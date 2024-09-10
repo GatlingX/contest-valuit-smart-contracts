@@ -5,8 +5,15 @@ import '@openzeppelin/hardhat-upgrades';
 import 'solidity-coverage';
 import '@nomiclabs/hardhat-solhint';
 import '@primitivefi/hardhat-dodoc';
+import "hardhat-contract-sizer"
+
+
+require("hardhat-contract-sizer");
+
+
 
 const config: HardhatUserConfig = {
+  
   solidity: {
     version: '0.8.17',
     settings: {
@@ -25,6 +32,9 @@ const config: HardhatUserConfig = {
     outputDir: "./docgen",
     freshOutput: true,
   },
+
+  
 };
+
 
 export default config;
