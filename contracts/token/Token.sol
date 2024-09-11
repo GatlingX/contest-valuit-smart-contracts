@@ -125,7 +125,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         _tokenSymbol = _symbol;
         _tokenDecimals = _decimals;
         _tokenOnchainID = _onchainID;
-        _tokenPaused = true;
+        _tokenPaused = false;
         setIdentityRegistry(_identityRegistry);
         setCompliance(_compliance);
         emit UpdatedTokenInformation(_tokenName, _tokenSymbol, _tokenDecimals, _TOKEN_VERSION, _tokenOnchainID);
@@ -432,7 +432,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         address _from,
         address _to,
         uint256 _amount
-    ) public override onlyAgent returns (bool) {
+    ) public override onlyAgents returns (bool) {
         require(balanceOf(_from) >= _amount, "sender balance too low");
         uint256 freeBalance = balanceOf(_from) - (_frozenTokens[_from]);
         if (_amount > freeBalance) {
@@ -485,7 +485,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     /**
      *  @dev See {IToken-freezePartialTokens}.
      */
-    function freezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgent {
+    function freezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgents {
         uint256 balance = balanceOf(_userAddress);
         require(balance >= _frozenTokens[_userAddress] + _amount, "Amount exceeds available balance");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] + (_amount);
@@ -495,7 +495,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     /**
      *  @dev See {IToken-unfreezePartialTokens}.
      */
-    function unfreezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgent {
+    function unfreezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgents {
         require(_frozenTokens[_userAddress] >= _amount, "Amount should be less than or equal to frozen tokens");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] - (_amount);
         emit TokensUnfrozen(_userAddress, _amount);

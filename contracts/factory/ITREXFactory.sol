@@ -85,6 +85,8 @@ interface ITREXFactory {
         address[] irAgents;
         // list of agents of the token
         address[] tokenAgents;
+        //list of transferAgents
+        address[] transferAgents;
         // modules to bind to the compliance, indexes are corresponding to the settings callData indexes
         // if a module doesn't require settings, it can be added at the end of the array, at index > settings.length
         address[] complianceModules;

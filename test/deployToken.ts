@@ -234,6 +234,7 @@ describe(" Tokenization Testing ", function () {
                 ONCHAINID: ethers.constants.AddressZero,
                 irAgents: [user1.address],
                 tokenAgents: [user1.address],
+                transferAgents:[],
                 complianceModules: [countryAllowCompliance.address, 
                     supplyLimitCompliance.address, 
                     maxBalanceCompliance.address, 
