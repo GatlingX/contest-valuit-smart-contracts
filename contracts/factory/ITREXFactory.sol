@@ -190,4 +190,6 @@ interface ITREXFactory {
      *  @param _salt The salt string that was used to deploy the token
      */
     function getToken(string calldata _salt) external view returns(address);
+
+    
 }
