@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0; 
 
-import 'contracts/proxy/interface/IImplementationAuthority.sol';
+import 'contracts/onchainID/interface/IImplementationAuthority.sol';
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities

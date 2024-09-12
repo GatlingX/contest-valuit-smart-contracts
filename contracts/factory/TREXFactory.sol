@@ -76,7 +76,7 @@ import "../proxy/IdentityRegistryStorageProxy.sol";
 import "../proxy/TrustedIssuersRegistryProxy.sol";
 import "../proxy/ModularComplianceProxy.sol";
 import "./ITREXFactory.sol";
-import "@onchain-id/solidity/contracts/factory/IIdFactory.sol";
+import "contracts/onchainID/factory/IIdFactory.sol";
 
 
 contract TREXFactory is ITREXFactory, Ownable {

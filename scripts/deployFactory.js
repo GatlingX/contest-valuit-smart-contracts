@@ -27,8 +27,8 @@ async function main () {
 
     // deploy TREXCONTRACTS see ITREXImplementationAuthority.sol interface for implementation struct details
     let tir = await TIR.deploy();
-    await tir.waitForDeployment();
-    console.log("TIR: ", tir.target);
+    await tir.deployed();
+    console.log("TIR: ", tir.address);
     await sleep(5000);
     let tirInitTx = await tir.init();
     await tirInitTx.wait();
@@ -37,8 +37,8 @@ async function main () {
    
     
     let ctr = await CTR.deploy();
-    await ctr.waitForDeployment();
-    console.log("CTR: ", ctr.target);
+    await ctr.deployed();
+    console.log("CTR: ", ctr.address);
     await sleep(5000);
     let ctrInitTx = await ctr.init();
     await ctrInitTx.wait();
@@ -47,8 +47,8 @@ async function main () {
 
 
     let irs = await IRS.deploy();
-    await irs.waitForDeployment();
-    console.log("IRS: ", irs.target);
+    await irs.deployed();
+    console.log("IRS: ", irs.address);
     await sleep(5000);
     let irsInitTx = await irs.init();
     await irsInitTx.wait();
@@ -57,18 +57,18 @@ async function main () {
   
 
     let ir = await IR.deploy();
-    await ir.waitForDeployment();
-    console.log("IR: ", ir.target);
+    await ir.deployed();
+    console.log("IR: ", ir.address);
     await sleep(5000);
-    let irInitTx = await ir.init(tir.target, ctr.target, irs.target);
+    let irInitTx = await ir.init(tir.address, ctr.address, irs.address);
     await irInitTx.wait();
     console.log("IR impl initialized");
     await sleep(5000);
  
 
     let compliance = await COMPLIANCE.deploy();
-    await compliance.waitForDeployment();
-    console.log("Compliance: ", compliance.target);
+    await compliance.deployed();
+    console.log("Compliance: ", compliance.address);
     await sleep(5000);
     let complianceInitTx = await compliance.init();
     await complianceInitTx.wait();
@@ -77,11 +77,11 @@ async function main () {
    
 
     let token = await TOKENIMPL.deploy();
-    await token.waitForDeployment();
-    console.log("Token Implementation: ", token.target);
+    await token.deployed();
+    console.log("Token Implementation: ", token.address);
     await sleep(5000);
     //TODO change symbol and name to "reference" ? 
-    let tokenInitTx = await token.init(ir.target, compliance.target, "dead", "dead", 18, ZERO_ADDRESS);
+    let tokenInitTx = await token.init(ir.address, compliance.address, "dead", "dead", 18, ZERO_ADDRESS);
     await tokenInitTx.wait();
     console.log("Token impl initialized");
     await sleep(5000);
@@ -89,12 +89,12 @@ async function main () {
 
     // //TREXContracts
     let TREXcontracts = {
-        tokenImplementation: token.target,
-        ctrImplementation: ctr.target,
-        irImplementation: ir.target,
-        irsImplementation: irs.target,
-        tirImplementation: tir.target,
-        mcImplementation: compliance.target
+        tokenImplementation: token.address,
+        ctrImplementation: ctr.address,
+        irImplementation: ir.address,
+        irsImplementation: irs.address,
+        tirImplementation: tir.address,
+        mcImplementation: compliance.address
     }
 
     //TREXVersion
@@ -106,9 +106,9 @@ async function main () {
 
     // deploy implementation authority
     let implementationAuth = await IMPLAUTH.deploy(true, ZERO_ADDRESS, ZERO_ADDRESS);
-    await implementationAuth.waitForDeployment();
+    await implementationAuth.deployed();
     await sleep(5000);
-    console.log("Reference Impl Auth : ", implementationAuth.target);
+    console.log("Reference Impl Auth : ", implementationAuth.address);
     let addAndUseTx = await implementationAuth.addAndUseTREXVersion(TREXversion, TREXcontracts);
     await addAndUseTx.wait();
     console.log("addAndUseTREXVersion success", );
@@ -116,25 +116,25 @@ async function main () {
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.target);
-    await trexFactory.waitForDeployment();
-    console.log("TREX Factory: ", trexFactory.target);
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"");
+    await trexFactory.deployed();
+    console.log("TREX Factory: ", trexFactory.address);
     await sleep(5000);
    
 
     // deploy IAFactory
-    let iaFactory = await IAFACTORY.deploy(trexFactory.target);
-    await iaFactory.waitForDeployment();
-    console.log("IAFactory :", iaFactory.target);
+    let iaFactory = await IAFACTORY.deploy(trexFactory.address);
+    await iaFactory.deployed();
+    console.log("IAFactory :", iaFactory.address);
     await sleep(5000);
    
 
     //set up implementation authority
-    let setTrexTx = await implementationAuth.setTREXFactory(trexFactory.target);
+    let setTrexTx = await implementationAuth.setTREXFactory(trexFactory.address);
     await setTrexTx.wait();
     console.log("IAFactory: setTREXFactory success");
     await sleep(5000);
-    let setIaFactTx = await implementationAuth.setIAFactory(iaFactory.target);
+    let setIaFactTx = await implementationAuth.setIAFactory(iaFactory.address);
     await setIaFactTx.wait();
     console.log("IAFactory: setIAFactory success");
     await sleep(5000);
