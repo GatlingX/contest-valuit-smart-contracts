@@ -1,11 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimIssuer, ClaimIssuer__factory, ClaimTopicsRegistry, ClaimTopicsRegistry__factory, ClaimTopicsRegistryProxy, CountryAllowModule, CountryAllowModule__factory, CountryRestrictModule, CountryRestrictModule__factory, DefaultCompliance, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryProxy, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdentityRegistryStorageProxy, IdFactory, IdFactory__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, ProxyV1, ProxyV1__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TokenProxy, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, TrustedIssuersRegistryProxy } from "../typechain-types";
+import { ClaimIssuer, ClaimIssuer__factory, ClaimTopicsRegistry, ClaimTopicsRegistry__factory, ClaimTopicsRegistryProxy, CountryAllowModule, CountryAllowModule__factory, CountryRestrictModule, CountryRestrictModule__factory, DefaultCompliance, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryProxy, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdentityRegistryStorageProxy, IdFactory, IdFactory__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, ProxyV1, ProxyV1__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TokenProxy, TokenProxy__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, TrustedIssuersRegistryProxy } from "../typechain-types";
 import { Identity } from "../typechain-types/contracts/onchainID";
 import { IdentityProxy, ImplementationAuthority } from "../typechain-types/contracts/onchainID/proxy";
 import { Identity__factory } from "../typechain-types/factories/contracts/onchainID";
 import { ImplementationAuthority__factory } from "../typechain-types/factories/contracts/onchainID/proxy";
+import { FactoryProxy, FactoryProxy__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
     let signer: SignerWithAddress;
@@ -42,7 +43,7 @@ describe(" Tokenization Testing ", function () {
     let fund: Fund;
     let fundFactory: FundFactory;
     let implFund: ImplementationAuthority;
-    let proxyV1: ProxyV1;
+    let fundProxy: FactoryProxy;
   
     beforeEach(" ", async () => {
       signers = await ethers.getSigners();
@@ -116,9 +117,9 @@ describe(" Tokenization Testing ", function () {
     fund = await new Fund__factory(owner).deploy();
     implFund = await new ImplementationAuthority__factory(owner).deploy(fund.address);
     fundFactory = await new FundFactory__factory(owner).deploy();
-    proxyV1 = await new ProxyV1__factory(owner).deploy();
+    fundProxy = await new FactoryProxy__factory(owner).deploy();
 
-    await proxyV1.upgradeTo(fundFactory.address);
+    await fundProxy.upgradeTo(fundFactory.address);
     
 
     })
@@ -271,15 +272,15 @@ describe(" Tokenization Testing ", function () {
                 // tokenAttached = await tokenImplementation.attach(firstAddress);
             }
 
-            // let fundProxy = await new FundFactory__factory(owner).attach(proxyV1.address);
+            let fundProxyAttached = await fundFactory.attach(fundProxy.address);
             
             console.log("I am here", trexFactory.address);
-            await fundFactory.init(trexFactory.address);
+            await fundProxyAttached.init(trexFactory.address);
 
-            await fundFactory.setImpl(implFund.address);
+            await fundProxyAttached.setImpl(implFund.address);
             console.log("Fund Implementation Set");
 
-            const tx = await fundFactory.createFund(firstAddress, 
+            const tx = await fundProxyAttached.createFund(firstAddress, 
                 "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000005",
                 "Hello"
             );

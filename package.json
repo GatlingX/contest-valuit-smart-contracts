@@ -78,6 +78,7 @@
   },
   "dependencies": {
     "@openzeppelin/test-helpers": "^0.5.16",
+    "dotenv": "^16.4.5",
     "hardhat-contract-sizer": "^2.10.0"
   }
 }

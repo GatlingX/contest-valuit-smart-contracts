@@ -1,16 +1,14 @@
+import { ethers } from "hardhat";
 const BN = require("ethers").BigNumber;
-const { Hre, ethers, web3 } = require("hardhat");
-const {
-    time, 
-    constants,
-  } = require("@openzeppelin/test-helpers");
-const ether = require("@openzeppelin/test-helpers/src/ether");
+// import { AddressZero } from "../test/utilities/utilities";
+// import { BurnBridge__factory } from "../typechain";
+// import { convertWithDecimal } from "../test/utilities/utilities";
+async function main() {
+  // const owner = "0x5F38A8Cf7147Ef29Cb18fE79B2405d1bc45e697C";
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function main () {
+  function sleep(ms: any) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
     const [deployer] = await ethers.getSigners();
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
     const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
@@ -116,7 +114,7 @@ async function main () {
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"");
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6");
     await trexFactory.deployed();
     console.log("TREX Factory: ", trexFactory.address);
     await sleep(5000);
@@ -138,6 +136,37 @@ async function main () {
     await setIaFactTx.wait();
     console.log("IAFactory: setIAFactory success");
     await sleep(5000);
+
+    //deploy Compliance Modules
+    const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
+    let countryallow = await CountryAllowModule.deploy();
+    await countryallow.deployed();
+    console.log("Country Allow Module: ",countryallow.address);
+    await sleep(5000);
+
+    const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
+    let supplylimit = await SupplyLimitModule.deploy();
+    await supplylimit.deployed();
+    console.log("Supply Limit Module: ",supplylimit.address);
+    await sleep(5000);
+
+
+    const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
+    let maxbalance = await MaxBalanceModule.deploy();
+    await maxbalance.deployed();
+    console.log("Max Balance Module: ",maxbalance.address);
+    await sleep(5000);
+
+
+    const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
+    let holdtime = await HoldTimeModule.deploy();
+    await holdtime.deployed();
+    console.log("Hold Time Module: ",holdtime.address);
+    await sleep(5000);
+
+
+
+
 
     
 

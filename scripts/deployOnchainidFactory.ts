@@ -1,16 +1,14 @@
+import { ethers } from "hardhat";
 const BN = require("ethers").BigNumber;
-const { ethers, web3 } = require("hardhat");
-const {
-    time, 
-    constants,
-  } = require("@openzeppelin/test-helpers");
-const ether = require("@openzeppelin/test-helpers/src/ether");
+// import { AddressZero } from "../test/utilities/utilities";
+// import { BurnBridge__factory } from "../typechain";
+// import { convertWithDecimal } from "../test/utilities/utilities";
+async function main() {
+  // const owner = "0x5F38A8Cf7147Ef29Cb18fE79B2405d1bc45e697C";
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function main () {
+  function sleep(ms: any) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
     const [deployer, investor] = await ethers.getSigners();
     const { chainId } = await ethers.provider.getNetwork();
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
