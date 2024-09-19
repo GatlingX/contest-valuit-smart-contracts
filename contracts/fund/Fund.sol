@@ -6,6 +6,7 @@ import 'contracts/fund/IFund.sol';
 import "contracts/fund/FundStorage.sol";
 import "contracts/factory/ITREXFactory.sol";
 import 'contracts/fund/ITKN.sol';
+import 'contracts/escrow/TransferHelper.sol';
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 
@@ -40,5 +41,16 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         NAVLatestPrice = _latestNAV;
         return true;
+    }
+
+    function shareDividend(address[] calldata _address, 
+                            uint256[] calldata _dividend,  
+                            address stableCoin_) public {
+        require(_address.length == _dividend.length, "Invalid Input");
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+
+        for(uint i=0; i<_address.length; i++){
+            TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address[i], _dividend[i]);
+        }
     }
 }
