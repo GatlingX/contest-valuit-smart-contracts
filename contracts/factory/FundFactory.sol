@@ -30,21 +30,21 @@ contract FundFactory is
 
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
 
-        proxy =address(new ProxyV1());
+        _proxy =address(new ProxyV1());
 
-        (bool success, ) = proxy.call(
+        (bool success, ) = _proxy.call(
                 abi.encodeWithSelector(0x3659cfe6, implFund)
             );
             require(success, "Proxy Upgrade Failed");
             success = false;
 
-        (success, ) = proxy.call(
+        (success, ) = _proxy.call(
             abi.encodeWithSelector(
                 0xc0d91eaf, _token, _data
             ));
             require(success, "FUND Intiatialization Failed");
 
-            emit FundCreated(proxy,mappingValue);
+            emit FundCreated(_proxy,mappingValue);
     }
 
 }

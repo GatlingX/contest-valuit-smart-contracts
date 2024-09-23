@@ -166,7 +166,8 @@ interface ITREXFactory {
     function deployTREXSuite(
         string memory _salt,
         TokenDetails calldata _tokenDetails,
-        ClaimDetails calldata _claimDetails) external;
+        ClaimDetails calldata _claimDetails,
+        bool wrap) external;
 
     /**
      *  @dev function that can be used to recover the ownership of contracts owned by the factory

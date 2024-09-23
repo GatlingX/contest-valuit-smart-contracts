@@ -6,7 +6,7 @@ contract FundFactoryStorage {
 
     address public masterFactory;
     address public implFund;
-    address proxy;
+    address internal _proxy;
 
     event FundCreated(
         address _FundProxy,

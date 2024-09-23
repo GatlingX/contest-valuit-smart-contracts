@@ -90,10 +90,13 @@ contract TREXFactory is ITREXFactory, Ownable {
     /// mapping containing info about the token contracts corresponding to salt already used for CREATE2 deployments
     mapping(string => address) public tokenDeployed;
 
+    address public wrapper;
+
     /// constructor is setting the implementation authority and the Identity Factory of the TREX factory
-    constructor(address implementationAuthority_, address idFactory_) {
+    constructor(address implementationAuthority_, address idFactory_, address wrapper_) {
         setImplementationAuthority(implementationAuthority_);
         setIdFactory(idFactory_);
+        wrapper = wrapper_;
     }
 
     /**
@@ -101,7 +104,7 @@ contract TREXFactory is ITREXFactory, Ownable {
      */
     // solhint-disable-next-line code-complexity, function-max-lines
     function deployTREXSuite(string memory _salt, TokenDetails calldata _tokenDetails, ClaimDetails calldata
-        _claimDetails)
+        _claimDetails, bool wrap)
     external override onlyOwner {
         require(tokenDeployed[_salt] == address(0)
         , "token already deployed");
@@ -169,6 +172,9 @@ contract TREXFactory is ITREXFactory, Ownable {
             if (i < (_tokenDetails.complianceSettings).length) {
                 mc.callModuleFunction(_tokenDetails.complianceSettings[i], _tokenDetails.complianceModules[i]);
             }
+        }
+        if(wrap){
+            mc.setWrapper(wrapper);
         }
         tokenDeployed[_salt] = address(token);
         (Ownable(address(token))).transferOwnership(_tokenDetails.owner);

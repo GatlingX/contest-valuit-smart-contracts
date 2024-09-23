@@ -78,4 +78,8 @@ contract MCStorage {
      * variables without shifting down storage in the inheritance chain.
      */
     uint256[49] private __gap;
+
+    bool public wrapperSet;
+
+    address public wrapper;
 }
