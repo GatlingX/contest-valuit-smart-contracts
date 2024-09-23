@@ -20,6 +20,10 @@ contract Wrapper is Ownable, WrapperStorage{
         wrapperOnchainID = onChainID_;
     }
 
+    function setOnchainID(address _onChainID) public onlyOwner{
+        wrapperOnchainID = _onChainID;
+    }
+
     function createWrapToken(address _erc3643, uint16 _countryCode) public {
         require(_erc3643 != address(0),"INVALID! Zero Address");
         require(!isWrapped[_erc3643], "Token already wrapped");

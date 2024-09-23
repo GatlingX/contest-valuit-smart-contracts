@@ -81,6 +81,8 @@ interface ITREXFactory {
         // ONCHAINID of the token
         // solhint-disable-next-line var-name-mixedcase
         address ONCHAINID;
+        // Token Wrappable Boolean
+        bool wrap;
         // list of agents of the identity registry (can be set to an AgentManager contract)
         address[] irAgents;
         // list of agents of the token
@@ -166,8 +168,7 @@ interface ITREXFactory {
     function deployTREXSuite(
         string memory _salt,
         TokenDetails calldata _tokenDetails,
-        ClaimDetails calldata _claimDetails,
-        bool wrap) external;
+        ClaimDetails calldata _claimDetails) external;
 
     /**
      *  @dev function that can be used to recover the ownership of contracts owned by the factory

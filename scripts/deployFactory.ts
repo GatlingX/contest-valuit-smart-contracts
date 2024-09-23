@@ -22,67 +22,70 @@ async function main() {
     const IRS = await ethers.getContractFactory("IdentityRegistryStorage");
     const TIR = await ethers.getContractFactory("TrustedIssuersRegistry");
     const COMPLIANCE = await ethers.getContractFactory("ModularCompliance");
+    const WRAPPER = await ethers.getContractFactory("Wrapper");
+
+    let time = 5000;
 
     // deploy TREXCONTRACTS see ITREXImplementationAuthority.sol interface for implementation struct details
     let tir = await TIR.deploy();
     await tir.deployed();
     console.log("TIR: ", tir.address);
-    await sleep(5000);
+    await sleep(time);
     let tirInitTx = await tir.init();
     await tirInitTx.wait();
     console.log("TIR impl initialized");
-    await sleep(5000);
+    await sleep(time);
    
     
     let ctr = await CTR.deploy();
     await ctr.deployed();
     console.log("CTR: ", ctr.address);
-    await sleep(5000);
+    await sleep(time);
     let ctrInitTx = await ctr.init();
     await ctrInitTx.wait();
     console.log("CTR impl initialized");
-    await sleep(5000);
+    await sleep(time);
 
 
     let irs = await IRS.deploy();
     await irs.deployed();
     console.log("IRS: ", irs.address);
-    await sleep(5000);
+    await sleep(time);
     let irsInitTx = await irs.init();
     await irsInitTx.wait();
     console.log("IRS impl initialized");
-    await sleep(5000);
+    await sleep(time);
   
 
     let ir = await IR.deploy();
     await ir.deployed();
     console.log("IR: ", ir.address);
-    await sleep(5000);
+    await sleep(time);
     let irInitTx = await ir.init(tir.address, ctr.address, irs.address);
     await irInitTx.wait();
     console.log("IR impl initialized");
-    await sleep(5000);
+    await sleep(time);
  
 
     let compliance = await COMPLIANCE.deploy();
     await compliance.deployed();
     console.log("Compliance: ", compliance.address);
-    await sleep(5000);
+    await sleep(time);
     let complianceInitTx = await compliance.init();
     await complianceInitTx.wait();
     console.log("Compliance impl initialized");
-    await sleep(5000);
+    await sleep(time);
    
 
     let token = await TOKENIMPL.deploy();
     await token.deployed();
     console.log("Token Implementation: ", token.address);
-    await sleep(5000);
+    await sleep(time);
     //TODO change symbol and name to "reference" ? 
     let tokenInitTx = await token.init(ir.address, compliance.address, "dead", "dead", 18, ZERO_ADDRESS);
     await tokenInitTx.wait();
     console.log("Token impl initialized");
-    await sleep(5000);
+    await sleep(time);
 
 
     // //TREXContracts
@@ -105,64 +108,82 @@ async function main() {
     // deploy implementation authority
     let implementationAuth = await IMPLAUTH.deploy(true, ZERO_ADDRESS, ZERO_ADDRESS);
     await implementationAuth.deployed();
-    await sleep(5000);
+    await sleep(time);
     console.log("Reference Impl Auth : ", implementationAuth.address);
     let addAndUseTx = await implementationAuth.addAndUseTREXVersion(TREXversion, TREXcontracts);
     await addAndUseTx.wait();
     console.log("addAndUseTREXVersion success", );
-    await sleep(5000);
+    await sleep(time);
+
+    //ERC20 Implementation
+    const ERC20 = await ethers.getContractFactory("VERC20");
+    let erc20 = await ERC20.deploy();
+    await erc20.deployed();
+    console.log("VERC20 Implementation: ", erc20.address);
+    await sleep(time);
+
+    //ERC20 Implementation Auth
+    const IMPLATHT = await ethers.getContractFactory("ImplementationAuthority");
+    let erc20ImplAuth = await IMPLATHT.deploy(erc20.address);
+    await erc20ImplAuth.deployed();
+    console.log("ERC20 ImplAuth: ", erc20ImplAuth.address);
+    await sleep(time);
+
+    //deploy Wrapper
+    let wrapper = await WRAPPER.deploy(erc20ImplAuth.address, ZERO_ADDRESS);
+    await wrapper.deployed();
+    console.log("Wrapper: ",wrapper.address);
+    await sleep(time);   
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6");
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6", wrapper.address);
     await trexFactory.deployed();
     console.log("TREX Factory: ", trexFactory.address);
-    await sleep(5000);
-   
+    await sleep(time);
 
     // deploy IAFactory
     let iaFactory = await IAFACTORY.deploy(trexFactory.address);
     await iaFactory.deployed();
     console.log("IAFactory :", iaFactory.address);
-    await sleep(5000);
-   
+    await sleep(time);
 
     //set up implementation authority
     let setTrexTx = await implementationAuth.setTREXFactory(trexFactory.address);
     await setTrexTx.wait();
     console.log("IAFactory: setTREXFactory success");
-    await sleep(5000);
+    await sleep(time);
     let setIaFactTx = await implementationAuth.setIAFactory(iaFactory.address);
     await setIaFactTx.wait();
     console.log("IAFactory: setIAFactory success");
-    await sleep(5000);
+    await sleep(time);
 
     //deploy Compliance Modules
     const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
     let countryallow = await CountryAllowModule.deploy();
     await countryallow.deployed();
     console.log("Country Allow Module: ",countryallow.address);
-    await sleep(5000);
+    await sleep(time);
 
     const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
     let supplylimit = await SupplyLimitModule.deploy();
     await supplylimit.deployed();
     console.log("Supply Limit Module: ",supplylimit.address);
-    await sleep(5000);
+    await sleep(time);
 
 
     const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
     let maxbalance = await MaxBalanceModule.deploy();
     await maxbalance.deployed();
     console.log("Max Balance Module: ",maxbalance.address);
-    await sleep(5000);
+    await sleep(time);
 
 
     const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
     let holdtime = await HoldTimeModule.deploy();
     await holdtime.deployed();
     console.log("Hold Time Module: ",holdtime.address);
-    await sleep(5000);
+    await sleep(time);
 
 
 

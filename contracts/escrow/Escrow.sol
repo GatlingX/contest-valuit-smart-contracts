@@ -14,7 +14,7 @@ contract Escrow is Ownable, EscrowStorage{
 
     constructor(address stableCoin_, uint8 adminFee_) {
         stableCoin = stableCoin_;
-        adminFee = adminFee_;
+        adminFee = adminFee_; //1 Represents 0.01%
     } 
 
     function rescueAnyERC20Tokens(
@@ -67,11 +67,11 @@ contract Escrow is Ownable, EscrowStorage{
 
         TransferHelper.safeTransfer(stableCoin, 
                                     msg.sender, 
-                                    investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/100));
+                                    investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/10000));
 
         TransferHelper.safeTransfer(stableCoin, 
                                     owner(), 
-                                    (investorOrders[orderID].value * adminFee)/100);
+                                    (investorOrders[orderID].value * adminFee)/10000);
 
         pendingOrderAmount -= investorOrders[orderID].value;
         investorOrders[orderID].status = true;

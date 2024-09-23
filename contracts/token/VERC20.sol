@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract ERC20 is ERC20Upgradeable, OwnableUpgradeable {
+contract VERC20 is ERC20Upgradeable, OwnableUpgradeable {
     
     function init(string memory name_, string memory symbol_, uint8 decimals_) external{
         __ERC20_init(name_,symbol_, decimals_);

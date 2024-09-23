@@ -9,7 +9,7 @@ async function main() {
         address: "0x2a709159b17C51af79D8d11fF5c664648c4Cd340",
         //Path of your main contract.
         constructorArguments:[],
-        contract: "contracts/USDT.sol:USDT",
+        contract: "contracts/Helpers/USDT.sol:USDT",
     });
     await sleep(3000);
 

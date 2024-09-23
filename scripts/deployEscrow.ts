@@ -25,9 +25,6 @@ async function main() {
     await escrow.deployed();
     console.log("Escrow : ", escrow.address);
     await sleep(time);
-
-    
-    
     
 }
 main()

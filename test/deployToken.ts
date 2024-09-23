@@ -1,12 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimIssuer, ClaimIssuer__factory, ClaimTopicsRegistry, ClaimTopicsRegistry__factory, ClaimTopicsRegistryProxy, CountryAllowModule, CountryAllowModule__factory, CountryRestrictModule, CountryRestrictModule__factory, DefaultCompliance, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryProxy, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdentityRegistryStorageProxy, IdFactory, IdFactory__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, ProxyV1, ProxyV1__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TokenProxy, TokenProxy__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, TrustedIssuersRegistryProxy } from "../typechain-types";
-import { Identity } from "../typechain-types/contracts/onchainID";
-import { IdentityProxy, ImplementationAuthority } from "../typechain-types/contracts/onchainID/proxy";
-import { Identity__factory } from "../typechain-types/factories/contracts/onchainID";
-import { ImplementationAuthority__factory } from "../typechain-types/factories/contracts/onchainID/proxy";
-import { FactoryProxy, FactoryProxy__factory } from "../typechain";
+import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
     let signer: SignerWithAddress;
@@ -44,6 +39,11 @@ describe(" Tokenization Testing ", function () {
     let fundFactory: FundFactory;
     let implFund: ImplementationAuthority;
     let fundProxy: FactoryProxy;
+
+    //ERC20 Wrapper
+    let verc20: VERC20;
+    let verc20Impl: ImplementationAuthority;
+    let wrapper: Wrapper;
   
     beforeEach(" ", async () => {
       signers = await ethers.getSigners();
@@ -96,8 +96,14 @@ describe(" Tokenization Testing ", function () {
       };
   
       await trexImplementationAuthority.connect(owner).addAndUseTREXVersion(versionStruct, contractsStruct);
+
+      verc20 = await new VERC20__factory(owner).deploy();
+
+      verc20Impl = await new ImplementationAuthority__factory(owner).deploy(verc20.address);
+
+      wrapper = await new Wrapper__factory(owner).deploy(verc20Impl.address, "0x0000000000000000000000000000000000000000");
   
-      trexFactory = await new TREXFactory__factory(owner).deploy(trexImplementationAuthority.address, identityFactory.address);
+      trexFactory = await new TREXFactory__factory(owner).deploy(trexImplementationAuthority.address, identityFactory.address, wrapper.address);
 
       console.log("Factory Deployed", trexFactory.address);
 
@@ -233,6 +239,7 @@ describe(" Tokenization Testing ", function () {
                 decimals: 18,
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
+                wrap: true,
                 irAgents: [user1.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],
@@ -305,7 +312,7 @@ describe(" Tokenization Testing ", function () {
 
 
             console.log("Fund Name:", await fundAttached?.fundName(), Number(await fundAttached?.cusip()), await fundAttached?.spvValuation(), await fundAttached?.yieldType());
-            console.log("Property Typr: ", Number( await fundAttached?.propertyType()),await fundAttached?.NAVLaunchPrice())
+            console.log("Property Type: ", Number( await fundAttached?.propertyType()),await fundAttached?.NAVLaunchPrice())
         })
   });
 
