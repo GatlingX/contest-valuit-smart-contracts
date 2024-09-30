@@ -457,4 +457,7 @@ interface IToken is IERC20 {
      *  @param _userAddress the address of the wallet on which getFrozenTokens is called
      */
     function getFrozenTokens(address _userAddress) external view returns (uint256);
+
+
+    function totalSupply() external view override returns (uint256);
 }

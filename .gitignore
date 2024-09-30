@@ -10,6 +10,7 @@ artifacts/
 cache/
 docgen/
 flat/
+typechain/
 
 # IDEs
 .idea/
@@ -18,3 +19,4 @@ flat/
 # NPM
 gas-report
 /bin/
+.env

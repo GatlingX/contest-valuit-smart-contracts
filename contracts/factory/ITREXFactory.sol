@@ -81,10 +81,14 @@ interface ITREXFactory {
         // ONCHAINID of the token
         // solhint-disable-next-line var-name-mixedcase
         address ONCHAINID;
+        // Token Wrappable Boolean
+        bool wrap;
         // list of agents of the identity registry (can be set to an AgentManager contract)
         address[] irAgents;
         // list of agents of the token
         address[] tokenAgents;
+        //list of transferAgents
+        address[] transferAgents;
         // modules to bind to the compliance, indexes are corresponding to the settings callData indexes
         // if a module doesn't require settings, it can be added at the end of the array, at index > settings.length
         address[] complianceModules;
@@ -190,4 +194,6 @@ interface ITREXFactory {
      *  @param _salt The salt string that was used to deploy the token
      */
     function getToken(string calldata _salt) external view returns(address);
+
+    
 }

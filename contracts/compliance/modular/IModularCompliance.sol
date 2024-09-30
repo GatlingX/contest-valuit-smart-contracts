@@ -192,6 +192,8 @@ interface IModularCompliance {
      */
     function destroyed(address _from, uint256 _amount) external;
 
+    function setWrapper(address _wrapper) external;
+
     /**
      *  @dev checks that the transfer is compliant.
      *  default compliance always returns true

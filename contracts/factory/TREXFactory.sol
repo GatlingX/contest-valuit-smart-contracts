@@ -76,7 +76,7 @@ import "../proxy/IdentityRegistryStorageProxy.sol";
 import "../proxy/TrustedIssuersRegistryProxy.sol";
 import "../proxy/ModularComplianceProxy.sol";
 import "./ITREXFactory.sol";
-import "@onchain-id/solidity/contracts/factory/IIdFactory.sol";
+import "contracts/onchainID/factory/IIdFactory.sol";
 
 
 contract TREXFactory is ITREXFactory, Ownable {
@@ -90,10 +90,13 @@ contract TREXFactory is ITREXFactory, Ownable {
     /// mapping containing info about the token contracts corresponding to salt already used for CREATE2 deployments
     mapping(string => address) public tokenDeployed;
 
+    address public wrapper;
+
     /// constructor is setting the implementation authority and the Identity Factory of the TREX factory
-    constructor(address implementationAuthority_, address idFactory_) {
+    constructor(address implementationAuthority_, address idFactory_, address wrapper_) {
         setImplementationAuthority(implementationAuthority_);
         setIdFactory(idFactory_);
+        wrapper = wrapper_;
     }
 
     /**
@@ -159,6 +162,9 @@ contract TREXFactory is ITREXFactory, Ownable {
         for (uint256 i = 0; i < (_tokenDetails.tokenAgents).length; i++) {
             AgentRole(address(token)).addAgent(_tokenDetails.tokenAgents[i]);
         }
+        for (uint256 i=0; i < (_tokenDetails.transferAgents).length; i++){
+            AgentRole(address(token)).addTA(_tokenDetails.transferAgents[i]);
+        }
         for (uint256 i = 0; i < (_tokenDetails.complianceModules).length; i++) {
             if (!mc.isModuleBound(_tokenDetails.complianceModules[i])) {
                 mc.addModule(_tokenDetails.complianceModules[i]);
@@ -166,6 +172,9 @@ contract TREXFactory is ITREXFactory, Ownable {
             if (i < (_tokenDetails.complianceSettings).length) {
                 mc.callModuleFunction(_tokenDetails.complianceSettings[i], _tokenDetails.complianceModules[i]);
             }
+        }
+        if(_tokenDetails.wrap){
+            mc.setWrapper(wrapper);
         }
         tokenDeployed[_salt] = address(token);
         (Ownable(address(token))).transferOwnership(_tokenDetails.owner);

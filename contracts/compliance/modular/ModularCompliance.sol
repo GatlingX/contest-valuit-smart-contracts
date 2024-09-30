@@ -63,6 +63,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "contracts/Helpers/String.sol";
 import "../../token/IToken.sol";
 import "./IModularCompliance.sol";
 import "./MCStorage.sol";
@@ -218,6 +219,12 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
 
     }
 
+    function setWrapper(address _wrapper) external onlyOwner{
+        require(_wrapper != address(0),"Zero Address");
+        wrapper = _wrapper;
+        wrapperSet = true;
+    }
+
     /**
      *  @dev See {IModularCompliance-isModuleBound}.
      */
@@ -245,6 +252,9 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
     function canTransfer(address _from, address _to, uint256 _value) external view override returns (bool) {
         uint256 length = _modules.length;
         for (uint256 i = 0; i < length; i++) {
+            if(_to == wrapper && wrapperSet == true && !String.equals(IModule(_modules[i]).name(),"HoldTimeModule")){
+                return true;
+            }
             if (!IModule(_modules[i]).moduleCheck(_from, _to, _value, address(this))) {
                 return false;
             }
