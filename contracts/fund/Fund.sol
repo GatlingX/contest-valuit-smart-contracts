@@ -22,19 +22,13 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         (propertyType, 
         NAVLaunchPrice,
         cusip,
-        yieldType,
-        spvValuation) = abi.decode(_data, (uint256, uint256, uint256, uint256, uint256));
+        projectedYield) = abi.decode(_data, (uint256, uint256, string, uint256));
+
+        _setValues(_data);
     }
 
     function getNAV() external returns (uint256){
         return NAVLatestPrice;
-    }
-
-    function getAUM() external returns (uint256){
-        ITKN mytoken = ITKN(token);
-        uint256 totalSupply = mytoken.totalSupply();
-        AssetUnderManagement = totalSupply * NAVLatestPrice;
-        return AssetUnderManagement;
     }
 
     function setNAV(uint256 _latestNAV) external returns(bool){
@@ -52,5 +46,15 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         for(uint i=0; i<_address.length; i++){
             TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address[i], _dividend[i]);
         }
+    }
+
+    function _setValues (bytes memory _data) internal{
+        (, 
+        ,
+        ,
+        ,
+        NAVLatestPrice,
+        minInvestment,
+        maxInvestment) = abi.decode(_data, (uint256, uint256, string, uint256, uint256, uint256, uint256));
     }
 }

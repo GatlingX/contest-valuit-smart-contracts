@@ -26,35 +26,35 @@ async function main() {
     console.log("ImplementationAuthority (linked to Fund): ", implAuth.address);
     await sleep(time);
 
-    //deploy FundFactory
-    const fundFactory = await FUNDFACTORY.deploy();
-    await fundFactory.deployed();
-    console.log("Fund Factory : ", fundFactory.address);
-    await sleep(time);
+    // //deploy FundFactory
+    // const fundFactory = await FUNDFACTORY.deploy();
+    // await fundFactory.deployed();
+    // console.log("Fund Factory : ", fundFactory.address);
+    // await sleep(time);
 
-    //deploy Fund Proxy
-    const fundProxy = await FUNDPROXY.deploy();
-    await fundProxy.deployed();
-    console.log("Fund Proxy: ", fundProxy.address);
-    await sleep(time);
+    // //deploy Fund Proxy
+    // const fundProxy = await FUNDPROXY.deploy();
+    // await fundProxy.deployed();
+    // console.log("Fund Proxy: ", fundProxy.address);
+    // await sleep(time);
 
-    //Upgrade Proxy
-    await fundProxy.upgradeTo(fundFactory.address);
-    console.log("Fund Proxy Upgraded");
-    await sleep(time);
+    // //Upgrade Proxy
+    // await fundProxy.upgradeTo(fundFactory.address);
+    // console.log("Fund Proxy Upgraded");
+    // await sleep(time);
 
-    //Attach and Initialize Factory
-    const fundAttached = await FUNDFACTORY.attach(fundProxy.address);
+    // //Attach and Initialize Factory
+    // const fundAttached = await FUNDFACTORY.attach(fundProxy.address);
 
-    // console.log(fundAttached);
+    // // console.log(fundAttached);
 
-    await fundAttached.init("0xf42F94223aF1BF1e2e3F4125Fff999605dbB3c77");
+    // await fundAttached.init("0xf42F94223aF1BF1e2e3F4125Fff999605dbB3c77");
 
-    console.log("Fund Factory Initialized");
-    await sleep(time);
+    // console.log("Fund Factory Initialized");
+    // await sleep(time);
 
-    await fundAttached.setImpl(implAuth.address);
-    console.log("Fund Implementation set");
+    // await fundAttached.setImpl(implAuth.address);
+    // console.log("Fund Implementation set");
 
     
     

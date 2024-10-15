@@ -6,15 +6,15 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 contract FundStorage {
 
     string public fundName;
+    string public cusip;
 
     address public token;
     address public factory;
 
-    uint256 public yieldType;
     uint256 public propertyType;
-    uint256 public AssetUnderManagement;
     uint256 public NAVLaunchPrice;
+    uint256 public projectedYield;
     uint256 public NAVLatestPrice;
-    uint256 public cusip;
-    uint256 public spvValuation;
+    uint256 public minInvestment;
+    uint256 public maxInvestment;
 }
