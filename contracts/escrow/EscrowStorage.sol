@@ -8,7 +8,8 @@ contract EscrowStorage {
         address _asset,
         address _investor,
         uint256 amountValue,
-        string orderID
+        string orderID,
+        string coin
     );
 
     event orderSettled(
@@ -21,16 +22,16 @@ contract EscrowStorage {
         address investor;
         address asset;
         uint256 value;
+        string coin;
         bool status;
     }
 
     uint8 public adminFee;
-    uint256 public pendingOrderAmount;
+    uint256 public totalPendingOrderAmount;
 
-    address public stableCoin;
-
-    // uint256 public orderID;
-
+    mapping(string => uint256) public pendingOrderAmount;
+    mapping(string => address) internal stablecoin;
+    mapping(address => string) internal stableCoinName;
     mapping(string => InvestorOrder) public investorOrders;
     mapping(string => uint256) public receivedAmount;
     mapping(string => bool) public orderCreated;

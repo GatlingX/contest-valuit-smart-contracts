@@ -27,7 +27,7 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         _setValues(_data);
     }
 
-    function getNAV() external returns (uint256){
+    function getNAV() view external returns (uint256){
         return NAVLatestPrice;
     }
 

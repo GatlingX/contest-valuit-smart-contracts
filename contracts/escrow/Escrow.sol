@@ -12,8 +12,11 @@ import "../roles/AgentRole.sol";
 
 contract Escrow is Ownable, EscrowStorage{
 
-    constructor(address stableCoin_, uint8 adminFee_) {
-        stableCoin = stableCoin_;
+    constructor(address [] memory  stableCoin_, uint8 adminFee_) {
+        stablecoin["usdc"] = stableCoin_[1];
+        stablecoin["usdt"] = stableCoin_[2];
+        stableCoinName[stableCoin_[1]] = "usdc";
+        stableCoinName[stableCoin_[2]] = "usdt";
         adminFee = adminFee_; //1 Represents 0.01%
     } 
 
@@ -22,11 +25,11 @@ contract Escrow is Ownable, EscrowStorage{
         address _to,
         uint128 _amount
     ) external onlyOwner {
-        if(_tokenAddr == stableCoin){
+        if(_tokenAddr == stablecoin["usdc"] || _tokenAddr == stablecoin["usdt"]){
             SafeERC20.safeTransfer(
                 IERC20(_tokenAddr),
                 _to,
-                IToken(stableCoin).balanceOf(address(this)) - pendingOrderAmount
+                IToken(_tokenAddr).balanceOf(address(this)) - pendingOrderAmount[stableCoinName[_tokenAddr]]
             );
         } else{
                 SafeERC20.safeTransfer(
@@ -42,7 +45,7 @@ contract Escrow is Ownable, EscrowStorage{
         adminFee = _fee;
     }
 
-    function deposit(address _token, uint256 _amount, string memory orderID) public{
+    function deposit(address _token, uint256 _amount, string calldata orderID, string calldata coin) public{
         require(_token != address(0),"Zero Address not allowed");
         require(_amount > 0, "Amount should be greater than 0");
         require(IToken(_token).identityRegistry().isVerified(msg.sender), "Investor not whitelisted");
@@ -51,36 +54,43 @@ contract Escrow is Ownable, EscrowStorage{
         investorOrders[orderID].investor = msg.sender;
         investorOrders[orderID].asset = _token;
         investorOrders[orderID].value = _amount;
+        investorOrders[orderID].coin = coin;
         investorOrders[orderID].status = false;
 
-        TransferHelper.safeTransferFrom(stableCoin, msg.sender, address(this), _amount);
+        TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, address(this), _amount);
 
         receivedAmount[orderID] = _amount;
         orderCreated[orderID] = true;
-        pendingOrderAmount += investorOrders[orderID].value;
+        pendingOrderAmount[investorOrders[orderID].coin] += investorOrders[orderID].value;
+        totalPendingOrderAmount += investorOrders[orderID].value;
 
-        emit AmountReceived(_token, msg.sender, _amount, orderID);
+        emit AmountReceived(_token, msg.sender, _amount, orderID, coin);
     }
 
-    function settlement(string memory orderID) public {
+    function settlement(string calldata orderID) public {
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
 
-        TransferHelper.safeTransfer(stableCoin, 
+        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
                                     investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/10000));
 
-        TransferHelper.safeTransfer(stableCoin, 
+        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     owner(), 
                                     (investorOrders[orderID].value * adminFee)/10000);
 
-        pendingOrderAmount -= investorOrders[orderID].value;
+        pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
+        totalPendingOrderAmount -= investorOrders[orderID].value;
         investorOrders[orderID].status = true;
 
         emit orderSettled(orderID, msg.sender, investorOrders[orderID].value);
     }
     
 
-    function getStableCoin() public view returns(address){
-        return stableCoin;
+    function getStableCoin(string calldata _stablecoin) public view returns(address){
+        return stablecoin[_stablecoin];
+    }
+
+    function getStableCoinName(address stableCoin) public view returns(string memory){
+        return stableCoinName[stableCoin];
     }
 }

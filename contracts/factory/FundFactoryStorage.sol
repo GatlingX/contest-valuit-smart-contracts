@@ -6,6 +6,7 @@ contract FundFactoryStorage {
 
     address public masterFactory;
     address public implFund;
+    address public implEquityConfig;
     address internal _proxy;
 
     event FundCreated(
@@ -13,5 +14,15 @@ contract FundFactoryStorage {
         string mappingValue
     );
 
+    event EquityConfigCreated(
+        address _EquityConfigProxy,
+        string mappingValue
+    );
+
+    event Whitelisted(
+        address UserAddress,
+        address OfferingAddress,
+        string salt
+    );
     
 }
