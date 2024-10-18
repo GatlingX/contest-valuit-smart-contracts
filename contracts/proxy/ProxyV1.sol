@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'contracts/onchainID/interface/IImplementationAuthority.sol';
 /**
- * @title OwnedUpgradeabilityProxy
+ * @title ProxyV1
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
  

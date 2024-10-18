@@ -1,14 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0
 
-/*
-      █████╗ ███╗   ██╗████████╗██╗███████╗██████╗ 
-     ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝██╔══██╗
-     ███████║██╔██╗ ██║   ██║   ██║█████╗  ██████╔╝
-     ██╔══██║██║╚██╗██║   ██║   ██║██╔══╝  ██╔══██╗
-     ██║  ██║██║ ╚████║   ██║   ██║███████╗██║  ██║
-     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚══════╝╚═╝  ╚═╝                                      
-*/
-
 import "contracts/proxy/ProxyV1.sol";
 import "contracts/factory/FundFactoryStorage.sol";
 import "contracts/fund/IFactory.sol";
