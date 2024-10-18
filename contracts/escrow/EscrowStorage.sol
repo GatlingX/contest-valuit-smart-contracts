@@ -26,6 +26,7 @@ contract EscrowStorage {
         bool status;
     }
 
+    address public adminWallet;
     uint8 public adminFee;
     uint256 public totalPendingOrderAmount;
 

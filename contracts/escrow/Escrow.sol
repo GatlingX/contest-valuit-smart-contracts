@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../roles/AgentRole.sol";
 import "contracts/escrow/EscrowStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -10,14 +10,17 @@ import "contracts/escrow/TransferHelper.sol";
 import "contracts/token/IToken.sol";
 import "../roles/AgentRole.sol";
 
-contract Escrow is Ownable, EscrowStorage{
+contract Escrow is OwnableUpgradeable, EscrowStorage{
 
-    constructor(address [] memory  stableCoin_, uint8 adminFee_) {
-        stablecoin["usdc"] = stableCoin_[1];
-        stablecoin["usdt"] = stableCoin_[2];
-        stableCoinName[stableCoin_[1]] = "usdc";
-        stableCoinName[stableCoin_[2]] = "usdt";
+    function init(address [] memory  stableCoin_, uint8 adminFee_) public initializer {
+        stablecoin["usdc"] = stableCoin_[0];
+        stablecoin["usdt"] = stableCoin_[1];
+        stableCoinName[stableCoin_[0]] = "usdc";
+        stableCoinName[stableCoin_[1]] = "usdt";
         adminFee = adminFee_; //1 Represents 0.01%
+        adminWallet = msg.sender;
+        __Ownable_init_unchained();
+
     } 
 
     function rescueAnyERC20Tokens(
@@ -43,6 +46,11 @@ contract Escrow is Ownable, EscrowStorage{
     function setAdminFee(uint8 _fee) public onlyOwner{
         require(_fee >= 0, "Cannot be less than 0");
         adminFee = _fee;
+    }
+
+    function setAdminWallet(address _newWallet) public onlyOwner(){
+        require(_newWallet != address(0),"Zero Address");
+        adminWallet = _newWallet;
     }
 
     function deposit(address _token, uint256 _amount, string calldata orderID, string calldata coin) public{
@@ -76,7 +84,7 @@ contract Escrow is Ownable, EscrowStorage{
                                     investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/10000));
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    owner(), 
+                                    adminWallet, 
                                     (investorOrders[orderID].value * adminFee)/10000);
 
         pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
