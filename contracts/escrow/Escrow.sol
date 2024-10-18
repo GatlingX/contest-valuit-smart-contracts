@@ -69,6 +69,7 @@ contract Escrow is Ownable, EscrowStorage{
 
     function settlement(string calldata orderID) public {
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
+        require (!investorOrders[orderID].status, "Order Already Settled");
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
