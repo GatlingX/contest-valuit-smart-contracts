@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 
 /**
- * @title OwnedUpgradeabilityProxy
+ * @title FactoryProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
  

@@ -46,7 +46,7 @@ async function main() {
     //Attach and Initialize Escrow
     const escrowAttached = await ESCROW.attach(escrowProxy.address);
 
-    await escrowAttached.init([usdt.address,usdc.address],1);
+    await escrowAttached.init([usdc.address,usdt.address],1);
     console.log("Escrow Initialized");
     await sleep(time);
 
