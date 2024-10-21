@@ -10,8 +10,9 @@ describe(" Tokenization Testing ", function () {
     let tokenIssuer: SignerWithAddress;
     let transferAgent: SignerWithAddress;
     let user1: SignerWithAddress;
-    let sponsor: SignerWithAddress;
     let user2: SignerWithAddress;
+    let user3: SignerWithAddress;
+
     // const trustSigningKey = ethers.Wallet.createRandom();
   
     // console.log("claimIssuerSigningKey ", trustSigningKey);
@@ -56,6 +57,7 @@ describe(" Tokenization Testing ", function () {
       transferAgent = signers[2];
       user1 = signers[4];
       user2 = signers[5];
+      user3 = signers[6];
       
   
       // console.log("trust ", trust);
@@ -277,14 +279,17 @@ describe(" Tokenization Testing ", function () {
             expect(await tokenAttached?.symbol()).to.equal("NKL");
 
             await identityFactory.createIdentity(user1.address, user1.address);
+            await identityFactory.createIdentity(user2.address, user2.address);
+            await identityFactory.createIdentity(user3.address, user3.address);
+
             let user1Identity = await identityFactory.getIdentity(user1.address);
             
             let identityRegistryAddress = await tokenAttached?.identityRegistry();
 
             
             let identityRegisteryAttached = identityRegistryImplementation.attach(String(identityRegistryAddress));
-
             await identityRegisteryAttached.connect(user1).registerIdentity(user1.address, String(user1Identity), 91);
+
 
             await tokenAttached?.connect(user1).mint(user1.address, 100);
             expect((await tokenAttached?.balanceOf(user1.address))).to.be.equal(100);
@@ -311,7 +316,7 @@ describe(" Tokenization Testing ", function () {
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
                 wrap:false,
-                irAgents: [user1.address],
+                irAgents: [user1.address,fundProxy.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],
                 complianceModules: [countryAllowCompliance.address, 
@@ -347,8 +352,18 @@ describe(" Tokenization Testing ", function () {
 
             if (Array.isArray(token) && token.length > 0) {
                 firstAddress = token[0];  // Directly accessing the first element
-                // tokenAttached = await tokenImplementation.attach(firstAddress);
+                tokenAttached = await tokenImplementation.attach(firstAddress);
             }
+
+
+            await identityFactory.createIdentity(user1.address, user1.address);
+            await identityFactory.createIdentity(user2.address, user2.address);
+            await identityFactory.createIdentity(user3.address, user3.address);
+
+            let user1Identity = await identityFactory.getIdentity(user1.address);
+            let user2Identity = await identityFactory.getIdentity(user2.address);
+            let user3Identity = await identityFactory.getIdentity(user3.address); 
+            
 
             let fundProxyAttached = await fundFactory.attach(fundProxy.address);
             
@@ -375,6 +390,8 @@ describe(" Tokenization Testing ", function () {
                 fundAddress = fundContract[0];  // Directly accessing the first element
                 fundAttached = await fund.attach(fundAddress);
             }
+
+            await fundProxyAttached.connect(user1).batchWhitelist(firstAddress,[user1.address,user2.address,user3.address],[user1Identity,user2Identity,user3Identity],[91,91,91],["a","b","c"]);
 
             await usdc.connect(user1).approve(fundAddress,1000);
 
