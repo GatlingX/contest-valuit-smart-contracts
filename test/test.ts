@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory } from "../typechain";
+import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
     let signer: SignerWithAddress;
@@ -34,11 +34,17 @@ describe(" Tokenization Testing ", function () {
     let supplyLimitCompliance: SupplyLimitModule;
     let maxBalanceCompliance: MaxBalanceModule;
     let holdTimeCompliance: HoldTimeModule;
-    //Fund Contract
+    //Fund Contract & EquityConfig Contract
     let fund: Fund;
     let fundFactory: FundFactory;
     let implFund: ImplementationAuthority;
     let fundProxy: FactoryProxy;
+    let equityConfig: EquityConfig;
+    let implEquityConfig: ImplementationAuthority;
+
+    //Wrapper Contarct
+    let wrapper: Wrapper;
+    let verc20 : VERC20;
   
     beforeEach(" ", async () => {
       signers = await ethers.getSigners();
@@ -92,7 +98,7 @@ describe(" Tokenization Testing ", function () {
   
       await trexImplementationAuthority.connect(owner).addAndUseTREXVersion(versionStruct, contractsStruct);
   
-      trexFactory = await new TREXFactory__factory(owner).deploy(trexImplementationAuthority.address, identityFactory.address);
+      
 
     //   console.log("Factory Deployed", trexFactory.address);
 
@@ -109,11 +115,19 @@ describe(" Tokenization Testing ", function () {
     //Fund Contract
 
     fund = await new Fund__factory(owner).deploy();
+    equityConfig = await new EquityConfig__factory(owner).deploy();
     implFund = await new ImplementationAuthority__factory(owner).deploy(fund.address);
+    implEquityConfig = await new ImplementationAuthority__factory(owner).deploy(equityConfig.address);
     fundFactory = await new FundFactory__factory(owner).deploy();
     fundProxy = await new FactoryProxy__factory(owner).deploy();
 
+    //Wrapper
+    verc20 = await new VERC20__factory(owner).deploy();
+    wrapper = await new Wrapper__factory(owner).deploy(verc20.address, verc20.address);
+
     await fundProxy.upgradeTo(fundFactory.address);
+
+    trexFactory = await new TREXFactory__factory(owner).deploy(trexImplementationAuthority.address, identityFactory.address, wrapper.address);
     
 
     })
@@ -125,6 +139,7 @@ describe(" Tokenization Testing ", function () {
                 decimals: 18,
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
+                wrap:false,
                 irAgents: [user1.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],
@@ -168,11 +183,11 @@ describe(" Tokenization Testing ", function () {
             
             await fundProxyAttached.init(trexFactory.address);
 
-            await fundProxyAttached.setImpl(implFund.address);
+            await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
             // console.log("Fund Implementation Set");
 
             const tx = await fundProxyAttached.createFund(firstAddress, 
-                "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000005",
+                "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000",
                 "Hello"
             );
 
@@ -204,6 +219,7 @@ describe(" Tokenization Testing ", function () {
                 decimals: 18,
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
+                wrap:false,
                 irAgents: [user1.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],

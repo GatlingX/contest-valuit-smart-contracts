@@ -7,6 +7,7 @@ import '@nomiclabs/hardhat-solhint';
 // import '@primitivefi/hardhat-dodoc';
 import "hardhat-contract-sizer";
 import dotenv from "dotenv";
+import 'solidity-coverage';
 
 
 require("hardhat-contract-sizer");
