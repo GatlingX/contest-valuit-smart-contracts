@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
+import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
     let signer: SignerWithAddress;
@@ -45,6 +45,9 @@ describe(" Tokenization Testing ", function () {
     //Wrapper Contarct
     let wrapper: Wrapper;
     let verc20 : VERC20;
+
+    //stable Coins
+    let usdc: USDC;
   
     beforeEach(" ", async () => {
       signers = await ethers.getSigners();
@@ -124,6 +127,11 @@ describe(" Tokenization Testing ", function () {
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
     wrapper = await new Wrapper__factory(owner).deploy(verc20.address, verc20.address);
+
+    //Stable Coin
+    usdc = await new USDC__factory(owner).deploy();
+
+    await usdc.mint(user1.address,1000000);
 
     await fundProxy.upgradeTo(fundFactory.address);
 
@@ -205,13 +213,19 @@ describe(" Tokenization Testing ", function () {
                 fundAttached = await fund.attach(fundAddress);
             }
 
+            expect (await fundAttached?.getNAV()).to.equal(5);
+
+            await fundAttached?.connect(user1).setNAV(15);
+
+            expect (await fundAttached?.getNAV()).to.equal(15);
+
             // console.log("fundContract Address: ", fundAddress, fundContract);
 
             // console.log("Fund Name:", await fundAttached?.fundName(), Number(await fundAttached?.cusip()), await fundAttached?.spvValuation(), await fundAttached?.yieldType());
             // console.log("Property Typr: ", Number( await fundAttached?.propertyType()),await fundAttached?.NAVLaunchPrice())
         })
 
-        it("Mint Tokens", async () => {
+        it("Factory", async () => {
             let tokenDetails = {
                 owner: owner.address,
                 name: "Nickel",
@@ -274,7 +288,100 @@ describe(" Tokenization Testing ", function () {
 
             await tokenAttached?.connect(user1).mint(user1.address, 100);
             expect((await tokenAttached?.balanceOf(user1.address))).to.be.equal(100);
+
+            expect((await trexFactory.getToken("process.env.TOKEN_SALT"))).to.equal(firstAddress);
+
+            await trexFactory.setImplementationAuthority(trexImplementationAuthority.address);
+
+            await trexFactory.setIdFactory(identityFactory.address);
+
+            expect((await trexFactory.getIdFactory())).to.equal(identityFactory.address);
+
+            expect((await trexFactory.getImplementationAuthority())).to.equal(trexImplementationAuthority.address);
         });
+
+        it("Share Dividend", async () => {
+
+            
+            let tokenDetails = {
+                owner: owner.address,
+                name: "Nickel",
+                symbol: "NKL",
+                decimals: 18,
+                irs: ethers.constants.AddressZero,
+                ONCHAINID: ethers.constants.AddressZero,
+                wrap:false,
+                irAgents: [user1.address],
+                tokenAgents: [user1.address],
+                transferAgents:[],
+                complianceModules: [countryAllowCompliance.address, 
+                    supplyLimitCompliance.address, 
+                    maxBalanceCompliance.address, 
+                    holdTimeCompliance.address],
+                complianceSettings: ["0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+                    "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0", 
+                    "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+                    "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc"
+                ]
+            }
+        
+            let claimDetails = {
+                claimTopics: [],
+                issuers: [],
+                issuerClaims: []
+            };
+
+            await identityFactory.addTokenFactory(trexFactory.address);
+
+            const TX = await trexFactory.deployTREXSuite("process.env.TOKEN_SALT", tokenDetails, claimDetails);
+
+            const receipt = await TX.wait();
+
+            const event = receipt.events?.find(event=>event.event==="TREXSuiteDeployed");
+
+            let token = event?.args; 
+
+            // console.log("Token Address: ", token);
+            let tokenAttached;
+            let firstAddress;
+
+            if (Array.isArray(token) && token.length > 0) {
+                firstAddress = token[0];  // Directly accessing the first element
+                // tokenAttached = await tokenImplementation.attach(firstAddress);
+            }
+
+            let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+            
+            await fundProxyAttached.init(trexFactory.address);
+
+            await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+            // console.log("Fund Implementation Set");
+
+            const tx = await fundProxyAttached.createFund(firstAddress, 
+                "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000",
+                "Hello"
+            );
+
+            const receiptFund = await tx.wait();
+
+            const event1 = receiptFund.events?.find(event=>event.event==="FundCreated");
+
+            let fundContract = event1?.args; 
+
+            let fundAddress;
+            let fundAttached;
+
+            if (Array.isArray(fundContract) && fundContract.length > 0) {
+                fundAddress = fundContract[0];  // Directly accessing the first element
+                fundAttached = await fund.attach(fundAddress);
+            }
+
+            await usdc.connect(user1).approve(fundAddress,1000);
+
+            await fundAttached?.connect(user1).shareDividend([user2.address,owner.address], [50,50], usdc.address);
+
+
+        })
 
 
   });
