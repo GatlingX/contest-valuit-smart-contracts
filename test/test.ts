@@ -401,6 +401,84 @@ describe(" Tokenization Testing ", function () {
         })
 
 
+        it("Deploy Equity Config Contract", async () => {
+            let tokenDetails = {
+                owner: owner.address,
+                name: "Nickel",
+                symbol: "NKL",
+                decimals: 18,
+                irs: ethers.constants.AddressZero,
+                ONCHAINID: ethers.constants.AddressZero,
+                wrap:false,
+                irAgents: [user1.address],
+                tokenAgents: [user1.address],
+                transferAgents:[],
+                complianceModules: [countryAllowCompliance.address, 
+                    supplyLimitCompliance.address, 
+                    maxBalanceCompliance.address, 
+                    holdTimeCompliance.address],
+                complianceSettings: ["0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+                    "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0", 
+                    "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+                    "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc"
+                ]
+            }
+        
+            let claimDetails = {
+                claimTopics: [],
+                issuers: [],
+                issuerClaims: []
+            };
+
+            await identityFactory.addTokenFactory(trexFactory.address);
+
+            const TX = await trexFactory.deployTREXSuite("process.env.TOKEN_SALT", tokenDetails, claimDetails);
+
+            const receipt = await TX.wait();
+
+            const event = receipt.events?.find(event=>event.event==="TREXSuiteDeployed");
+
+            let token = event?.args; 
+
+            // console.log("Token Address: ", token);
+            let tokenAttached;
+            let firstAddress;
+
+            if (Array.isArray(token) && token.length > 0) {
+                firstAddress = token[0];  // Directly accessing the first element
+                // tokenAttached = await tokenImplementation.attach(firstAddress);
+            }
+
+            await fundProxy.setMaintenance(true);
+            await fundProxy.setMaintenance(false);
+
+            let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+            
+            await fundProxyAttached.init(trexFactory.address);
+
+            await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+
+            const tx = await fundProxyAttached.createEquityConfig(firstAddress,"0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000537342e3938000000000000000000000000000000000000000000000000000000", "EquityConfig");
+        
+            const receiptFund = await tx.wait();
+
+            const event1 = receiptFund.events?.find(event=>event.event==="EquityConfigCreated");
+
+            let equityConfigContract = event1?.args; 
+
+            let equityConfigAddress;
+            let equityConfigAttached;
+
+            if (Array.isArray(equityConfigContract) && equityConfigContract.length > 0) {
+                equityConfigAddress = equityConfigContract[0];  // Directly accessing the first element
+                equityConfigAttached = await equityConfig.attach(equityConfigAddress);
+            }
+
+            await equityConfigAttached?.connect(user1).setValuation(100);
+
+
+        })
+
         
 
 
