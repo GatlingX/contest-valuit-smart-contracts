@@ -128,7 +128,7 @@ describe(" Tokenization Testing ", function () {
 
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
-    wrapper = await new Wrapper__factory(owner).deploy(verc20.address, verc20.address);
+    wrapper = await new Wrapper__factory(owner).deploy(verc20.address);
 
     //Stable Coin
     usdc = await new USDC__factory(owner).deploy();

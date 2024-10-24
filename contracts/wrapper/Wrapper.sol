@@ -14,10 +14,9 @@ import "contracts/escrow/TransferHelper.sol";
 
 contract Wrapper is Ownable, WrapperStorage{
 
-    constructor(address _erc20Impl, address onChainID_) {
+    constructor(address _erc20Impl) {
         require(_erc20Impl != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
-        wrapperOnchainID = onChainID_;
     }
 
     function setOnchainID(address _onChainID) public onlyOwner{
