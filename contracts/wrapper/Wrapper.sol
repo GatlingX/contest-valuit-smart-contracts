@@ -44,7 +44,7 @@ contract Wrapper is Ownable, WrapperStorage{
             abi.encodeWithSelector(
                 0xf57b0182, name, symbol, decimals
             ));
-            require(success, "Wrap Contract Creation Failed");
+            require(success, "Wrap Contract Initialization Failed");
 
         IIdentityRegistry ir = IToken(_erc3643).identityRegistry();
 

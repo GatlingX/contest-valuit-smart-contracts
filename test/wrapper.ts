@@ -46,6 +46,7 @@ describe(" Tokenization Testing ", function () {
     //Wrapper Contarct
     let wrapper: Wrapper;
     let verc20 : VERC20;
+    let verc20Implementation: ImplementationAuthority;
 
     //stable Coins
     let usdc: USDC;
@@ -128,7 +129,8 @@ describe(" Tokenization Testing ", function () {
 
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
-    wrapper = await new Wrapper__factory(owner).deploy(verc20.address);
+    verc20Implementation = await new ImplementationAuthority__factory(owner).deploy(verc20.address);
+    wrapper = await new Wrapper__factory(owner).deploy(verc20Implementation.address);
 
     await identityFactory.createIdentity(wrapper.address, wrapper.address);
     let wrapperID = await identityFactory.getIdentity(wrapper.address);
@@ -154,7 +156,7 @@ describe(" Tokenization Testing ", function () {
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
                 wrap:false,
-                irAgents: [user1.address],
+                irAgents: [user1.address, wrapper.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],
                 complianceModules: [countryAllowCompliance.address, 
@@ -218,8 +220,6 @@ describe(" Tokenization Testing ", function () {
                 fundAddress = fundContract[0];  // Directly accessing the first element
                 fundAttached = await fund.attach(fundAddress);
             }
-
-            
 
             await wrapper.connect(user1).createWrapToken(firstAddress,91);
 

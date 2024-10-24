@@ -1,4 +1,4 @@
-const hre = require("hardhat");
+import { ethers } from "hardhat";
 
 async function main() {
     function sleep(ms: any) {
@@ -91,7 +91,7 @@ async function main() {
     await hre.run("verify:verify", {
         address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
         //Path of your main contract.
-        constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C","0x0000000000000000000000000000000000000000"],
+        constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C"],
         contract: "contracts/wrapper/Wrapper.sol:Wrapper",
     });
     await sleep(3000);
