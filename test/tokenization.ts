@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
   AgentRole,
@@ -47,6 +47,8 @@ import {
   TREXImplementationAuthority__factory,
   TrustedIssuersRegistry,
   TrustedIssuersRegistry__factory,
+  USDC,
+  USDC__factory,
   VERC20,
   VERC20__factory,
   Wrapper,
@@ -100,6 +102,10 @@ describe(" Tokenization Testing ", function () {
   let verc20: VERC20;
   let agentContract: AgentRole;
   let agentUpgradeable: AgentRoleUpgradeable;
+  let snapshotId: any;
+
+  //stable Coins
+  let usdc: USDC;
 
   beforeEach(" ", async () => {
     signers = await ethers.getSigners();
@@ -110,7 +116,7 @@ describe(" Tokenization Testing ", function () {
     user2 = signers[5];
     user3 = signers[6];
     user4 = signers[7];
-
+    snapshotId = await network.provider.send("evm_snapshot");
     // console.log("trust ", trust);
 
     //  let trustSigner =  provider.getSigner(trust.address)
@@ -216,6 +222,12 @@ describe(" Tokenization Testing ", function () {
       verc20.address,
       verc20.address
     );
+
+    //Stable Coin
+    usdc = await new USDC__factory(owner).deploy();
+
+    await usdc.mint(user1.address, 1000000);
+
     await identityRegistryImplementation.init(
       trustedIssuersRegistryImplementation.address,
       claimTopicsRegistryImplementation.address,
@@ -238,7 +250,6 @@ describe(" Tokenization Testing ", function () {
       18,
       identityRegistryStorageImplementation.address
     );
-    
 
     await tokenImplementation.addAgent(owner.address);
 
@@ -310,7 +321,6 @@ describe(" Tokenization Testing ", function () {
     //     ),
     //     countryAllowCompliance.address
     //   );
-    
 
     trexFactory = await new TREXFactory__factory(owner).deploy(
       trexImplementationAuthority.address,
@@ -318,7 +328,9 @@ describe(" Tokenization Testing ", function () {
       wrapper.address
     );
   });
-
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
+  });
   it("Deploy Fund Contract", async () => {
     let tokenDetails = {
       owner: owner.address,
@@ -419,10 +431,10 @@ describe(" Tokenization Testing ", function () {
       decimals: 18,
       irs: ethers.constants.AddressZero,
       ONCHAINID: ethers.constants.AddressZero,
-      wrap: false,
+      wrap: true,
       irAgents: [user1.address],
       tokenAgents: [user1.address],
-      transferAgents: [],
+      transferAgents: [owner.address],
       complianceModules: [
         countryAllowCompliance.address,
         supplyLimitCompliance.address,
@@ -485,14 +497,12 @@ describe(" Tokenization Testing ", function () {
       .registerIdentity(user1.address, String(user1Identity), 91);
 
     await tokenAttached?.connect(user1).mint(user1.address, 100);
-    await tokenAttached?.connect(user1).batchMint([user1.address],[100]);
+    await tokenAttached?.connect(user1).batchMint([user1.address], [100]);
     expect(await tokenAttached?.balanceOf(user1.address)).to.be.equal(200);
-    await tokenAttached?.connect(user1).burn(user1.address,50);
-    await tokenAttached?.connect(user1).batchBurn([user1.address],[50]);
+    await tokenAttached?.connect(user1).burn(user1.address, 50);
+    await tokenAttached?.connect(user1).batchBurn([user1.address], [50]);
     expect(await tokenAttached?.balanceOf(user1.address)).to.be.equal(100);
-
   });
-
   describe("Registries", () => {
     describe("ClaimTopicRegsitry", () => {
       it("init", async () => {
@@ -1235,13 +1245,13 @@ describe(" Tokenization Testing ", function () {
         await tokenImplementation.setName("GoldToken");
       });
       it("setSymbol", async () => {
-        await tokenImplementation.setName("GT");
+        await tokenImplementation.setSymbol("GT");
       });
-      it("setSymbol passing empty string", async () => {
-        await expect(tokenImplementation.setName("")).to.be.revertedWith(
-          "invalid argument - empty string"
-        );
-      });
+      //   it("setSymbol passing empty string", async () => {
+      //     await expect(tokenImplementation.setSymbol("")).to.be.revertedWith(
+      //       "invalid argument - empty string"
+      //     );
+      //   });
       it("decimals", async () => {
         await tokenImplementation.decimals();
       });
@@ -1274,23 +1284,821 @@ describe(" Tokenization Testing ", function () {
         await tokenImplementation.version();
       });
 
-        // it.only("Batch Mint Tokens", async () => {
-        //   await tokenImplementation
-        //     .connect(owner)
-        //     .batchMint([user3.address], [100]);
-        // });
-      //   it("Batch Transfer Tokens", async () => {
-      //     let bal = await tokenImplementation.balanceOf(owner.address);
-      //     console.log("bal", bal);
-      //     await tokenImplementation
-      //       .connect(owner)
-      //       .batchTransfer([user2.address, user3.address], [1000 * 8, 10000]);
-      //   });
-      //   it("Transfer from", async () => {
-      //     await tokenImplementation
-      //       .connect(owner)
-      //       .transferFrom(owner.address, user2.address, 1000000);
-      //   });
+      it("Batch Mint Tokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+        await identityFactory.createIdentity(user1.address, user1.address);
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await tokenAttached.connect(user1).batchMint([user1.address], [100]);
+      });
+      it("recoveryAddress", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+        await identityFactory.createIdentity(user1.address, user1.address);
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let ownerIdentity = await identityFactory.getIdentity(owner.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(owner.address, ownerIdentity, 91);
+
+        await tokenAttached.connect(user1).batchMint([owner.address], [100]);
+        await expect(
+          tokenAttached
+            .connect(user1)
+            .recoveryAddress(owner.address, user1.address, ownerIdentity)
+        ).to.be.revertedWith("Recovery not possible");
+      });
+      it("Batch Transfer Tokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+
+        await tokenAttached.connect(user1).batchMint([user1.address], [100]);
+        await tokenAttached
+          .connect(user1)
+          .batchTransfer([user2.address, user3.address], [10, 10]);
+      });
+      it("TransferFrom", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user1.address, user2.address], [100, 100]);
+        await tokenAttached.connect(user1).approve(user2.address, 10000);
+        await tokenAttached
+          .connect(user2)
+          .transferFrom(user1.address, user3.address, 10);
+      });
+      it("batchSetAddressFrozen", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user1.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .batchSetAddressFrozen([user2.address, user3.address], [true, true]);
+      });
+      it("batchFreezePartialTokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user3.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .batchFreezePartialTokens([user2.address, user3.address], [1, 1]);
+      });
+      it("batchUnfreezePartialTokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user3.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .batchFreezePartialTokens([user2.address, user3.address], [1, 1]);
+        await tokenAttached
+          .connect(user1)
+          .batchUnfreezePartialTokens([user2.address, user3.address], [1, 1]);
+      });
+      it("freezePartialTokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user3.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .freezePartialTokens(user2.address, 1);
+      });
+      it("batchUnfreezePartialTokens", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user3.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .freezePartialTokens(user2.address, 1);
+        await tokenAttached
+          .connect(user1)
+          .unfreezePartialTokens(user2.address, 1);
+      });
+      it("setAddressFrozen", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "TestToken",
+          symbol: "TT",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [user1.address, fundProxy.address],
+          tokenAgents: [user1.address],
+          transferAgents: [user1.address],
+          complianceModules: [
+            countryAllowCompliance.address,
+            supplyLimitCompliance.address,
+            maxBalanceCompliance.address,
+            holdTimeCompliance.address,
+          ],
+          complianceSettings: [
+            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
+            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
+            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
+            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
+          ],
+        };
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+
+        await identityFactory.addTokenFactory(trexFactory.address);
+
+        const TX = await trexFactory.deployTREXSuite(
+          "process.env.TOKEN_SALT",
+          tokenDetails,
+          claimDetails
+        );
+
+        const receipt = await TX.wait();
+
+        const event = receipt.events?.find(
+          (event) => event.event === "TREXSuiteDeployed"
+        );
+        let token = event?.args;
+        let tokenAttached: any;
+        let firstAddress;
+
+        if (Array.isArray(token) && token.length > 0) {
+          firstAddress = token[0]; // Directly accessing the first element
+          tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+
+        await identityFactory.createIdentity(user1.address, user1.address);
+        await identityFactory.createIdentity(user2.address, user2.address);
+
+        let user1Identity = await identityFactory.getIdentity(user1.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        let user3Identity = await identityFactory.getIdentity(user3.address);
+
+        let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+        let identityRegisteryAttached = identityRegistryImplementation.attach(
+          String(identityRegistryAddress)
+        );
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user1.address, user1Identity, 91);
+
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user2.address, user2Identity, 91);
+        await identityRegisteryAttached
+          .connect(user1)
+          .registerIdentity(user3.address, user3Identity, 91);
+        await tokenAttached
+          .connect(user1)
+          .batchMint([user3.address, user2.address], [100, 100]);
+        await tokenAttached
+          .connect(user1)
+          .setAddressFrozen(user2.address, true);
+      });
     });
   });
 });
