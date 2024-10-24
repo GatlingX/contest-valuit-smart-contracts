@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
@@ -166,7 +167,7 @@ describe(" Tokenization Testing ", function () {
                 complianceSettings: ["0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
                     "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0", 
                     "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-                    "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc"
+                    "0xf945530100000000000000000000000000000000000000000000000000000000739e9e98"
                 ]
             }
         
@@ -192,7 +193,7 @@ describe(" Tokenization Testing ", function () {
 
             if (Array.isArray(token) && token.length > 0) {
                 firstAddress = token[0];  // Directly accessing the first element
-                // tokenAttached = await tokenImplementation.attach(firstAddress);
+                tokenAttached = await tokenImplementation.attach(firstAddress);
             }
 
             let fundProxyAttached = await fundFactory.attach(fundProxy.address);
@@ -223,7 +224,25 @@ describe(" Tokenization Testing ", function () {
 
             await wrapper.connect(user1).createWrapToken(firstAddress,91);
 
-            console.log("Wrapper of 3643 : ", await wrapper.getERC20(firstAddress));
+            //identities
+            await identityFactory.createIdentity(user2.address, user2.address);
+            let user2ID = await identityFactory.getIdentity(user2.address);
+
+            let identityRegistryAddress = await tokenAttached?.identityRegistry();
+
+            
+            let identityRegisteryAttached = identityRegistryImplementation.attach(String(identityRegistryAddress));
+            await identityRegisteryAttached.connect(user1).registerIdentity(user2.address, String(user2ID), 91);
+
+
+            await tokenAttached?.connect(user1).mint(user2.address, 100);
+
+            await tokenAttached?.connect(user2).increaseAllowance(wrapper.address,10);
+
+             await time.increaseTo(1939776128);
+            await wrapper.connect(user2).toERC20(firstAddress, 10);
+
+            await wrapper.connect(user2).toERC3643(await wrapper.getERC20(firstAddress), 10);
 
         
         })
