@@ -25,6 +25,10 @@ interface IIdFactory {
     // event emitted when a previously recorded token factory address is removed
     event TokenFactoryRemoved(address indexed factory);
 
+    // event for created Id
+    event IDCreated(address wallet, address onchainID, string salt);
+
+
     /// functions
 
     /**

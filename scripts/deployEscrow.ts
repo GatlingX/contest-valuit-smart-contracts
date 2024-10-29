@@ -14,17 +14,17 @@ async function main() {
 
     let time = 5000;
 
-    const USDT = await ethers.getContractFactory("USDT");
-    const usdt = await USDT.deploy();
-    await usdt.deployed();
-    console.log("USDT: ", usdt.address);
-    await sleep(time);
+    // const USDT = await ethers.getContractFactory("USDT");
+    // const usdt = await USDT.deploy();
+    // await usdt.deployed();
+    // console.log("USDT: ", usdt.address);
+    // await sleep(time);
 
-    const USDC = await ethers.getContractFactory("USDC");
-    const usdc = await USDC.deploy();
-    await usdc.deployed();
-    console.log("USDC: ", usdc.address);
-    await sleep(time);
+    // const USDC = await ethers.getContractFactory("USDC");
+    // const usdc = await USDC.deploy();
+    // await usdc.deployed();
+    // console.log("USDC: ", usdc.address);
+    // await sleep(time);
 
 
     //deploy escrow implementation, escrow proxy
@@ -46,7 +46,7 @@ async function main() {
     //Attach and Initialize Escrow
     const escrowAttached = await ESCROW.attach(escrowProxy.address);
 
-    await escrowAttached.init([usdc.address,usdt.address],1);
+    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"],1);
     console.log("Escrow Initialized");
     await sleep(time);
 

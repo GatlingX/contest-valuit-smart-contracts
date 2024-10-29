@@ -92,6 +92,12 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
 
         emit orderSettled(orderID, msg.sender, investorOrders[orderID].value);
     }
+
+    function setStableCoins(string calldata coin, address _stablecoin) public onlyOwner{
+        require(_stablecoin != address(0),"Zero Address");
+        stablecoin[coin] = _stablecoin;
+        stableCoinName[_stablecoin] = coin;
+    }
     
 
     function getStableCoin(string calldata _stablecoin) public view returns(address){

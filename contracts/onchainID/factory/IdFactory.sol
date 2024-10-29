@@ -73,6 +73,7 @@ contract IdFactory is IIdFactory, Ownable {
         _userIdentity[_wallet] = identity;
         _wallets[identity].push(_wallet);
         emit WalletLinked(_wallet, identity);
+        emit IDCreated(_wallet, identity, _salt);
         return identity;
     }
 
