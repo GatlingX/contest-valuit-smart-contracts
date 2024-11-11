@@ -52,7 +52,7 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
         adminWallet = _newWallet;
     }
 
-    function deposit(address _token, uint256 _amount, string calldata orderID, string calldata coin) public{
+    function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) public{
         require(_token != address(0),"Zero Address not allowed");
         require(_amount > 0, "Amount should be greater than 0");
         require(IToken(_token).identityRegistry().isVerified(msg.sender), "Investor not whitelisted");
@@ -61,6 +61,7 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
         investorOrders[orderID].investor = msg.sender;
         investorOrders[orderID].asset = _token;
         investorOrders[orderID].value = _amount;
+        investorOrders[orderID].tokens = _tokens;
         investorOrders[orderID].coin = coin;
         investorOrders[orderID].status = false;
 
@@ -71,7 +72,7 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
         pendingOrderAmount[investorOrders[orderID].coin] += investorOrders[orderID].value;
         totalPendingOrderAmount += investorOrders[orderID].value;
 
-        emit AmountReceived(_token, msg.sender, _amount, orderID, coin);
+        emit AmountReceived(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
 
     function settlement(string calldata orderID) public {
@@ -85,12 +86,20 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     adminWallet, 
                                     (investorOrders[orderID].value * adminFee)/10000);
+        
+        IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, investorOrders[orderID].tokens);
 
         pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
         totalPendingOrderAmount -= investorOrders[orderID].value;
         investorOrders[orderID].status = true;
 
-        emit orderSettled(orderID, msg.sender, investorOrders[orderID].value);
+        emit orderSettled(orderID, msg.sender, investorOrders[orderID].value, investorOrders[orderID].tokens);
+    }
+
+    function batchSettlement(string[] calldata orderIDs) public {
+        for (uint256 i = 0; i < orderIDs.length; i++) {
+            settlement(orderIDs[i]);
+        }
     }
 
     function setStableCoins(string calldata coin, address _stablecoin) public onlyOwner{

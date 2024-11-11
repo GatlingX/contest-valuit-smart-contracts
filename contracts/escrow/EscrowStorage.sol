@@ -8,6 +8,7 @@ contract EscrowStorage {
         address _asset,
         address _investor,
         uint256 amountValue,
+        uint256 tokens,
         string orderID,
         string coin
     );
@@ -15,13 +16,15 @@ contract EscrowStorage {
     event orderSettled(
         string orderID,
         address _Issuer,
-        uint256 amountValue
+        uint256 amountValue,
+        uint256 tokens
     );
 
     struct InvestorOrder{
         address investor;
         address asset;
         uint256 value;
+        uint256 tokens;
         string coin;
         bool status;
     }
