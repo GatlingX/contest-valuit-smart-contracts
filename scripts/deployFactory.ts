@@ -115,29 +115,29 @@ async function main() {
     console.log("addAndUseTREXVersion success", );
     await sleep(time);
 
-    //ERC20 Implementation
-    const ERC20 = await ethers.getContractFactory("VERC20");
-    let erc20 = await ERC20.deploy();
-    await erc20.deployed();
-    console.log("VERC20 Implementation: ", erc20.address);
-    await sleep(time);
+    // //ERC20 Implementation
+    // const ERC20 = await ethers.getContractFactory("VERC20");
+    // let erc20 = await ERC20.deploy();
+    // await erc20.deployed();
+    // console.log("VERC20 Implementation: ", erc20.address);
+    // await sleep(time);
 
-    //ERC20 Implementation Auth
-    const IMPLATHT = await ethers.getContractFactory("ImplementationAuthority");
-    let erc20ImplAuth = await IMPLATHT.deploy(erc20.address);
-    await erc20ImplAuth.deployed();
-    console.log("ERC20 ImplAuth: ", erc20ImplAuth.address);
-    await sleep(time);
+    // //ERC20 Implementation Auth
+    // const IMPLATHT = await ethers.getContractFactory("ImplementationAuthority");
+    // let erc20ImplAuth = await IMPLATHT.deploy(erc20.address);
+    // await erc20ImplAuth.deployed();
+    // console.log("ERC20 ImplAuth: ", erc20ImplAuth.address);
+    // await sleep(time);
 
-    //deploy Wrapper
-    let wrapper = await WRAPPER.deploy(erc20ImplAuth.address, ZERO_ADDRESS);
-    await wrapper.deployed();
-    console.log("Wrapper: ",wrapper.address);
-    await sleep(time);   
+    // //deploy Wrapper
+    // let wrapper = await WRAPPER.deploy(erc20ImplAuth.address, ZERO_ADDRESS);
+    // await wrapper.deployed();
+    // console.log("Wrapper: ",wrapper.address);
+    // await sleep(time);   
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6", wrapper.address);
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x2c086167C89D11E64C8A8D74b014545587d2A0F8", "0xdd91623DFe09907DeAbF1197FB4eCd54478A8bC6");
     await trexFactory.deployed();
     console.log("TREX Factory: ", trexFactory.address);
     await sleep(time);
@@ -158,32 +158,32 @@ async function main() {
     console.log("IAFactory: setIAFactory success");
     await sleep(time);
 
-    //deploy Compliance Modules
-    const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
-    let countryallow = await CountryAllowModule.deploy();
-    await countryallow.deployed();
-    console.log("Country Allow Module: ",countryallow.address);
-    await sleep(time);
+    // //deploy Compliance Modules
+    // const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
+    // let countryallow = await CountryAllowModule.deploy();
+    // await countryallow.deployed();
+    // console.log("Country Allow Module: ",countryallow.address);
+    // await sleep(time);
 
-    const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
-    let supplylimit = await SupplyLimitModule.deploy();
-    await supplylimit.deployed();
-    console.log("Supply Limit Module: ",supplylimit.address);
-    await sleep(time);
-
-
-    const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
-    let maxbalance = await MaxBalanceModule.deploy();
-    await maxbalance.deployed();
-    console.log("Max Balance Module: ",maxbalance.address);
-    await sleep(time);
+    // const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
+    // let supplylimit = await SupplyLimitModule.deploy();
+    // await supplylimit.deployed();
+    // console.log("Supply Limit Module: ",supplylimit.address);
+    // await sleep(time);
 
 
-    const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
-    let holdtime = await HoldTimeModule.deploy();
-    await holdtime.deployed();
-    console.log("Hold Time Module: ",holdtime.address);
-    await sleep(time);
+    // const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
+    // let maxbalance = await MaxBalanceModule.deploy();
+    // await maxbalance.deployed();
+    // console.log("Max Balance Module: ",maxbalance.address);
+    // await sleep(time);
+
+
+    // const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
+    // let holdtime = await HoldTimeModule.deploy();
+    // await holdtime.deployed();
+    // console.log("Hold Time Module: ",holdtime.address);
+    // await sleep(time);
 
 
 

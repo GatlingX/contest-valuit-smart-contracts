@@ -141,7 +141,7 @@ describe(" Tokenization Testing ", function () {
     
 
     })
-        it("Deploy Fund Contract", async () => {
+        it.only("Deploy Fund Contract", async () => {
             let tokenDetails = {
                 owner: owner.address,
                 name: "Nickel",
@@ -149,7 +149,7 @@ describe(" Tokenization Testing ", function () {
                 decimals: 18,
                 irs: ethers.constants.AddressZero,
                 ONCHAINID: ethers.constants.AddressZero,
-                wrap:false,
+                wrap:true,
                 irAgents: [user1.address],
                 tokenAgents: [user1.address],
                 transferAgents:[],

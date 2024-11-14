@@ -22,7 +22,7 @@ async function main() {
   // await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0xc5a8Fb9667Ae749a96aC68baD8D345738546E2dF",
+        address: "0x63952a22B3626FcFe954a512b22cA57C5950E3A8",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/escrow/Escrow.sol:Escrow",
@@ -30,7 +30,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-      address: "0x9453aA830BFB86D7a6a518fA3C85EB0A20BA953A",
+      address: "0x35f39906cCCfa2ec4e041b25164ddC6EacFEEb24",
       //Path of your main contract.
       constructorArguments:[],
       contract: "contracts/escrow/EscrowProxy.sol:EscrowProxy",

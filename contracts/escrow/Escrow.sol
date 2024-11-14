@@ -42,14 +42,16 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
             }    
     }
 
-    function setAdminFee(uint8 _fee) public onlyOwner{
-        require(_fee >= 0, "Cannot be less than 0");
+    function setAdminFee(uint16 _fee, string calldata _id) public onlyOwner{
+        require(_fee >= 0 && _fee < 10000, "Invalid Fee. Out of Range!");
         adminFee = _fee;
+        emit AdminFeeUpdated(adminFee, _id, block.timestamp);
     }
 
-    function setAdminWallet(address _newWallet) public onlyOwner(){
+    function setAdminWallet(address _newWallet, string calldata _id) public onlyOwner(){
         require(_newWallet != address(0),"Zero Address");
         adminWallet = _newWallet;
+        emit AdminWalletUpdated(adminWallet, _id, block.timestamp);
     }
 
     function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) public{
@@ -102,10 +104,11 @@ contract Escrow is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function setStableCoins(string calldata coin, address _stablecoin) public onlyOwner{
+    function setStableCoin(string calldata coin, address _stablecoin) public onlyOwner{
         require(_stablecoin != address(0),"Zero Address");
         stablecoin[coin] = _stablecoin;
         stableCoinName[_stablecoin] = coin;
+        emit StableCoinUpdated(coin, _stablecoin);
     }
     
 

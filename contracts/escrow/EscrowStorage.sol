@@ -20,6 +20,23 @@ contract EscrowStorage {
         uint256 tokens
     );
 
+    event AdminFeeUpdated(
+        uint16 newFee,
+        string id,
+        uint256 timeStamp
+    );
+
+    event AdminWalletUpdated(
+        address newAdminWallet,
+        string id,
+        uint256 timeStamp
+    );
+
+    event StableCoinUpdated(
+        string coin,
+        address newAddress
+    );
+
     struct InvestorOrder{
         address investor;
         address asset;
@@ -30,7 +47,7 @@ contract EscrowStorage {
     }
 
     address public adminWallet;
-    uint8 public adminFee;
+    uint16 public adminFee;
     uint256 public totalPendingOrderAmount;
 
     mapping(string => uint256) public pendingOrderAmount;
