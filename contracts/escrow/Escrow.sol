@@ -12,7 +12,7 @@ import "../roles/AgentRole.sol";
 
 contract Escrow is OwnableUpgradeable, EscrowStorage{
 
-    function init(address [] memory  stableCoin_, uint8 adminFee_) public initializer {
+    function init(address [] memory  stableCoin_, uint16 adminFee_) public initializer {
         stablecoin["usdc"] = stableCoin_[0];
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
