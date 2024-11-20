@@ -37,6 +37,69 @@ contract EscrowStorage {
         address newAddress
     );
 
+    event TokensMinted(
+        address toAddress, 
+        uint256 amount, 
+        string orderID);
+
+    event TokensBurned(
+        address fromAddress, 
+        uint256 amount, 
+        string orderID
+    );
+
+    event UserTokensFrozen(
+        address fromAddress, 
+        uint256 amount, 
+        string orderID
+    );
+
+    event UserTokensUnFrozen(
+        address fromAddress, 
+        uint256 amount, 
+        string orderID
+    );
+
+    event ForceTransferred(
+        address fromAddress,
+        address toAddress, 
+        uint256 amount, 
+        string orderID
+    );
+
+    event UserAddressFrozen(
+        address userAddress,
+        bool isFrozen,
+        string actionID
+    );
+
+    event UserIdentityRegistered(
+        address userAddress, 
+        address onchainID,
+        string userID
+    );
+
+    event IdentityUpdated(
+        address userAddress,
+        address token,
+        string actionID
+    );
+
+    event UserCountryUpdated(
+        address userAddress,
+        address token,
+        uint16 country,
+        string actionID
+    );
+
+    event UserIdentityDeleted(
+        address userAddress,
+        address token,
+        string actionID
+    );
+    
+
+
     struct InvestorOrder{
         address investor;
         address asset;

@@ -9,8 +9,8 @@ async function main() {
   }
     // let owner = 0xE24f577cfAfC4faaE1c42E9c5335aA0c5D5742db;
 
-    const ESCROWPROXY = await ethers.getContractFactory("EscrowProxy")
-    const ESCROW = await ethers.getContractFactory("Escrow");
+    const ESCROWPROXY = await ethers.getContractFactory("EscrowControllerProxy")
+    const ESCROW = await ethers.getContractFactory("EscrowController");
 
     let time = 5000;
 

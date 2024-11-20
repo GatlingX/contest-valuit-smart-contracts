@@ -25,7 +25,7 @@ async function main() {
         address: "0x63952a22B3626FcFe954a512b22cA57C5950E3A8",
         //Path of your main contract.
         constructorArguments:[],
-        contract: "contracts/escrow/Escrow.sol:Escrow",
+        contract: "contracts/escrow/EscrowController.sol:EscrowController",
     });
     await sleep(3000);
 
@@ -33,7 +33,7 @@ async function main() {
       address: "0x35f39906cCCfa2ec4e041b25164ddC6EacFEEb24",
       //Path of your main contract.
       constructorArguments:[],
-      contract: "contracts/escrow/EscrowProxy.sol:EscrowProxy",
+      contract: "contracts/escrow/EscrowControllerProxy.sol:EscrowControllerProxy",
   });
   await sleep(3000);
   

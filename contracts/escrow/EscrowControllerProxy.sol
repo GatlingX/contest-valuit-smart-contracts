@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 
 /**
- * @title EscrowProxy
+ * @title EscrowControllerProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
  
-contract EscrowProxy {
+contract EscrowControllerProxy {
     /**
      * @dev Event to show ownership has been transferred
      * @param previousOwner representing the address of the previous owner
