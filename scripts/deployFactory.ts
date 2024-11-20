@@ -185,6 +185,12 @@ async function main() {
     // console.log("Hold Time Module: ",holdtime.address);
     // await sleep(time);
 
+    // const CountryRestrictModule = await ethers.getContractFactory("CountryRestrictModule");
+    // let countryrestrict = await CountryRestrictModule.deploy();
+    // await countryrestrict.deployed();
+    // console.log("Country Restrict Module: ", countryrestrict.address);
+    // await sleep(time);
+
 
 
 

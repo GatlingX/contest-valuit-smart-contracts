@@ -177,6 +177,14 @@ async function main() {
         contract: "contracts/compliance/modular/modules/HoldTimeModule.sol:HoldTimeModule",
     });
     await sleep(3000);
+
+    await hre.run("verify:verify", {
+        address: "0x350Adb83814F4729aB91B9DFf81aF84bfA5f4083",
+        //Path of your main contract.
+        constructorArguments:[],
+        contract: "contracts/compliance/modular/modules/CountryRestrictmodule.sol:CountryRestrictmodule",
+    });
+    await sleep(3000);
   
 
 }
