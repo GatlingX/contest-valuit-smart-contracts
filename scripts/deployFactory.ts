@@ -137,7 +137,7 @@ async function main() {
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x2c086167C89D11E64C8A8D74b014545587d2A0F8", "0xdd91623DFe09907DeAbF1197FB4eCd54478A8bC6");
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x9B5FeF7f654774b3eBd8AaD57F51F749AEE35c4B", "0x5c3c57908121d9838E39f8B53edbf8200cbA29eb");
     await trexFactory.deployed();
     console.log("TREX Factory: ", trexFactory.address);
     await sleep(time);
@@ -158,38 +158,38 @@ async function main() {
     console.log("IAFactory: setIAFactory success");
     await sleep(time);
 
-    // //deploy Compliance Modules
-    // const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
-    // let countryallow = await CountryAllowModule.deploy();
-    // await countryallow.deployed();
-    // console.log("Country Allow Module: ",countryallow.address);
-    // await sleep(time);
+    //deploy Compliance Modules
+    const CountryAllowModule = await ethers.getContractFactory("CountryAllowModule");
+    let countryallow = await CountryAllowModule.deploy();
+    await countryallow.deployed();
+    console.log("Country Allow Module: ",countryallow.address);
+    await sleep(time);
 
-    // const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
-    // let supplylimit = await SupplyLimitModule.deploy();
-    // await supplylimit.deployed();
-    // console.log("Supply Limit Module: ",supplylimit.address);
-    // await sleep(time);
-
-
-    // const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
-    // let maxbalance = await MaxBalanceModule.deploy();
-    // await maxbalance.deployed();
-    // console.log("Max Balance Module: ",maxbalance.address);
-    // await sleep(time);
+    const SupplyLimitModule = await ethers.getContractFactory("SupplyLimitModule");
+    let supplylimit = await SupplyLimitModule.deploy();
+    await supplylimit.deployed();
+    console.log("Supply Limit Module: ",supplylimit.address);
+    await sleep(time);
 
 
-    // const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
-    // let holdtime = await HoldTimeModule.deploy();
-    // await holdtime.deployed();
-    // console.log("Hold Time Module: ",holdtime.address);
-    // await sleep(time);
+    const MaxBalanceModule = await ethers.getContractFactory("MaxBalanceModule");
+    let maxbalance = await MaxBalanceModule.deploy();
+    await maxbalance.deployed();
+    console.log("Max Balance Module: ",maxbalance.address);
+    await sleep(time);
 
-    // const CountryRestrictModule = await ethers.getContractFactory("CountryRestrictModule");
-    // let countryrestrict = await CountryRestrictModule.deploy();
-    // await countryrestrict.deployed();
-    // console.log("Country Restrict Module: ", countryrestrict.address);
-    // await sleep(time);
+
+    const HoldTimeModule = await ethers.getContractFactory("HoldTimeModule");
+    let holdtime = await HoldTimeModule.deploy();
+    await holdtime.deployed();
+    console.log("Hold Time Module: ",holdtime.address);
+    await sleep(time);
+
+    const CountryRestrictModule = await ethers.getContractFactory("CountryRestrictModule");
+    let countryrestrict = await CountryRestrictModule.deploy();
+    await countryrestrict.deployed();
+    console.log("Country Restrict Module: ", countryrestrict.address);
+    await sleep(time);
 
 
 

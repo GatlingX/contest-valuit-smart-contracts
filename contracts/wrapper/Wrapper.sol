@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "contracts/wrapper/WrapperStorage.sol";
 import "../roles/AgentRole.sol";
 import "contracts/proxy/ProxyV1.sol";
@@ -10,13 +9,16 @@ import "contracts/token/IToken.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/onchainID/interface/IIdentity.sol";
 import "contracts/escrow/TransferHelper.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 
-contract Wrapper is Ownable, WrapperStorage{
 
-    constructor(address _erc20Impl) {
+contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
+
+    function init(address _erc20Impl) public initializer{
         require(_erc20Impl != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
+        __Ownable_init_unchained();
     }
 
     function setOnchainID(address _onChainID) public onlyOwner{

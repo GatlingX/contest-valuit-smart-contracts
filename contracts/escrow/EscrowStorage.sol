@@ -20,6 +20,12 @@ contract EscrowStorage {
         uint256 tokens
     );
 
+    event orderRejected(
+        string orderID,
+        address _Issuer,
+        uint256 refundedValue
+    );
+
     event AdminFeeUpdated(
         uint16 newFee,
         string id,

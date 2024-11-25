@@ -8,7 +8,7 @@ async function main() {
 
      //TIR
     await hre.run("verify:verify", {
-      address: "0x33485e94d7B4555137BA0f17FCf62f9946E86eBf",
+      address: "0x068426FCc9D8e486D14277ADF3BDB3a393CF3f30",
       //Path of your main contract.
       constructorArguments:[],
       contract: "contracts/registry/implementation/TrustedIssuersRegistry.sol:TrustedIssuersRegistry",
@@ -17,7 +17,7 @@ async function main() {
 
     //CTR
     await hre.run("verify:verify", {
-        address: "0x335b7C3B643F30efE16D2514913a38350D26625e",
+        address: "0x71f051b05622FcC2b78bb521CB85B188286903D2",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/registry/implementation/ClaimTopicsRegistry.sol:ClaimTopicsRegistry",
@@ -26,7 +26,7 @@ async function main() {
 
     //IRS
     await hre.run("verify:verify", {
-        address: "0x1E5465fF23813C85416d9f5fDE5004d9DcC18cA2",
+        address: "0x5249f64Ca8B8490468c96bF8b5C542e99B0d7A87",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/registry/implementation/IdentityRegistryStorage.sol:IdentityRegistryStorage",
@@ -35,7 +35,7 @@ async function main() {
 
     //IR
     await hre.run("verify:verify", {
-        address: "0x8A004064b1d1CB14e1d4912725c1AbdD1688D1b3",
+        address: "0x843a3E03C4902a2b30B41B646bDD71dF76acB79c",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/registry/implementation/IdentityRegistry.sol:IdentityRegistry",
@@ -44,7 +44,7 @@ async function main() {
 
     //Compliance
     await hre.run("verify:verify", {
-        address: "0x0547B3E9253224978ADA177570e87707e0Ae24BD",
+        address: "0x512cd537F2B9907E848bd471186d02bA4fE89506",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/compliance/modular/ModularCompliance.sol:ModularCompliance",
@@ -53,7 +53,7 @@ async function main() {
 
     //Token
     await hre.run("verify:verify", {
-        address: "0x2fFa8203e587C8Fa2AA8cbc83a980267985970A2",
+        address: "0x0d1F06e6a8BC0Bb883eBa40317F379C572b0B601",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/token/Token.sol:Token",
@@ -62,55 +62,55 @@ async function main() {
 
     //TREXImplementationAuthority
     await hre.run("verify:verify", {
-        address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
+        address: "0xd3A80F5CafFFCcCb0d5ad0FE6ad0Bf6A012bCC43",
         //Path of your main contract.
         constructorArguments:[true, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'],
         contract: "contracts/proxy/authority/TREXImplementationAuthority.sol:TREXImplementationAuthority",
     });
     await sleep(3000);
 
-    //VERC20 Implementation
-    await hre.run("verify:verify", {
-        address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
-        //Path of your main contract.
-        constructorArguments:[],
-        contract: "contracts/token/VERC20.sol:VERC20",
-    });
-    await sleep(3000);
+    // //VERC20 Implementation
+    // await hre.run("verify:verify", {
+    //     address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
+    //     //Path of your main contract.
+    //     constructorArguments:[],
+    //     contract: "contracts/token/VERC20.sol:VERC20",
+    // });
+    // await sleep(3000);
 
-    //ERC20 Implementation Auth
-    await hre.run("verify:verify", {
-        address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
-        //Path of your main contract.
-        constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C"],
-        contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
-    });
-    await sleep(3000);
+    // //ERC20 Implementation Auth
+    // await hre.run("verify:verify", {
+    //     address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
+    //     //Path of your main contract.
+    //     constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C"],
+    //     contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
+    // });
+    // await sleep(3000);
 
-    //Wrapper
-    await hre.run("verify:verify", {
-        address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
-        //Path of your main contract.
-        constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C"],
-        contract: "contracts/wrapper/Wrapper.sol:Wrapper",
-    });
-    await sleep(3000);
+    // //Wrapper
+    // await hre.run("verify:verify", {
+    //     address: "0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C",
+    //     //Path of your main contract.
+    //     constructorArguments:["0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C"],
+    //     contract: "contracts/wrapper/Wrapper.sol:Wrapper",
+    // });
+    // await sleep(3000);
 
 
     //TREXFactory
     await hre.run("verify:verify", {
-        address: "0xf42F94223aF1BF1e2e3F4125Fff999605dbB3c77",
+        address: "0xB6F552fddBda8fDA884a96BEe5067CA3F0913cC8",
         //Path of your main contract.
-        constructorArguments:['0xFa5219aDf0a62C35e54d36de0114658EDad6Ab3C',"0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6"],
+        constructorArguments:['0xd3A80F5CafFFCcCb0d5ad0FE6ad0Bf6A012bCC43',"0x9B5FeF7f654774b3eBd8AaD57F51F749AEE35c4B", "0x894BEe6D987bFfE075eE34dc4F9597A62C7bDD83"],
         contract: "contracts/factory/TREXFactory.sol:TREXFactory",
     });
     await sleep(3000);
 
     //IAFactory
     await hre.run("verify:verify", {
-        address: "0x44A0E873065b7833dF42898734D979728e71713C",
+        address: "0x9ffC2226C17058E7d238F6E05385510FD8eB6199",
         //Path of your main contract.
-        constructorArguments:['0xf42F94223aF1BF1e2e3F4125Fff999605dbB3c77'],
+        constructorArguments:['0xB6F552fddBda8fDA884a96BEe5067CA3F0913cC8'],
         contract: "contracts/proxy/authority/IAFactory.sol:IAFactory",
     });
     await sleep(3000);
@@ -119,7 +119,7 @@ async function main() {
 
     //Identity Implementation
     await hre.run("verify:verify", {
-        address: "0xC29295f67F5d476105f19E8513da0E5027e73e39",
+        address: "0xa2778DB3331040F8e01dE12d331D366c5ae8910E",
         //Path of your main contract.
         constructorArguments:['0x000000000000000000000000000000000000dEaD', true],
         contract: "contracts/onchainID/Identity.sol:Identity",
@@ -128,18 +128,18 @@ async function main() {
 
     //ImplementationAuthority
     await hre.run("verify:verify", {
-        address: "0xA3B55f368Eb944f8A664D04002F5460f592D40d7",
+        address: "0x8fab508c3525afA64baf6Af7D583780F659B8Eae",
         //Path of your main contract.
-        constructorArguments:['0xC29295f67F5d476105f19E8513da0E5027e73e39'],
+        constructorArguments:['0xa2778DB3331040F8e01dE12d331D366c5ae8910E'],
         contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
     });
     await sleep(3000);
 
     //IdFactory
     await hre.run("verify:verify", {
-        address: "0x3740d1Ac4463D8A778EcFA7d3d163bc7d35700C6",
+        address: "0x9B5FeF7f654774b3eBd8AaD57F51F749AEE35c4B",
         //Path of your main contract.
-        constructorArguments:['0xA3B55f368Eb944f8A664D04002F5460f592D40d7'],
+        constructorArguments:['0x8fab508c3525afA64baf6Af7D583780F659B8Eae'],
         contract: "contracts/onchainID/factory/IdFactory.sol:IdFactory",
     });
     await sleep(3000);
@@ -147,7 +147,7 @@ async function main() {
 
     //Compliance Modules
     await hre.run("verify:verify", {
-        address: "0x9449BDAA38CE303355F9eD6eb22465437f351Ff8",
+        address: "0xC184C48b4b74c3063A4C3d47Cc3Fe470CfB4A674",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/compliance/modular/modules/CountryAllowModule.sol:CountryAllowModule",
@@ -155,7 +155,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x8489CF77fC2167DeeF64D34445007380fAB47917",
+        address: "0x83318b9113042d07FCBB907E62cA35bD91325e5d",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/compliance/modular/modules/SupplyLimitModule.sol:SupplyLimitModule",
@@ -163,7 +163,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x6aBA405c2d3baF83d38976E9E6325119165f197a",
+        address: "0x7cdB0509A0e5a520e4A0a5e49d277E3D6a38afaf",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/compliance/modular/modules/MaxBalanceModule.sol:MaxBalanceModule",
@@ -171,7 +171,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x350Adb83814F4729aB91B9DFf81aF84bfA5f4083",
+        address: "0x544dDEDf4544CE2876c10b614633aeb937c3135D",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/compliance/modular/modules/HoldTimeModule.sol:HoldTimeModule",
@@ -179,10 +179,10 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x350Adb83814F4729aB91B9DFf81aF84bfA5f4083",
+        address: "0x0ac1ca8Ee1eDa6276cE52E5237f054c05e02f3E0",
         //Path of your main contract.
         constructorArguments:[],
-        contract: "contracts/compliance/modular/modules/CountryRestrictmodule.sol:CountryRestrictmodule",
+        contract: "contracts/compliance/modular/modules/CountryRestrictModule.sol:CountryRestrictModule",
     });
     await sleep(3000);
   

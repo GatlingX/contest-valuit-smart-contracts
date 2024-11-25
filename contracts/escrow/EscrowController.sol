@@ -54,7 +54,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit AdminWalletUpdated(adminWallet, _id, block.timestamp);
     }
 
-    function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) public{
+    function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) external {
         require(_token != address(0),"Zero Address not allowed");
         require(_amount > 0, "Amount should be greater than 0");
         require(IToken(_token).identityRegistry().isVerified(msg.sender), "Investor not whitelisted");
@@ -96,6 +96,19 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         investorOrders[orderID].status = true;
 
         emit orderSettled(orderID, msg.sender, investorOrders[orderID].value, investorOrders[orderID].tokens);
+    }
+
+    function rejectOrder(string calldata orderID) external {
+        require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
+        require (!investorOrders[orderID].status, "Order Executed");
+        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
+                                    investorOrders[orderID].investor, 
+                                    investorOrders[orderID].value);
+        pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
+        totalPendingOrderAmount -= investorOrders[orderID].value;
+        investorOrders[orderID].status = true;
+
+        emit orderRejected(orderID, msg.sender, investorOrders[orderID].value);
     }
 
     function batchSettlement(string[] calldata orderIDs) public {
