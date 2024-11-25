@@ -17,6 +17,8 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
         stableCoinName[stableCoin_[1]] = "usdt";
+        isStableCoin[stableCoin_[0]] = true;
+        isStableCoin[stableCoin_[1]] = true;
         adminFee = adminFee_; //1 Represents 0.01%
         adminWallet = msg.sender;
         __Ownable_init_unchained();
@@ -27,7 +29,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         address _to,
         uint128 _amount
     ) external onlyOwner {
-        if(_tokenAddr == stablecoin["usdc"] || _tokenAddr == stablecoin["usdt"]){
+        if(isStableCoin[_tokenAddr]){
             SafeERC20.safeTransfer(
                 IERC20(_tokenAddr),
                 _to,
@@ -121,6 +123,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         require(_stablecoin != address(0),"Zero Address");
         stablecoin[coin] = _stablecoin;
         stableCoinName[_stablecoin] = coin;
+        isStableCoin[_stablecoin] = true;
         emit StableCoinUpdated(coin, _stablecoin);
     }
 

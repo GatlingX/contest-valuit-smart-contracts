@@ -122,6 +122,7 @@ contract EscrowStorage {
     mapping(string => uint256) public pendingOrderAmount;
     mapping(string => address) internal stablecoin;
     mapping(address => string) internal stableCoinName;
+    mapping(address => bool) public isStableCoin;
     mapping(string => InvestorOrder) public investorOrders;
     mapping(string => uint256) public receivedAmount;
     mapping(string => bool) public orderCreated;
