@@ -18,6 +18,7 @@ contract FundFactory is
     function init(address _factory) public initializer {
         __Ownable_init_unchained();
         masterFactory = _factory;
+        adminWallet = msg.sender;
     }
 
     function setImpl(
@@ -29,8 +30,22 @@ contract FundFactory is
         implEquityConfig = _implEquityConfig;
     }
 
+    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external {
+        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+        adminFee[_token] = _adminFee;
+        emit AdminFeeUpdated(_token, _adminFee, actionID, block.timestamp);
+    }
+
+    function setAdminWallet(address _newWallet, string calldata _actionID) external {
+        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+        require(_newWallet != address(0),"Zero Address");
+        adminWallet = _newWallet;
+        emit AdminWalletUpdated(adminWallet, _actionID, block.timestamp);
+    }
+
     function createFund (address _token, 
         bytes memory _data, 
+        uint16 _adminFee,
         string memory mappingValue) public{
 
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
@@ -49,6 +64,7 @@ contract FundFactory is
                 ));
             require(success, "FUND Intiatialization Failed");
 
+            adminFee[_token] = _adminFee;
             emit FundCreated(_proxy,mappingValue);
     }
 
@@ -92,5 +108,13 @@ contract FundFactory is
                 IIdentityRegistry(ir).registerIdentity(_userAddresses[i], _identities[i], _countries[i]);
                 emit Whitelisted(_userAddresses[i], _token, _salts[i]);
             }
+    }
+
+    function getAdminFee(address _token) external view returns(uint16){
+        return adminFee[_token];
+    }
+
+    function getAdminWallet() external view returns(address){
+        return adminWallet;
     }
 }

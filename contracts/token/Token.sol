@@ -344,6 +344,10 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         return _TOKEN_VERSION;
     }
 
+    function totalFrozenTokens() external view returns (uint256){
+        return _totalFrozen;
+    }
+
     /**
      *  @notice ERC-20 overridden function that include logic to check for trade validity.
      *  Require that the msg.sender and to addresses are not frozen.
@@ -428,6 +432,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         uint256 balance = balanceOf(_userAddress);
         require(balance >= _frozenTokens[_userAddress] + _amount, "Amount exceeds available balance");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] + (_amount);
+        _totalFrozen += _amount;
         emit TokensFrozen(_userAddress, _amount);
     }
 
@@ -437,6 +442,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     function unfreezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgents {
         require(_frozenTokens[_userAddress] >= _amount, "Amount should be less than or equal to frozen tokens");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] - (_amount);
+        _totalFrozen -= _amount;
         emit TokensUnfrozen(_userAddress, _amount);
     }
 

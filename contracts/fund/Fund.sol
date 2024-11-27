@@ -31,9 +31,10 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return NAVLatestPrice;
     }
 
-    function setNAV(uint256 _latestNAV) external returns(bool){
+    function setNAV(uint256 _latestNAV, string memory actionID) external returns(bool){
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         NAVLatestPrice = _latestNAV;
+        emit NAVUpdated(_latestNAV, actionID);
         return true;
     }
 
@@ -46,6 +47,24 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         for(uint i=0; i<_address.length; i++){
             TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address[i], _dividend[i]);
         }
+    }
+
+    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        minInvestment = _newMinInvestment;
+        emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
+    }
+
+    function setMaxInvesrment(uint256 _newMaxInvestment, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        maxInvestment = _newMaxInvestment;
+        emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
+    }
+
+    function setProjectedYeild(uint256 _newProjectedYield, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        projectedYield = _newProjectedYield;
+        emit ProjectedYieldUpdated(_newProjectedYield, actionID);
     }
 
     function _setValues (bytes memory _data) internal{

@@ -26,18 +26,6 @@ contract EscrowStorage {
         uint256 refundedValue
     );
 
-    event AdminFeeUpdated(
-        uint16 newFee,
-        string id,
-        uint256 timeStamp
-    );
-
-    event AdminWalletUpdated(
-        address newAdminWallet,
-        string id,
-        uint256 timeStamp
-    );
-
     event StableCoinUpdated(
         string coin,
         address newAddress
@@ -114,9 +102,7 @@ contract EscrowStorage {
         string coin;
         bool status;
     }
-
-    address public adminWallet;
-    uint16 public adminFee;
+    
     uint256 public totalPendingOrderAmount;
 
     mapping(string => uint256) public pendingOrderAmount;

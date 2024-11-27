@@ -27,11 +27,36 @@ contract EquityConfig is Initializable, EquityConfigStorage, OwnableUpgradeable 
         currentValuation = launchValuation;
     }
 
-    function setValuation(uint256 _latestValuation) external returns(bool){
+    function setValuation(uint256 _latestValuation, string memory actionID) external returns(bool){
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         previousValutaion = currentValuation;
         currentValuation = _latestValuation;
+        emit ValuationUpdated(_latestValuation, actionID);
         return true;
+    }
+
+    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        minInvestment = _newMinInvestment;
+        emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
+    }
+
+    function setMaxInvesrment(uint256 _newMaxInvestment, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        maxInvestment = _newMaxInvestment;
+        emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
+    }
+
+    function setProjectedYeild(uint256 _newProjectedYield, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        projectedYield = _newProjectedYield;
+        emit ProjectedYieldUpdated(_newProjectedYield, actionID);
+    }
+
+    function setDERatio(string memory _newDERatio, string memory actionID) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        DERatio = _newDERatio;
+        emit DERatioUpdated(_newDERatio, actionID);
     }
 
 }

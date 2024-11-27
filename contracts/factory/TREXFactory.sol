@@ -105,6 +105,7 @@ contract TREXFactory is ITREXFactory, Ownable {
         }
         for (uint256 i=0; i < (_tokenDetails.transferAgents).length; i++){
             AgentRole(address(token)).addTA(_tokenDetails.transferAgents[i]);
+            AgentRole(address(ir)).addAgent(_tokenDetails.transferAgents[i]);
         }
         for (uint256 i = 0; i < (_tokenDetails.complianceModules).length; i++) {
             if (!mc.isModuleBound(_tokenDetails.complianceModules[i])) {

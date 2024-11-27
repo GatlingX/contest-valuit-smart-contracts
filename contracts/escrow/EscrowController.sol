@@ -7,20 +7,19 @@ import "../roles/AgentRole.sol";
 import "contracts/token/IToken.sol";
 import "contracts/escrow/TransferHelper.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
+import "contracts/factory/IFundFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
-    function init(address [] memory  stableCoin_, uint16 adminFee_) public initializer {
+    function init(address [] memory  stableCoin_) public initializer {
         stablecoin["usdc"] = stableCoin_[0];
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
         stableCoinName[stableCoin_[1]] = "usdt";
         isStableCoin[stableCoin_[0]] = true;
         isStableCoin[stableCoin_[1]] = true;
-        adminFee = adminFee_; //1 Represents 0.01%
-        adminWallet = msg.sender;
         __Ownable_init_unchained();
     } 
 
@@ -42,18 +41,6 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
                     _amount
                 );
             }    
-    }
-
-    function setAdminFee(uint16 _fee, string calldata _id) public onlyOwner{
-        require(_fee >= 0 && _fee < 10000, "Invalid Fee. Out of Range!");
-        adminFee = _fee;
-        emit AdminFeeUpdated(adminFee, _id, block.timestamp);
-    }
-
-    function setAdminWallet(address _newWallet, string calldata _id) public onlyOwner(){
-        require(_newWallet != address(0),"Zero Address");
-        adminWallet = _newWallet;
-        emit AdminWalletUpdated(adminWallet, _id, block.timestamp);
     }
 
     function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) external {
@@ -79,16 +66,18 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit AmountReceived(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
 
-    function settlement(string calldata orderID) public {
+    function settlement(string calldata orderID, address fundFactory) public {
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Already Settled");
+
+        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
                                     investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/10000));
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    adminWallet, 
+                                    IFundFactory(fundFactory).getAdminWallet(), 
                                     (investorOrders[orderID].value * adminFee)/10000);
         
         IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, investorOrders[orderID].tokens);
@@ -113,9 +102,9 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit orderRejected(orderID, msg.sender, investorOrders[orderID].value);
     }
 
-    function batchSettlement(string[] calldata orderIDs) public {
+    function batchSettlement(string[] calldata orderIDs,address fundFactory) public {
         for (uint256 i = 0; i < orderIDs.length; i++) {
-            settlement(orderIDs[i]);
+            settlement(orderIDs[i], fundFactory);
         }
     }
 

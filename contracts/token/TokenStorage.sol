@@ -20,6 +20,7 @@ contract TokenStorage {
     /// @dev Variables of freeze and pause functions
     mapping(address => bool) internal _frozen;
     mapping(address => uint256) internal _frozenTokens;
+    uint256 internal _totalFrozen;
 
     bool internal _tokenPaused = false;
 
