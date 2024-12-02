@@ -30,6 +30,11 @@ contract FundFactory is
         implEquityConfig = _implEquityConfig;
     }
 
+    function setMasterFactory(address factory_) external{
+        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set master Factory");
+        masterFactory = factory_;
+    }
+
     function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external {
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
         adminFee[_token] = _adminFee;

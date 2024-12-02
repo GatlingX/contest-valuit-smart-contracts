@@ -16,14 +16,19 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
-    function init(address _erc20Impl) public initializer{
+    function init(address _erc20Impl, address _fundFactory) public initializer{
         require(_erc20Impl != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
+        fundFactory = _fundFactory;
         __Ownable_init_unchained();
     }
 
     function setOnchainID(address _onChainID) public onlyOwner{
         wrapperOnchainID = _onChainID;
+    }
+
+    function setFundFactory(address fundFactory_) public onlyOwner{
+        fundFactory = fundFactory_;
     }
 
     function createWrapToken(address _erc3643, uint16 _countryCode) public {
@@ -60,24 +65,43 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         emit WrapTokenCreated(_erc3643,_proxy);
     }
 
-    function toERC20(address _erc3643, uint256 _amount, uint256 _tax, address fundFactory) public {
+    function toERC20(address _erc3643, uint256 _amount) public {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
 
-        TransferHelper.safeTransferFrom(_erc3643,msg.sender, address(this),_amount);
-        TransferHelper.safeTransferFrom(_erc3643,msg.sender, IFundFactory(fundFactory).getAdminWallet(),_tax);
-        IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
+        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(_erc3643);
 
+        TransferHelper.safeTransferFrom(
+            _erc3643,
+            msg.sender, 
+            address(this),
+            _amount - ((_amount * adminFee)/10000));
+        TransferHelper.safeTransferFrom(
+            _erc3643,
+            msg.sender, 
+            IFundFactory(fundFactory).getAdminWallet(),
+            (_amount * adminFee)/10000);
 
-        lockedERC3643[_erc3643] += _amount;
+        IToken(getERC20[_erc3643]).mint(msg.sender, _amount - ((_amount * adminFee)/10000));
 
-        emit TokenLocked(_erc3643, _amount);   
+        lockedERC3643[_erc3643] += _amount - ((_amount * adminFee)/10000);
+
+        emit TokenLocked(_erc3643, _amount - ((_amount * adminFee)/10000));
     }
 
     function toERC3643(address _erc20, uint256 _amount) public {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
+        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]);
+
         IToken(_erc20).burn(msg.sender, _amount);
-        TransferHelper.safeTransfer(getERC3643[_erc20], msg.sender, _amount);
+        TransferHelper.safeTransfer(
+            getERC3643[_erc20], 
+            msg.sender, 
+            _amount - ((_amount * adminFee)/10000));
+        TransferHelper.safeTransfer(
+            getERC3643[_erc20], 
+            IFundFactory(fundFactory).getAdminWallet(), 
+            ((_amount * adminFee)/10000));
 
         lockedERC3643[getERC3643[_erc20]] -= _amount;
 

@@ -13,6 +13,7 @@ contract WrapperStorage {
     address public implERC20;
     address internal _proxy;
     address public wrapperOnchainID;
+    address public fundFactory;
     
     event WrapTokenCreated(
         address _erc3643,

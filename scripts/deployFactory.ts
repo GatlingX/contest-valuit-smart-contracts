@@ -115,27 +115,6 @@ async function main() {
     console.log("addAndUseTREXVersion success", );
     await sleep(time);
 
-    // //ERC20 Implementation
-    // const ERC20 = await ethers.getContractFactory("VERC20");
-    // let erc20 = await ERC20.deploy();
-    // await erc20.deployed();
-    // console.log("VERC20 Implementation: ", erc20.address);
-    // await sleep(time);
-
-    // //ERC20 Implementation Auth
-    // const IMPLATHT = await ethers.getContractFactory("ImplementationAuthority");
-    // let erc20ImplAuth = await IMPLATHT.deploy(erc20.address);
-    // await erc20ImplAuth.deployed();
-    // console.log("ERC20 ImplAuth: ", erc20ImplAuth.address);
-    // await sleep(time);
-
-    // //deploy Wrapper
-    // let wrapper = await WRAPPER.deploy(erc20ImplAuth.address, ZERO_ADDRESS);
-    // await wrapper.deployed();
-    // console.log("Wrapper: ",wrapper.address);
-    // await sleep(time);   
-
-
     // deploy and set up TREX Token Factory
     let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x610a97777774E17BB94f31Db9B0894a97F44FAc9", "0xAA72c4A5A079109461DA8C12594B18151CcdA6dD");
     await trexFactory.deployed();

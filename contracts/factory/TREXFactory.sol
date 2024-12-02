@@ -37,7 +37,7 @@ contract TREXFactory is ITREXFactory, Ownable {
     constructor(address implementationAuthority_, address idFactory_, address wrapper_) {
         setImplementationAuthority(implementationAuthority_);
         setIdFactory(idFactory_);
-        wrapper = wrapper_;
+        setWrapper(wrapper_);
     }
 
     /**
@@ -180,6 +180,11 @@ contract TREXFactory is ITREXFactory, Ownable {
         require(idFactory_ != address(0), "invalid argument - zero address");
         _idFactory = idFactory_;
         emit IdFactorySet(idFactory_);
+    }
+
+    function setWrapper(address wrapper_) public onlyOwner {
+        require(wrapper_ != address(0), "invalid argument - zero address");
+        wrapper = wrapper_;
     }
 
     /// deploy function with create2 opcode call
