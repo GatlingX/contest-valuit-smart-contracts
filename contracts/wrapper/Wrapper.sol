@@ -73,12 +73,13 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
             _erc3643,
             msg.sender, 
             address(this),
-            _amount - ((_amount * adminFee)/10000));
-        TransferHelper.safeTransferFrom(
+            _amount);
+
+        TransferHelper.safeTransfer(
             _erc3643,
-            msg.sender, 
             IFundFactory(fundFactory).getAdminWallet(),
-            (_amount * adminFee)/10000);
+            (_amount * adminFee)/10000
+            );
 
         IToken(getERC20[_erc3643]).mint(msg.sender, _amount - ((_amount * adminFee)/10000));
 
