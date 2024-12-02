@@ -16,10 +16,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
-    function init(address _erc20Impl, address _fundFactory) public initializer{
+    function init(address _erc20Impl) public initializer{
         require(_erc20Impl != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
-        fundFactory = _fundFactory;
         __Ownable_init_unchained();
     }
 
