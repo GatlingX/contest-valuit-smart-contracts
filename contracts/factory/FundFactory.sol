@@ -98,25 +98,6 @@ contract FundFactory is
             emit EquityConfigCreated(_proxy, mappingValue);
         }
 
-    
-    function batchWhitelist(
-        address _token,
-        address[] calldata _userAddresses,
-        IIdentity[] calldata _identities,
-        uint16[] calldata _countries,
-        string[] calldata _salts) public {
-            IIdentityRegistry ir = IToken(_token).identityRegistry();
-            require(AgentRole(address(ir)).isAgent(msg.sender),"Not an Identity Registry Agent");
-            require(_userAddresses.length == _identities.length &&
-            _identities.length == _countries.length &&
-            _countries.length == _salts.length, "Invalid Inputs");
-
-            for(uint i=0; i<_userAddresses.length; i++){
-                IIdentityRegistry(ir).registerIdentity(_userAddresses[i], _identities[i], _countries[i]);
-                emit Whitelisted(_userAddresses[i], _token, _salts[i]);
-            }
-    }
-
     function getAdminFee(address _token) external view returns(uint16){
         return adminFee[_token];
     }
