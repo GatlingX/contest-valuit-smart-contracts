@@ -137,7 +137,7 @@ async function main() {
 
 
     // deploy and set up TREX Token Factory
-    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x9B5FeF7f654774b3eBd8AaD57F51F749AEE35c4B", "0x5c3c57908121d9838E39f8B53edbf8200cbA29eb");
+    let trexFactory = await TREXFACTORY.deploy(implementationAuth.address,"0x610a97777774E17BB94f31Db9B0894a97F44FAc9", "0xAA72c4A5A079109461DA8C12594B18151CcdA6dD");
     await trexFactory.deployed();
     console.log("TREX Factory: ", trexFactory.address);
     await sleep(time);

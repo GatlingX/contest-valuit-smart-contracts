@@ -8,6 +8,7 @@ import "contracts/proxy/ProxyV1.sol";
 import "contracts/token/IToken.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/onchainID/interface/IIdentity.sol";
+import "contracts/factory/IFundFactory.sol";
 import "contracts/escrow/TransferHelper.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -59,11 +60,13 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         emit WrapTokenCreated(_erc3643,_proxy);
     }
 
-    function toERC20(address _erc3643, uint256 _amount) public {
+    function toERC20(address _erc3643, uint256 _amount, uint256 _tax, address fundFactory) public {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
 
         TransferHelper.safeTransferFrom(_erc3643,msg.sender, address(this),_amount);
+        TransferHelper.safeTransferFrom(_erc3643,msg.sender, IFundFactory(fundFactory).getAdminWallet(),_tax);
         IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
+
 
         lockedERC3643[_erc3643] += _amount;
 

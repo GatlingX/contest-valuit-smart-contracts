@@ -30,24 +30,24 @@ async function main() {
     //deploy escrow implementation, escrow proxy
     const escrow = await ESCROW.deploy();
     await escrow.deployed();
-    console.log("Escrow : ", escrow.address);
+    console.log("EscrowController : ", escrow.address);
     await sleep(time);
 
     const escrowProxy = await ESCROWPROXY.deploy();
     await escrowProxy.deployed();
-    console.log("EscrowProxy: ", escrowProxy.address);
+    console.log("EscrowControllerProxy: ", escrowProxy.address);
     await sleep(time);
 
     //Upgrade Proxy
     await escrowProxy.upgradeTo(escrow.address);
-    console.log("Escrow Proxy Upgraded");
+    console.log("EscrowController Proxy Upgraded");
     await sleep(time);
 
     //Attach and Initialize Escrow
     const escrowAttached = await ESCROW.attach(escrowProxy.address);
 
-    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"],10);
-    console.log("Escrow Initialized");
+    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"]);
+    console.log("EscrowController Proxy Initialized");
     await sleep(time);
 
 }

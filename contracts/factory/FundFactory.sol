@@ -70,6 +70,7 @@ contract FundFactory is
 
     function createEquityConfig (address _token, 
         bytes memory _data, 
+        uint16 _adminFee,
         string memory mappingValue) public{
 
             require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
@@ -88,6 +89,7 @@ contract FundFactory is
                 ));
             require(success, "Equity Configuration Intiatialization Failed");
 
+            adminFee[_token] = _adminFee;
             emit EquityConfigCreated(_proxy, mappingValue);
         }
 
