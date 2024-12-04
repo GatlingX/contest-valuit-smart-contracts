@@ -43,7 +43,7 @@ async function main() {
 
     const wrapperAttached = await WRAPPER.attach(wrapperProxy.address);
 
-    await wrapperAttached.init(implAuth.address, "0xB5d83077d40a795Ce415EA82773a06DAFb4A8565");
+    await wrapperAttached.init(implAuth.address,"0xdFc729Ea55333d91DE197D06b724804A143e1De4");
     console.log("Proxy Initialized");
 
 }

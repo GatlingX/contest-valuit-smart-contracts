@@ -33,15 +33,15 @@ contract EquityConfigStorage {
     );
 
     string public fundName;
-    string public DERatio;
+    string internal DERatio;
 
     address public token;
     address public factory;
 
-    uint256 public minInvestment;
-    uint256 public maxInvestment;
-    uint256 public launchValuation;
-    uint256 public projectedYield;
-    uint256 public previousValutaion;
-    uint256 public currentValuation;
+    uint256 internal minInvestment;
+    uint256 internal maxInvestment;
+    uint256 internal launchValuation;
+    uint256 internal projectedYield;
+    uint256 internal previousValutaion;
+    uint256 internal currentValuation;
 }

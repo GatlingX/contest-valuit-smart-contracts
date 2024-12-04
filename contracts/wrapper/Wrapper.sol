@@ -10,24 +10,43 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/onchainID/interface/IIdentity.sol";
 import "contracts/factory/IFundFactory.sol";
 import "contracts/escrow/TransferHelper.sol";
+import "contracts/fund/IFactory.sol";
+import "contracts/escrow/IEscrowController.sol";
+import "contracts/fund/IFund.sol";
+import "contracts/fund/IEquityConfig.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
 
 
 contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
-    function init(address _erc20Impl) public initializer{
-        require(_erc20Impl != address(0),"INVALID! Zero Address");
+    function init(address _erc20Impl, address _fundFactory) public initializer{
+        require(_erc20Impl != address(0) && _fundFactory != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
+        fundFactory = _fundFactory;
         __Ownable_init_unchained();
     }
 
-    function setOnchainID(address _onChainID) public onlyOwner{
+    function setOnchainID(address _onChainID) public {
+        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
         wrapperOnchainID = _onChainID;
     }
 
-    function setFundFactory(address fundFactory_) public onlyOwner{
+    function setFundFactory(address fundFactory_) public {
+        require(fundFactory_ != address(0),"INVALID! Zero Address");
+        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
         fundFactory = fundFactory_;
+    }
+
+    function setEscrowController(address escrowController_) public {
+        require(escrowController_ != address(0),"INVALID! Zero Address");
+        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
+        escrowController = escrowController_;
+    }
+
+    function setStableCoin(string calldata _stablecoin) public {
+        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
+        require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
+        stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
     }
 
     function createWrapToken(address _erc3643, uint16 _countryCode) public {
@@ -67,44 +86,106 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
     function toERC20(address _erc3643, uint256 _amount) public {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
 
-        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(_erc3643);
+        address fund = IFundFactory(fundFactory).getFund(_erc3643);
+        uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
 
-        TransferHelper.safeTransferFrom(
+        if(fundType == 1){
+
+            TransferHelper.safeTransferFrom(
             _erc3643,
             msg.sender, 
             address(this),
             _amount);
 
-        TransferHelper.safeTransfer(
+            if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
+                uint256 tokenPrice = (IFund(fund).getNAV() / IToken(_erc3643).totalSupply()) * 10 ** 18;
+                uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
+                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
+                TransferHelper.safeTransferFrom(
+                stableCoin,
+                msg.sender, 
+                IFundFactory(fundFactory).getAdminWallet(),
+                taxAmount);
+            }
+            
+            IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
+            lockedERC3643[_erc3643] += _amount;
+            emit TokenLocked(_erc3643, _amount);
+        }
+
+        if(fundType == 2){
+
+            TransferHelper.safeTransferFrom(
             _erc3643,
-            IFundFactory(fundFactory).getAdminWallet(),
-            (_amount * adminFee)/10000
-            );
+            msg.sender, 
+            address(this),
+            _amount);
 
-        IToken(getERC20[_erc3643]).mint(msg.sender, _amount - ((_amount * adminFee)/10000));
+            if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
+                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IToken(_erc3643).totalSupply()) * 10 ** 18;
+                uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
+                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
+                TransferHelper.safeTransferFrom(
+                stableCoin,
+                msg.sender, 
+                IFundFactory(fundFactory).getAdminWallet(),
+                taxAmount);
+            }
 
-        lockedERC3643[_erc3643] += _amount - ((_amount * adminFee)/10000);
-
-        emit TokenLocked(_erc3643, _amount - ((_amount * adminFee)/10000));
+            IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
+            lockedERC3643[_erc3643] += _amount;
+            emit TokenLocked(_erc3643, _amount);
+        }
     }
 
     function toERC3643(address _erc20, uint256 _amount) public {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
-        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]);
+        address fund = IFundFactory(fundFactory).getFund(getERC3643[_erc20]);
+        uint8 fundType = IFundFactory(fundFactory).getAssetType(getERC3643[_erc20]);
 
-        IToken(_erc20).burn(msg.sender, _amount);
-        TransferHelper.safeTransfer(
+        if(fundType == 1){
+
+            if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
+                uint256 tokenPrice = (IFund(fund).getNAV() / IToken(getERC3643[_erc20]).totalSupply()) * 10 ** 18;
+                uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
+                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
+                TransferHelper.safeTransferFrom(
+                stableCoin,
+                msg.sender, 
+                IFundFactory(fundFactory).getAdminWallet(),
+                taxAmount);
+            }
+
+            IToken(_erc20).burn(msg.sender, _amount);
+            TransferHelper.safeTransfer(
             getERC3643[_erc20], 
             msg.sender, 
-            _amount - ((_amount * adminFee)/10000));
-        TransferHelper.safeTransfer(
+            _amount);
+            lockedERC3643[getERC3643[_erc20]] -= _amount;
+            emit TokenUnlocked(getERC3643[_erc20], _amount);
+        }
+
+        if(fundType == 2){
+
+            if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
+                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IToken(getERC3643[_erc20]).totalSupply()) * 10 ** 18;
+                uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
+                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
+                TransferHelper.safeTransferFrom(
+                stableCoin,
+                msg.sender, 
+                IFundFactory(fundFactory).getAdminWallet(),
+                taxAmount);
+            }
+           
+            IToken(_erc20).burn(msg.sender, _amount);
+            TransferHelper.safeTransfer(
             getERC3643[_erc20], 
-            IFundFactory(fundFactory).getAdminWallet(), 
-            ((_amount * adminFee)/10000));
-
-        lockedERC3643[getERC3643[_erc20]] -= _amount;
-
-        emit TokenUnlocked(getERC3643[_erc20], _amount);
+            msg.sender, 
+            _amount);
+            lockedERC3643[getERC3643[_erc20]] -= _amount;
+            emit TokenUnlocked(getERC3643[_erc20], _amount);
+        }
     }
 }

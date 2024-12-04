@@ -34,6 +34,8 @@ contract FundFactoryStorage {
     );
 
     mapping(address => uint16) internal adminFee;
+    mapping(address => address) internal fundLinked;
+    mapping(address => uint8) internal assetType;
 
     address public masterFactory;
     address public implFund;

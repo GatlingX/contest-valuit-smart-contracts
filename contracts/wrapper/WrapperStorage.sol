@@ -14,6 +14,8 @@ contract WrapperStorage {
     address internal _proxy;
     address public wrapperOnchainID;
     address public fundFactory;
+    address public escrowController;
+    address public stableCoin;
     
     event WrapTokenCreated(
         address _erc3643,

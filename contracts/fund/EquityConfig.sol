@@ -59,4 +59,31 @@ contract EquityConfig is Initializable, EquityConfigStorage, OwnableUpgradeable 
         emit DERatioUpdated(_newDERatio, actionID);
     }
 
+    function getCurrentValuation() external view returns(uint256){
+        return currentValuation;
+    }
+
+    function getMinInvestment() external view returns(uint256){
+        return minInvestment;
+    }
+
+    function getMaxInvestment() external view returns(uint256){
+        return maxInvestment;
+    }
+
+    function getProjectedYield() external view returns(uint256){
+        return projectedYield;
+    }
+
+    function getDERatio() external view returns(string memory){
+        return DERatio;
+    }
+
+    function getLaunchValuation() external view returns(uint256){
+        return launchValuation;
+    }
+
+    function getPreviousValutaion() external view returns(uint256){
+        return previousValutaion;
+    }
 }

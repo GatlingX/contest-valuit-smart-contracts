@@ -70,6 +70,8 @@ contract FundFactory is
             require(success, "FUND Intiatialization Failed");
 
             adminFee[_token] = _adminFee;
+            fundLinked[_token] = _proxy;
+            assetType[_token] = 1;
             emit FundCreated(_proxy,mappingValue);
     }
 
@@ -95,8 +97,10 @@ contract FundFactory is
             require(success, "Equity Configuration Intiatialization Failed");
 
             adminFee[_token] = _adminFee;
+            fundLinked[_token] = _proxy;
+            assetType[_token] = 2;
             emit EquityConfigCreated(_proxy, mappingValue);
-        }
+    }
 
     function getAdminFee(address _token) external view returns(uint16){
         return adminFee[_token];
@@ -104,5 +108,17 @@ contract FundFactory is
 
     function getAdminWallet() external view returns(address){
         return adminWallet;
+    }
+
+    function getFund(address _token) external view returns(address){
+        return fundLinked[_token];
+    }
+
+    function getAssetType(address _token) external view returns(uint8){
+        return assetType[_token];
+    }
+
+    function getMasterFactory() external view returns(address){
+        return masterFactory;
     }
 }
