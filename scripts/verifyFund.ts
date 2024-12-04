@@ -40,7 +40,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0xD0e2f819948FA9FE0cf5a6AFAA779589A7F945d2",
+        address: "0xD8179f0c1f691618031934c247c236b3A11529Aa",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/factory/FundFactory.sol:FundFactory",

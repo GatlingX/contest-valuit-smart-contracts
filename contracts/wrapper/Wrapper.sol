@@ -98,7 +98,7 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
             _amount);
 
             if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
-                uint256 tokenPrice = (IFund(fund).getNAV() / IToken(_erc3643).totalSupply()) * 10 ** 18;
+                uint256 tokenPrice = (IFund(fund).getNAV() / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643)) * 10 ** 18;
                 uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
                 uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
                 TransferHelper.safeTransferFrom(
@@ -122,7 +122,7 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
             _amount);
 
             if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
-                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IToken(_erc3643).totalSupply()) * 10 ** 18;
+                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643)) * 10 ** 18;
                 uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
                 uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
                 TransferHelper.safeTransferFrom(
@@ -147,7 +147,7 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         if(fundType == 1){
 
             if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
-                uint256 tokenPrice = (IFund(fund).getNAV() / IToken(getERC3643[_erc20]).totalSupply()) * 10 ** 18;
+                uint256 tokenPrice = (IFund(fund).getNAV() / IFundFactory(fundFactory).getTokenTotalSupply(getERC3643[_erc20])) * 10 ** 18;
                 uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
                 uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
                 TransferHelper.safeTransferFrom(
@@ -169,7 +169,7 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         if(fundType == 2){
 
             if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
-                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IToken(getERC3643[_erc20]).totalSupply()) * 10 ** 18;
+                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() / IFundFactory(fundFactory).getTokenTotalSupply(getERC3643[_erc20])) * 10 ** 18;
                 uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
                 uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
                 TransferHelper.safeTransferFrom(

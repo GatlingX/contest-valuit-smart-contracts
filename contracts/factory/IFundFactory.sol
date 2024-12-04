@@ -13,4 +13,6 @@ interface IFundFactory {
     function getFund(address _token) external view returns(address);
 
     function getAssetType(address _token) external view returns(uint8);
+
+    function getTokenTotalSupply(address _token) external view returns(uint256);
 }

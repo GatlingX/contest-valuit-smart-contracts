@@ -51,6 +51,7 @@ contract FundFactory is
     function createFund (address _token, 
         bytes memory _data, 
         uint16 _adminFee,
+        uint256 _totalTokenSupply,
         string memory mappingValue) public{
 
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
@@ -72,12 +73,14 @@ contract FundFactory is
             adminFee[_token] = _adminFee;
             fundLinked[_token] = _proxy;
             assetType[_token] = 1;
+            tokenTotalSupply[_token] = _totalTokenSupply;
             emit FundCreated(_proxy,mappingValue);
     }
 
     function createEquityConfig (address _token, 
         bytes memory _data, 
         uint16 _adminFee,
+        uint256 _totalTokenSupply,
         string memory mappingValue) public{
 
             require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
@@ -99,6 +102,7 @@ contract FundFactory is
             adminFee[_token] = _adminFee;
             fundLinked[_token] = _proxy;
             assetType[_token] = 2;
+            tokenTotalSupply[_token] = _totalTokenSupply;
             emit EquityConfigCreated(_proxy, mappingValue);
     }
 
@@ -120,5 +124,9 @@ contract FundFactory is
 
     function getMasterFactory() external view returns(address){
         return masterFactory;
+    }
+
+    function getTokenTotalSupply(address _token) external view returns(uint256){
+        return tokenTotalSupply[_token];
     }
 }
