@@ -191,15 +191,29 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
      */
     function canTransfer(address _from, address _to, uint256 _value) external view override returns (bool) {
         uint256 length = _modules.length;
-        for (uint256 i = 0; i < length; i++) {
-            if(_to == wrapper && wrapperSet == true && !String.equals(IModule(_modules[i]).name(),"HoldTimeModule")){
-                return true;
+        
+        if (_to == wrapper && wrapperSet == true) {
+            // Transfers to the wrapper address
+            // Only enforce the HoldTimeModule, bypass other modules
+            for (uint256 i = 0; i < length; i++) {
+                if (String.equals(IModule(_modules[i]).name(), "HoldTimeModule")) {
+                    // Check compliance with HoldTimeModule
+                    if (!IModule(_modules[i]).moduleCheck(_from, _to, _value, address(this))) {
+                        return false;
+                    }
+                    // Since HoldTimeModule is unique, we can break the loop
+                    break; 
+                }
             }
-            if (!IModule(_modules[i]).moduleCheck(_from, _to, _value, address(this))) {
-                return false;
+            return true;
+        } else {
+            for (uint256 i = 0; i < length; i++) {
+                if (!IModule(_modules[i]).moduleCheck(_from, _to, _value, address(this))) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
     }
 
     /// @dev Extracts the Solidity ABI selector for the specified interaction.
