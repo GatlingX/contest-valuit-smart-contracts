@@ -131,11 +131,22 @@ contract MaxBalanceModule is AbstractModuleUpgradeable {
      *  no transfer action required in this module
      */
     function moduleTransferAction(address _from, address _to, uint256 _value) external override onlyComplianceCall {
+
+        // Access wrapper and wrapperSet from the compliance contract
+        address wrapperAddress = IModularCompliance(msg.sender).getWrapper();
+        bool isWrapperSet = IModularCompliance(msg.sender).isWrapperSet();
+
         address _idFrom = _getIdentity(msg.sender, _from);
         address _idTo = _getIdentity(msg.sender, _to);
+
         _IDBalance[msg.sender][_idTo] += _value;
         _IDBalance[msg.sender][_idFrom] -= _value;
+
+        // If the recipient is not the wrapper or the wrapper is not set, enforce max balance on the recipient
+        if (!(isWrapperSet && _to == wrapperAddress)) {
+        // Enforce max balance on the recipient
         if (_IDBalance[msg.sender][_idTo] > _maxBalance[msg.sender]) revert MaxBalanceExceeded(msg.sender, _value);
+        }
     }
 
     /**

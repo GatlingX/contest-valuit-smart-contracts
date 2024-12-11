@@ -165,6 +165,14 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
         wrapperSet = true;
     }
 
+    function getWrapper() external view override returns (address){
+        return wrapper;
+    }
+
+    function isWrapperSet() external view override returns (bool){
+        return wrapperSet;
+    }
+
     /**
      *  @dev See {IModularCompliance-isModuleBound}.
      */
@@ -191,7 +199,7 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
      */
     function canTransfer(address _from, address _to, uint256 _value) external view override returns (bool) {
         uint256 length = _modules.length;
-        
+
         if (_to == wrapper && wrapperSet == true) {
             // Transfers to the wrapper address
             // Only enforce the HoldTimeModule, bypass other modules

@@ -169,4 +169,8 @@ interface IModularCompliance {
      *  returns true if module is bound, false otherwise
      */
     function isModuleBound(address _module) external view returns (bool);
+
+    function getWrapper() external view returns (address);
+
+    function isWrapperSet() external view returns (bool);
 }
