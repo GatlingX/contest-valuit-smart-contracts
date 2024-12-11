@@ -14,6 +14,7 @@ import "contracts/fund/IFactory.sol";
 import "contracts/escrow/IEscrowController.sol";
 import "contracts/fund/IFund.sol";
 import "contracts/fund/IEquityConfig.sol";
+import "contracts/compliance/modular/IModularCompliance.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 
@@ -53,6 +54,8 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         require(_erc3643 != address(0),"INVALID! Zero Address");
         require(!isWrapped[_erc3643], "Token already wrapped");
         require (AgentRole(_erc3643).isAgent(msg.sender), "Invalid Creator");
+        require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
+        require(IModularCompliance(IToken(_erc3643).compliance()).getWrapper() == address(this), "Invalid wrapper");
 
         string memory name = string.concat("W",IToken(_erc3643).name());
         string memory symbol = string.concat("W",IToken(_erc3643).symbol());
@@ -85,6 +88,8 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
     function toERC20(address _erc3643, uint256 _amount) public {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
+        require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
+        require(IModularCompliance(IToken(_erc3643).compliance()).getWrapper() == address(this), "Invalid wrapper");
 
         address fund = IFundFactory(fundFactory).getFund(_erc3643);
         uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
