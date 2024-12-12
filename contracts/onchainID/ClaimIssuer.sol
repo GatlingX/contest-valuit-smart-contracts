@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import "./interface/IClaimIssuer.sol";
 import "./Identity.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract ClaimIssuer is IClaimIssuer, Identity {
     mapping (bytes => bool) public revokedClaims;
@@ -109,8 +110,6 @@ contract ClaimIssuer is IClaimIssuer, Identity {
             va += 27;
         }
 
-        address recoveredAddress = ecrecover(dataHash, va, ra, sa);
-
-        return (recoveredAddress);
+        return ECDSA.recover(dataHash, sig);
     }
 }
