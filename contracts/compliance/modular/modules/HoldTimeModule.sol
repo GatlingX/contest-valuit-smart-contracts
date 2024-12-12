@@ -79,15 +79,16 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
     /**
      *  @dev See {IModule-canComplianceBind}.
      */
-    function canComplianceBind(address /*_compliance*/) external view override returns (bool) {
-        return true;
+    function canComplianceBind(address _compliance) external view override returns (bool) {
+        return holdTime[_compliance] > 0;
+
     }
 
     /**
      *  @dev See {IModule-isPlugAndPlay}.
      */
     function isPlugAndPlay() external pure override returns (bool) {
-        return true;
+        return false;
     }
 
     /**
