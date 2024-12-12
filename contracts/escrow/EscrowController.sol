@@ -110,6 +110,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function setStableCoin(string calldata coin, address _stablecoin) public onlyOwner{
         require(_stablecoin != address(0),"Zero Address");
+        require(stablecoin[coin] == address(0), "Stablecoin in use, update disallowed");
         stablecoin[coin] = _stablecoin;
         stableCoinName[_stablecoin] = coin;
         isStableCoin[_stablecoin] = true;
