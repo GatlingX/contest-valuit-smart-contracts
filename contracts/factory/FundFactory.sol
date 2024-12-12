@@ -37,6 +37,7 @@ contract FundFactory is
 
     function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external {
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+        require(_adminFee >= 0 && _adminFee <10000, "Fee Out of Bound");
         adminFee[_token] = _adminFee;
         emit AdminFeeUpdated(_token, _adminFee, actionID, block.timestamp);
     }
