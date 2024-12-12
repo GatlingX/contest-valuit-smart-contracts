@@ -55,6 +55,7 @@ contract FundFactory is
         string memory mappingValue) public{
 
         require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
+        require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
         _proxy =address(new ProxyV1());
 
@@ -84,6 +85,7 @@ contract FundFactory is
         string memory mappingValue) public{
 
             require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
+            require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
             _proxy =address(new ProxyV1());
 
