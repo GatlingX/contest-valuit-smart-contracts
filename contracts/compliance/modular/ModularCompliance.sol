@@ -159,10 +159,10 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
 
     }
 
-    function setWrapper(address _wrapper) external onlyOwner{
+    function setWrapper(address _wrapper, bool _enabled) external onlyOwner{
         require(_wrapper != address(0),"Zero Address");
         wrapper = _wrapper;
-        wrapperSet = true;
+        wrapperSet = _enabled;
     }
 
     function getWrapper() external view override returns (address){

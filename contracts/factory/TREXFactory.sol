@@ -116,7 +116,7 @@ contract TREXFactory is ITREXFactory, Ownable {
             }
         }
         if(_tokenDetails.wrap){
-            mc.setWrapper(wrapper);
+            mc.setWrapper(wrapper, true);
         }
         tokenDeployed[_salt] = address(token);
         (Ownable(address(token))).transferOwnership(_tokenDetails.owner);

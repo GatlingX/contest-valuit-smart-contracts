@@ -132,7 +132,7 @@ interface IModularCompliance {
      */
     function destroyed(address _from, uint256 _amount) external;
 
-    function setWrapper(address _wrapper) external;
+    function setWrapper(address _wrapper, bool _enabled) external;
 
     /**
      *  @dev checks that the transfer is compliant.
