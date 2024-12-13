@@ -112,4 +112,9 @@ contract EscrowStorage {
     mapping(string => InvestorOrder) public investorOrders;
     mapping(string => uint256) public receivedAmount;
     mapping(string => bool) public orderCreated;
+
+    /**
+     * @dev Storage gap to reserve space for future upgrades.
+     */
+    uint256[50] private __gap; 
 }
