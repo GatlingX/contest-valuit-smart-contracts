@@ -83,37 +83,6 @@ contract MaxBalanceModule is AbstractModuleUpgradeable {
     }
 
     /**
-     *  @dev make a batch transaction calling preSetModuleState multiple times
-     *  @param _compliance the address of the compliance contract to preset
-     *  @param _id the ONCHAINID address of the token holder
-     *  @param _balance the current balance of the token holder
-     *  Only the owner of the Compliance smart contract can call this function
-     *  emits _id.length `IDBalancePreSet` events
-     */
-    function batchPreSetModuleState(
-        address _compliance,
-        address[] calldata _id,
-        uint256[] calldata _balance) external {
-        if(_id.length == 0 || _id.length != _balance.length) {
-            revert InvalidPresetValues(_compliance, _id, _balance);
-        }
-
-        if (OwnableUpgradeable(_compliance).owner() != msg.sender) {
-            revert OnlyComplianceOwnerCanCall(_compliance);
-        }
-
-        if (IModularCompliance(_compliance).isModuleBound(address(this))) {
-            revert TokenAlreadyBound(_compliance);
-        }
-
-        for (uint i = 0; i < _id.length; i++) {
-            _preSetModuleState(_compliance, _id[i], _balance[i]);
-        }
-
-        _compliancePresetStatus[_compliance] = true;
-    }
-
-    /**
      *  @dev updates compliance preset status as true
      *  @param _compliance the address of the compliance contract
      *  Only the owner of the Compliance smart contract can call this function
