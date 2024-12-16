@@ -145,19 +145,18 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
 
         uint256 adminFee = IFundFactory(fundFactory).getAdminFee(_erc3643);
+        
         if (adminFee == 0) return 0;
 
         uint256 netAssetValue = (fundType == 1)
             ? IFund(fund).getNAV()
             : IEquityConfig(fund).getCurrentValuation();
 
-        uint256 tokenTotalSupply = IFundFactory(fundFactory).getTokenTotalSupply(_erc3643);
-
-        require(tokenTotalSupply > 0, "Token supply must be greater than zero");
+        require(IFundFactory(fundFactory).getTokenTotalSupply(_erc3643) > 0, "Token supply must be greater than zero");
 
         if(!IFund(fund).getOffChainPriceStatus()){
             // Calculate the token price in 18 decimals
-            uint256 tokenPrice = (netAssetValue * (10 ** 18) / tokenTotalSupply);
+            uint256 tokenPrice = (netAssetValue * (10 ** 18) / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643));
             // Calculate the order value in stablecoin decimals
             uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
             // Calculate the admin fee (tax amount) in stablecoin decimals
