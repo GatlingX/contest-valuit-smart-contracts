@@ -155,18 +155,25 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
         require(tokenTotalSupply > 0, "Token supply must be greater than zero");
 
-        // Calculate the token price in 18 decimals
-        uint256 tokenPrice = (netAssetValue * (10 ** 18) / tokenTotalSupply);
-
-        // Calculate the order value in stablecoin decimals
-        uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
-
-        // Calculate the admin fee (tax amount) in stablecoin decimals
-        uint256 taxAmount = (orderValue * adminFee) / 10000;
-
-        // Perform the tax transfer
-        TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
-
-        return taxAmount;
+        if(!IFund(fund).getOffChainPriceStatus()){
+            // Calculate the token price in 18 decimals
+            uint256 tokenPrice = (netAssetValue * (10 ** 18) / tokenTotalSupply);
+            // Calculate the order value in stablecoin decimals
+            uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
+            // Calculate the admin fee (tax amount) in stablecoin decimals
+            uint256 taxAmount = (orderValue * adminFee) / 10000;
+            // Perform the tax transfer
+            TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
+            return taxAmount;
+        }
+        else{
+            //tokenPrice is with 6 decimals
+            uint256 tokenPrice = IFund(fund).getOffChainPrice();
+            uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 6);
+            uint256 taxAmount = (orderValue * adminFee) / 10000;
+            // Perform the tax transfer
+            TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
+            return taxAmount;
+        }
     }
 }

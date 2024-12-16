@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 interface IFund {
 
@@ -13,7 +13,11 @@ interface IFund {
     */
     function getNAV() external returns (uint256);
 
-    function getToken() view external returns (address);
+    function getToken() external view returns (address);
+
+    function getOffChainPrice() external view returns(uint256);
+
+    function getOffChainPriceStatus() external view returns(bool);
 
     function shareDividend(address _address, 
                             uint256  _dividend,

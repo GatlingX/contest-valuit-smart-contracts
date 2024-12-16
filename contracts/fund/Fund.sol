@@ -35,6 +35,18 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return token;
     }
 
+    function getDividendStatus(string calldata _id) public view returns(bool){
+        return dividendStatus[_id];
+    }
+
+    function getOffChainPrice() public view returns(uint256){
+        return tokenPrice;
+    }
+
+    function getOffChainPriceStatus() public view returns(bool){
+        return offChainPrice;
+    }
+
     function setNAV(uint256 _latestNAV, string memory actionID) external returns(bool){
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         NAVLatestPrice = _latestNAV;
@@ -42,8 +54,14 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return true;
     }
 
-    function setAssetPrice() external {
+    function setAssetPriceOffChain(uint256 _newPrice) external {
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        tokenPrice = _newPrice;
+    }
+
+    function setOffChainPrice(bool _status) external{
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        offChainPrice = _status;
     }
 
     function shareDividend(address _address, 
@@ -86,9 +104,5 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         NAVLatestPrice,
         minInvestment,
         maxInvestment) = abi.decode(_data, (uint256, uint256, string, uint256, uint256, uint256, uint256));
-    }
-
-    function getDividendStatus(string calldata _id) public view returns(bool){
-        return dividendStatus[_id];
     }
 }

@@ -46,6 +46,9 @@ contract FundStorage {
     uint256 public NAVLatestPrice;
     uint256 public minInvestment;
     uint256 public maxInvestment;
+    uint256 public tokenPrice;
+
+    bool public offChainPrice;
 
     mapping(string => bool) internal dividendStatus;
 }

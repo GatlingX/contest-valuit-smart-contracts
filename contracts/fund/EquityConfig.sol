@@ -59,6 +59,16 @@ contract EquityConfig is Initializable, EquityConfigStorage, OwnableUpgradeable 
         emit DERatioUpdated(_newDERatio, actionID);
     }
 
+    function setAssetPriceOffChain(uint256 _newPrice) external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        tokenPrice = _newPrice;
+    }
+
+    function setOffChainPrice(bool _status) external{
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+        offChainPrice = _status;
+    }
+
     function getCurrentValuation() external view returns(uint256){
         return currentValuation;
     }
@@ -85,5 +95,13 @@ contract EquityConfig is Initializable, EquityConfigStorage, OwnableUpgradeable 
 
     function getPreviousValutaion() external view returns(uint256){
         return previousValutaion;
+    }
+
+    function getOffChainPrice() public view returns(uint256){
+        return tokenPrice;
+    }
+
+    function getOffChainPriceStatus() public view returns(bool){
+        return offChainPrice;
     }
 }

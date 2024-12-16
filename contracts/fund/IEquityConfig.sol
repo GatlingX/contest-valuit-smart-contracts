@@ -17,5 +17,9 @@ interface IEquityConfig {
     function getLaunchValuation() external view returns(uint256);
 
     function getPreviousValutaion() external view returns(uint256);
+
+    function getOffChainPrice() external view returns(uint256);
+
+    function getOffChainPriceStatus() external view returns(bool);
 }
 

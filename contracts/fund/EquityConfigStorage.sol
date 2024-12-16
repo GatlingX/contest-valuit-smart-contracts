@@ -44,4 +44,7 @@ contract EquityConfigStorage {
     uint256 internal projectedYield;
     uint256 internal previousValutaion;
     uint256 internal currentValuation;
+    uint256 public tokenPrice;
+
+    bool public offChainPrice;
 }
