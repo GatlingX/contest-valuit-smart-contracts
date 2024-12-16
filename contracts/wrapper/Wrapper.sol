@@ -159,7 +159,7 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         uint256 tokenPrice = (netAssetValue * (10 ** 18) / tokenTotalSupply);
 
         // Calculate the order value in stablecoin decimals
-        uint256 orderValue = (((_amount / erc3643Decimals) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
+        uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
 
         // Calculate the admin fee (tax amount) in stablecoin decimals
         uint256 taxAmount = (orderValue * adminFee) / 10000;
