@@ -31,6 +31,10 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return NAVLatestPrice;
     }
 
+    function getToken() view external returns (address){
+        return token;
+    }
+
     function setNAV(uint256 _latestNAV, string memory actionID) external returns(bool){
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         NAVLatestPrice = _latestNAV;
@@ -38,15 +42,18 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return true;
     }
 
-    function shareDividend(address[] calldata _address, 
-                            uint256[] calldata _dividend,  
+    function shareDividend(address _address, 
+                            uint256 _dividend,
+                            string calldata _userIds,
+                            string calldata _dividendIds,  
                             address stableCoin_) public {
-        require(_address.length == _dividend.length, "Invalid Input");
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
-
-        for(uint i=0; i<_address.length; i++){
-            TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address[i], _dividend[i]);
-        }
+        require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
+    
+        TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address, _dividend);
+        dividendStatus[_dividendIds] = true;
+        emit DividendDistributed(_address, _dividend, _userIds, _dividendIds);
+        
     }
 
     function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external {
@@ -75,5 +82,9 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         NAVLatestPrice,
         minInvestment,
         maxInvestment) = abi.decode(_data, (uint256, uint256, string, uint256, uint256, uint256, uint256));
+    }
+
+    function getDividendStatus(string calldata _id) public view returns(bool){
+        return dividendStatus[_id];
     }
 }

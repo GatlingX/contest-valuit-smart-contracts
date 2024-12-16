@@ -24,12 +24,18 @@ contract WrapperStorage {
 
     event TokenLocked(
         address _erc3643,
-        uint256 _amount
+        address _erc20,
+        uint256 _amount,
+        uint256 _tax,
+        uint256 timestamp
     );
 
     event TokenUnlocked(
         address _erc3643,
-        uint256 _amount
+        address _erc20,
+        uint256 _amount,
+        uint256 _tax,
+        uint256 timestamp
     );
 
 }

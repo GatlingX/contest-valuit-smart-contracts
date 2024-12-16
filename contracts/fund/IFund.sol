@@ -12,4 +12,12 @@ interface IFund {
     This function is callable externally.
     */
     function getNAV() external returns (uint256);
+
+    function getToken() view external returns (address);
+
+    function shareDividend(address _address, 
+                            uint256  _dividend,
+                            string calldata _userIds,
+                            string calldata _dividendIds,  
+                            address stableCoin_) external;
 }

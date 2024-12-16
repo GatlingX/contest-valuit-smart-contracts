@@ -91,106 +91,89 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
         require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
         require(IModularCompliance(IToken(_erc3643).compliance()).getWrapper() == address(this), "Invalid wrapper");
 
-        address fund = IFundFactory(fundFactory).getFund(_erc3643);
-        uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
-
-        if(fundType == 1){
-
-            TransferHelper.safeTransferFrom(
+        TransferHelper.safeTransferFrom(
             _erc3643,
             msg.sender, 
             address(this),
             _amount);
 
-            if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
-                uint256 tokenPrice = (IFund(fund).getNAV() * 10 ** 18 / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643));
-                uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
-                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
-                TransferHelper.safeTransferFrom(
-                stableCoin,
-                msg.sender, 
-                IFundFactory(fundFactory).getAdminWallet(),
-                taxAmount);
-            }
-            
-            IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
-            lockedERC3643[_erc3643] += _amount;
-            emit TokenLocked(_erc3643, _amount);
-        }
 
-        if(fundType == 2){
-
-            TransferHelper.safeTransferFrom(
-            _erc3643,
-            msg.sender, 
-            address(this),
-            _amount);
-
-            if(IFundFactory(fundFactory).getAdminFee(_erc3643) != 0){
-                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() * 10 ** 18 / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643));
-                uint256 orderValue = (((_amount/(10**IToken(_erc3643).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
-                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(_erc3643))/10000;
-                TransferHelper.safeTransferFrom(
-                stableCoin,
-                msg.sender, 
-                IFundFactory(fundFactory).getAdminWallet(),
-                taxAmount);
-            }
+        uint256 taxAmount = _takeTax(
+                _erc3643,
+                _amount,
+                IToken(_erc3643).decimals(),
+                IToken(stableCoin).decimals(),
+                msg.sender,
+                IFundFactory(fundFactory).getAdminWallet()
+            );
 
             IToken(getERC20[_erc3643]).mint(msg.sender, _amount);
             lockedERC3643[_erc3643] += _amount;
-            emit TokenLocked(_erc3643, _amount);
-        }
+            emit TokenLocked(_erc3643,getERC20[_erc3643], _amount, taxAmount, block.timestamp);
     }
 
     function toERC3643(address _erc20, uint256 _amount) public {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
-        address fund = IFundFactory(fundFactory).getFund(getERC3643[_erc20]);
-        uint8 fundType = IFundFactory(fundFactory).getAssetType(getERC3643[_erc20]);
+        uint256 taxAmount = _takeTax(
+                getERC3643[_erc20],
+                _amount,
+                IToken(getERC3643[_erc20]).decimals(),
+                IToken(stableCoin).decimals(),
+                msg.sender,
+                IFundFactory(fundFactory).getAdminWallet()
+            );
 
-        if(fundType == 1){
-
-            if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
-                uint256 tokenPrice = (IFund(fund).getNAV() * 10 ** 18 / IFundFactory(fundFactory).getTokenTotalSupply(getERC3643[_erc20]));
-                uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
-                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
-                TransferHelper.safeTransferFrom(
-                stableCoin,
-                msg.sender, 
-                IFundFactory(fundFactory).getAdminWallet(),
-                taxAmount);
-            }
-
-            IToken(_erc20).burn(msg.sender, _amount);
+        IToken(_erc20).burn(msg.sender, _amount);
             TransferHelper.safeTransfer(
             getERC3643[_erc20], 
             msg.sender, 
             _amount);
             lockedERC3643[getERC3643[_erc20]] -= _amount;
-            emit TokenUnlocked(getERC3643[_erc20], _amount);
-        }
-
-        if(fundType == 2){
-
-            if(IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]) != 0){
-                uint256 tokenPrice = (IEquityConfig(fund).getCurrentValuation() * 10 ** 18/ IFundFactory(fundFactory).getTokenTotalSupply(getERC3643[_erc20]));
-                uint256 orderValue = (((_amount/(10**IToken(getERC3643[_erc20]).decimals())) * tokenPrice) * (10**IToken(stableCoin).decimals()))/10 ** 18;
-                uint256 taxAmount = (orderValue * IFundFactory(fundFactory).getAdminFee(getERC3643[_erc20]))/10000;
-                TransferHelper.safeTransferFrom(
-                stableCoin,
-                msg.sender, 
-                IFundFactory(fundFactory).getAdminWallet(),
-                taxAmount);
-            }
-           
-            IToken(_erc20).burn(msg.sender, _amount);
-            TransferHelper.safeTransfer(
-            getERC3643[_erc20], 
-            msg.sender, 
-            _amount);
-            lockedERC3643[getERC3643[_erc20]] -= _amount;
-            emit TokenUnlocked(getERC3643[_erc20], _amount);
-        }
+            emit TokenUnlocked(getERC3643[_erc20], _erc20, _amount, taxAmount, block.timestamp);
     }
+
+    function _takeTax(
+        address _erc3643,
+        uint256 _amount,
+        uint8 erc3643Decimals,
+        uint8 stableCoinDecimals,
+        address payer,
+        address adminWallet
+    ) internal returns(uint256){
+        address fund = IFundFactory(fundFactory).getFund(_erc3643);
+        uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
+
+        uint256 adminFee = IFundFactory(fundFactory).getAdminFee(_erc3643);
+        if (adminFee == 0) return 0;
+
+        uint256 netAssetValue = (fundType == 1)
+            ? IFund(fund).getNAV()
+            : IEquityConfig(fund).getCurrentValuation();
+
+        uint256 tokenTotalSupply = IFundFactory(fundFactory).getTokenTotalSupply(_erc3643);
+
+        require(tokenTotalSupply > 0, "Token supply must be greater than zero");
+
+        // Calculate the token price in stablecoin decimals
+        uint256 tokenPrice = (netAssetValue * (10 ** stableCoinDecimals)) / tokenTotalSupply;
+
+        // Scale _amount directly to stablecoin decimals
+        uint256 scaledAmount = _scaleDecimals(_amount, erc3643Decimals, stableCoinDecimals);
+
+        // Calculate the order value in stablecoin decimals
+        uint256 orderValue = (scaledAmount * tokenPrice) / (10 ** stableCoinDecimals);
+
+        // Calculate the admin fee (tax amount)
+        uint256 taxAmount = (orderValue * adminFee) / 10000;
+
+        // Perform the tax transfer
+        TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
+    }
+
+    function _scaleDecimals(uint256 value, uint8 inputDecimals, uint8 targetDecimals) internal pure returns (uint256) {
+            if (targetDecimals == inputDecimals) return value;
+            if (targetDecimals > inputDecimals) return value * (10 ** (targetDecimals - inputDecimals));
+            return value / (10 ** (inputDecimals - targetDecimals));
+        }
 }

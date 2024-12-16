@@ -30,6 +30,7 @@ contract TREXFactory is ITREXFactory, Ownable {
 
     /// mapping containing info about the token contracts corresponding to salt already used for CREATE2 deployments
     mapping(string => address) public tokenDeployed;
+    mapping(address => bool) public deployedByMe;
 
     address public wrapper;
 
@@ -119,6 +120,7 @@ contract TREXFactory is ITREXFactory, Ownable {
             mc.setWrapper(wrapper, true);
         }
         tokenDeployed[_salt] = address(token);
+        deployedByMe[address(token)] = true;
         (Ownable(address(token))).transferOwnership(_tokenDetails.owner);
         (Ownable(address(ir))).transferOwnership(_tokenDetails.owner);
         (Ownable(address(tir))).transferOwnership(_tokenDetails.owner);
@@ -153,6 +155,10 @@ contract TREXFactory is ITREXFactory, Ownable {
      */
     function getToken(string calldata _salt) external override view returns(address) {
         return tokenDeployed[_salt];
+    }
+
+    function tokenDeployedByMe(address _token)external override view returns(bool) {
+        return deployedByMe[_token];
     }
 
     /**

@@ -27,6 +27,13 @@ contract FundStorage {
         string actionID
     );
 
+    event DividendDistributed(
+        address investor,
+        uint256 amount,
+        string _userID,
+        string _dividendID
+    );
+
     string public fundName;
     string public cusip;
 
@@ -39,4 +46,6 @@ contract FundStorage {
     uint256 public NAVLatestPrice;
     uint256 public minInvestment;
     uint256 public maxInvestment;
+
+    mapping(string => bool) internal dividendStatus;
 }

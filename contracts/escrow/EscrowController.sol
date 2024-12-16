@@ -8,18 +8,21 @@ import "contracts/token/IToken.sol";
 import "contracts/escrow/TransferHelper.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/factory/IFundFactory.sol";
+import "contracts/factory/ITREXFactory.sol";
+import "contracts/fund/IFund.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
-    function init(address [] memory  stableCoin_) public initializer {
+    function init(address [] memory  stableCoin_, address _masterFactory) public initializer {
         stablecoin["usdc"] = stableCoin_[0];
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
         stableCoinName[stableCoin_[1]] = "usdt";
         isStableCoin[stableCoin_[0]] = true;
         isStableCoin[stableCoin_[1]] = true;
+        masterFactory = _masterFactory;
         __Ownable_init_unchained();
     } 
 
@@ -47,7 +50,9 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         require(_token != address(0),"Zero Address not allowed");
         require(_amount > 0, "Amount should be greater than 0");
         require(IToken(_token).identityRegistry().isVerified(msg.sender), "Investor not whitelisted");
-        require(!orderCreated[orderID], "Order Already Created");
+        require(!orderCreated[msg.sender][orderID], "Order Already Created");
+        require(ITREXFactory(masterFactory).tokenDeployedByMe(_token),"Asset not allowed");
+        require(stablecoin[coin] != address(0), "Unsupported stablecoin");
 
         investorOrders[orderID].investor = msg.sender;
         investorOrders[orderID].asset = _token;
@@ -59,7 +64,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, address(this), _amount);
 
         receivedAmount[orderID] = _amount;
-        orderCreated[orderID] = true;
+        orderCreated[msg.sender][orderID] = true;
         pendingOrderAmount[investorOrders[orderID].coin] += investorOrders[orderID].value;
         totalPendingOrderAmount += investorOrders[orderID].value;
 
@@ -115,6 +120,11 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         stableCoinName[_stablecoin] = coin;
         isStableCoin[_stablecoin] = true;
         emit StableCoinUpdated(coin, _stablecoin);
+    }
+
+    function setMasterFactory(address _masterFactory) public onlyOwner{
+        require(_masterFactory != address(0), "Invalid Zero Address");
+        masterFactory = _masterFactory;
     }
 
     function batchMintTokens(address _token, address[] calldata _toList, uint256[] calldata _amounts, string[] calldata orderIDs) external{
@@ -180,6 +190,21 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
+    function batchShareDividend(
+        address _fund,
+        address[] calldata _address, 
+        uint256[] calldata _dividend,
+        string[] calldata _userIds,
+        string[] calldata _dividendIds,  
+        address stableCoin_
+    )external {
+        require(AgentRole(IFund(_fund).getToken()).isAgent(msg.sender), "Invalid Issuer");
+        for(uint i=0; i < _address.length; i++){
+            IFund(_fund).shareDividend(_address[i], _dividend[i], _userIds[i], _dividendIds[i], stableCoin_);
+            emit DividendDistributed(_address[i], _dividend[i], _userIds[i], _dividendIds[i]);
+        }
+    }
+
     function callUpdateIdentity(
         address _userAddress,
         IIdentity _identity,
@@ -218,4 +243,5 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
     function getStableCoinName(address stableCoin) public view returns(string memory){
         return stableCoinName[stableCoin];
     }
+
 }

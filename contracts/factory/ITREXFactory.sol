@@ -136,5 +136,8 @@ interface ITREXFactory {
      */
     function getToken(string calldata _salt) external view returns(address);
 
+
+    function tokenDeployedByMe(address _token)external view returns(bool);
+
     
 }
