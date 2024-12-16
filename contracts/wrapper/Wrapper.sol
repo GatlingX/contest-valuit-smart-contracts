@@ -155,25 +155,18 @@ contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
 
         require(tokenTotalSupply > 0, "Token supply must be greater than zero");
 
-        // Calculate the token price in stablecoin decimals
-        uint256 tokenPrice = (netAssetValue * (10 ** stableCoinDecimals)) / tokenTotalSupply;
-
-        // Scale _amount directly to stablecoin decimals
-        uint256 scaledAmount = _scaleDecimals(_amount, erc3643Decimals, stableCoinDecimals);
+        // Calculate the token price in 18 decimals
+        uint256 tokenPrice = (netAssetValue * (10 ** 18) / tokenTotalSupply);
 
         // Calculate the order value in stablecoin decimals
-        uint256 orderValue = (scaledAmount * tokenPrice) / (10 ** stableCoinDecimals);
+        uint256 orderValue = (((_amount / erc3643Decimals) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
 
-        // Calculate the admin fee (tax amount)
+        // Calculate the admin fee (tax amount) in stablecoin decimals
         uint256 taxAmount = (orderValue * adminFee) / 10000;
 
         // Perform the tax transfer
         TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
-    }
 
-    function _scaleDecimals(uint256 value, uint8 inputDecimals, uint8 targetDecimals) internal pure returns (uint256) {
-            if (targetDecimals == inputDecimals) return value;
-            if (targetDecimals > inputDecimals) return value * (10 ** (targetDecimals - inputDecimals));
-            return value / (10 ** (inputDecimals - targetDecimals));
-        }
+        return taxAmount;
+    }
 }

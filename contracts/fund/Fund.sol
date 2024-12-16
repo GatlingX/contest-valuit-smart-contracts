@@ -42,6 +42,10 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         return true;
     }
 
+    function setAssetPrice() external {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    }
+
     function shareDividend(address _address, 
                             uint256 _dividend,
                             string calldata _userIds,
