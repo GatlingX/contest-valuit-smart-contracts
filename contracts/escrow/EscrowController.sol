@@ -72,8 +72,10 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
     }
 
     function settlement(string calldata orderID, address fundFactory) public {
+        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Already Settled");
+
 
         uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
 
@@ -95,6 +97,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
     }
 
     function rejectOrder(string calldata orderID) external {
+        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Executed");
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
