@@ -141,6 +141,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchTransfer}.
      */
     function batchTransfer(address[] calldata _toList, uint256[] calldata _amounts) external override {
+        require(_toList.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _toList.length; i++) {
             transfer(_toList[i], _amounts[i]);
         }
@@ -180,6 +181,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         address[] calldata _toList,
         uint256[] calldata _amounts
     ) external override {
+        require(_fromList.length == _toList.length && _toList.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _fromList.length; i++) {
             forcedTransfer(_fromList[i], _toList[i], _amounts[i]);
         }
@@ -189,6 +191,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchMint}.
      */
     function batchMint(address[] calldata _toList, uint256[] calldata _amounts) external override {
+        require(_toList.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _toList.length; i++) {
             mint(_toList[i], _amounts[i]);
         }
@@ -198,6 +201,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchBurn}.
      */
     function batchBurn(address[] calldata _userAddresses, uint256[] calldata _amounts) external override {
+        require(_userAddresses.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             burn(_userAddresses[i], _amounts[i]);
         }
@@ -207,6 +211,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchSetAddressFrozen}.
      */
     function batchSetAddressFrozen(address[] calldata _userAddresses, bool[] calldata _freeze) external override {
+        require(_userAddresses.length == _freeze.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             setAddressFrozen(_userAddresses[i], _freeze[i]);
         }
@@ -216,6 +221,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchFreezePartialTokens}.
      */
     function batchFreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external override {
+        require(_userAddresses.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             freezePartialTokens(_userAddresses[i], _amounts[i]);
         }
@@ -225,6 +231,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-batchUnfreezePartialTokens}.
      */
     function batchUnfreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external override {
+        require(_userAddresses.length == _amounts.length, "Mismatched array lengths");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             unfreezePartialTokens(_userAddresses[i], _amounts[i]);
         }
