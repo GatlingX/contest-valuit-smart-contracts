@@ -6,17 +6,16 @@ import "contracts/fund/IFactory.sol";
 import "contracts/token/IToken.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
 import "../roles/AgentRole.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 
 pragma solidity ^0.8.0;
 
 contract FundFactory is
     FundFactoryStorage,
-    Initializable,OwnableUpgradeable
+    Initializable
 {
     function init(address _factory) public initializer {
-        __Ownable_init_unchained();
         masterFactory = _factory;
         adminWallet = msg.sender;
     }

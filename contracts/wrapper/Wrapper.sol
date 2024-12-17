@@ -15,16 +15,15 @@ import "contracts/escrow/IEscrowController.sol";
 import "contracts/fund/IFund.sol";
 import "contracts/fund/IEquityConfig.sol";
 import "contracts/compliance/modular/IModularCompliance.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 
-contract Wrapper is WrapperStorage,Initializable,OwnableUpgradeable{
+contract Wrapper is WrapperStorage,Initializable{
 
     function init(address _erc20Impl, address _fundFactory) public initializer{
         require(_erc20Impl != address(0) && _fundFactory != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
         fundFactory = _fundFactory;
-        __Ownable_init_unchained();
     }
 
     function setOnchainID(address _onChainID) public {

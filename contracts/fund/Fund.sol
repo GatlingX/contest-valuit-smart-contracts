@@ -6,13 +6,12 @@ import 'contracts/fund/IFund.sol';
 import "contracts/fund/FundStorage.sol";
 import 'contracts/fund/ITKN.sol';
 import 'contracts/escrow/TransferHelper.sol';
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 
-contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
+contract Fund is IFund, Initializable, FundStorage {
 
     function init(address _token, bytes memory _data) external initializer{
-        _transferOwnership(msg.sender);
         factory = address(msg.sender);
 
         token = _token;
