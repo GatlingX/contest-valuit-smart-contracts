@@ -13,14 +13,14 @@ contract EscrowStorage {
         string coin
     );
 
-    event orderSettled(
+    event OrderSettled(
         string orderID,
         address _Issuer,
         uint256 amountValue,
         uint256 tokens
     );
 
-    event orderRejected(
+    event OrderRejected(
         string orderID,
         address _Issuer,
         uint256 refundedValue

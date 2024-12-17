@@ -84,13 +84,13 @@ contract Fund is IFund, Initializable, FundStorage, OwnableUpgradeable {
         emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
     }
 
-    function setMaxInvesrment(uint256 _newMaxInvestment, string memory actionID) external {
+    function setMaxInvestment(uint256 _newMaxInvestment, string memory actionID) external {
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         maxInvestment = _newMaxInvestment;
         emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
     }
 
-    function setProjectedYeild(uint256 _newProjectedYield, string memory actionID) external {
+    function setProjectedYield(uint256 _newProjectedYield, string memory actionID) external {
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         projectedYield = _newProjectedYield;
         emit ProjectedYieldUpdated(_newProjectedYield, actionID);

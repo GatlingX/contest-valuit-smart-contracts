@@ -93,7 +93,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         totalPendingOrderAmount -= investorOrders[orderID].value;
         investorOrders[orderID].status = true;
 
-        emit orderSettled(orderID, msg.sender, investorOrders[orderID].value, investorOrders[orderID].tokens);
+        emit OrderSettled(orderID, msg.sender, investorOrders[orderID].value, investorOrders[orderID].tokens);
     }
 
     function rejectOrder(string calldata orderID) external {
@@ -107,7 +107,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         totalPendingOrderAmount -= investorOrders[orderID].value;
         investorOrders[orderID].status = true;
 
-        emit orderRejected(orderID, msg.sender, investorOrders[orderID].value);
+        emit OrderRejected(orderID, msg.sender, investorOrders[orderID].value);
     }
 
     function batchSettlement(string[] calldata orderIDs,address fundFactory) public {
