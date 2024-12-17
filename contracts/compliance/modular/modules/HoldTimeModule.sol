@@ -11,6 +11,7 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
 
     /// Mapping for hold time time frames
     mapping(address => uint256) public holdTime;
+    mapping(address => bool) public isHoldTimeSet;
 
     event HoldTimeUpdated(address indexed compliance, uint256 holdTimeValue);
 
@@ -24,7 +25,10 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
 
     function setHoldTime(uint256 holdTime_) external onlyComplianceCall {
         require(holdTime_ > block.timestamp && holdTime_ !=0, "Hold Time cannot be less than current timestamp"); 
+        require(!isHoldTimeSet[msg.sender], "Reset of Hold Time not allowed");
+
         holdTime[msg.sender] = holdTime_;
+        isHoldTimeSet[msg.sender] = true;
 
         emit HoldTimeUpdated(msg.sender, holdTime_);
     }
@@ -89,6 +93,10 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
      */
     function isPlugAndPlay() external pure override returns (bool) {
         return false;
+    }
+
+    function isHoldtimeSet(address _compilance) external view returns(bool) {
+        return isHoldTimeSet[_compilance];
     }
 
     /**
