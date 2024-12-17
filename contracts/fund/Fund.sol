@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import 'contracts/fund/IFund.sol';
 import "contracts/fund/FundStorage.sol";
-import "contracts/factory/ITREXFactory.sol";
 import 'contracts/fund/ITKN.sol';
 import 'contracts/escrow/TransferHelper.sol';
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
