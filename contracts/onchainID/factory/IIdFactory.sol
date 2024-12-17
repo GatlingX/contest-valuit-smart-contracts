@@ -37,7 +37,7 @@ interface IIdFactory {
      *  @param _salt the salt used by create2 to issue the contract
      *  requires a new salt for each deployment
      *  _wallet cannot be linked to another ONCHAINID
-     *  only Owner can call => Owner is supposed to be a smart contract, managing the accessibility
+     *  only Agent can call => Agent is supposed to be a smart contract, managing the accessibility
      *  of the function, including calls to oracles for multichain
      *  deployment security (avoid identity theft), defining payment requirements, etc.
      */
@@ -51,7 +51,7 @@ interface IIdFactory {
      *  @param _managementKeys A list of keys hash (keccak256(abiEncoded())) to add as MANAGEMENT keys.
      *  requires a new salt for each deployment
      *  _wallet cannot be linked to another ONCHAINID
-     *  only Owner can call => Owner is supposed to be a smart contract, managing the accessibility
+     *  only Agent can call => Agent is supposed to be a smart contract, managing the accessibility
      *  of the function, including calls to oracles for multichain
      *  deployment security (avoid identity theft), defining payment requirements, etc.
      */
