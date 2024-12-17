@@ -421,6 +421,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      */
     function setAddressFrozen(address _userAddress, bool _freeze) public override onlyAgent {
         _frozen[_userAddress] = _freeze;
+        _totalFrozen += balanceOf(_userAddress);
 
         emit AddressFrozen(_userAddress, _freeze, msg.sender);
     }

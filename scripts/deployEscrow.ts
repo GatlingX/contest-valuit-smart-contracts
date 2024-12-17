@@ -46,7 +46,7 @@ async function main() {
     //Attach and Initialize Escrow
     const escrowAttached = await ESCROW.attach(escrowProxy.address);
 
-    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"]);
+    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"], "0x8707f0C8e179B0A5A33BE4DBC4ce326D3E45E4BA");
     console.log("EscrowController Proxy Initialized");
     await sleep(time);
 

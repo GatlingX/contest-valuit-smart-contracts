@@ -17,15 +17,15 @@ async function main() {
     let time = 5000;
 
 
-    // const verc20 = await VERC20.deploy();
-    // await verc20.deployed();
-    // console.log("verc20: ", verc20.address);
-    // await sleep(time);
+    const verc20 = await VERC20.deploy();
+    await verc20.deployed();
+    console.log("verc20: ", verc20.address);
+    await sleep(time);
 
-    // const implAuth = await IMPLAUTH.deploy(verc20.address);
-    // await implAuth.deployed();
-    // console.log("ImplementationAuthority (linked to VERC20): ", implAuth.address);
-    // await sleep(time);
+    const implAuth = await IMPLAUTH.deploy(verc20.address);
+    await implAuth.deployed();
+    console.log("ImplementationAuthority (linked to VERC20): ", implAuth.address);
+    await sleep(time);
 
     //deploy wrapper implementation
     const wrapper = await WRAPPER.deploy();
@@ -33,18 +33,18 @@ async function main() {
     console.log("Wrapper : ", wrapper.address);
     await sleep(time);
 
-    // const wrapperProxy = await WrapperProxy.deploy();
-    // await wrapperProxy.deployed();
-    // console.log("Wrapper Proxy: ", wrapperProxy.address);
-    // await sleep(time);
+    const wrapperProxy = await WrapperProxy.deploy();
+    await wrapperProxy.deployed();
+    console.log("Wrapper Proxy: ", wrapperProxy.address);
+    await sleep(time);
 
-    // await wrapperProxy.upgradeTo(wrapper.address);
-    // console.log("Proxy Upgraded")
+    await wrapperProxy.upgradeTo(wrapper.address);
+    console.log("Proxy Upgraded")
 
-    // const wrapperAttached = await WRAPPER.attach(wrapperProxy.address);
+    const wrapperAttached = await WRAPPER.attach(wrapperProxy.address);
 
-    // await wrapperAttached.init(implAuth.address,"0xdFc729Ea55333d91DE197D06b724804A143e1De4");
-    // console.log("Proxy Initialized");
+    await wrapperAttached.init(implAuth.address,"0x3229FC0C3552d2b7527Fe5B06c01e3BFD378Ff28");
+    console.log("Proxy Initialized");
 
 }
 main()
