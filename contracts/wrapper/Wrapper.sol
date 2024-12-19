@@ -26,25 +26,27 @@ contract Wrapper is WrapperStorage,Initializable{
         fundFactory = _fundFactory;
     }
 
-    function setOnchainID(address _onChainID) public {
-        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
+    modifier onlyOwner(address _factory) {
+        require(IFactory(_factory).owner() == msg.sender, "Only Owner can call");
+        _;
+    }
+
+
+    function setOnchainID(address _onChainID) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         wrapperOnchainID = _onChainID;
     }
 
-    function setFundFactory(address fundFactory_) public {
+    function setFundFactory(address fundFactory_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(fundFactory_ != address(0),"INVALID! Zero Address");
-        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
         fundFactory = fundFactory_;
     }
 
-    function setEscrowController(address escrowController_) public {
+    function setEscrowController(address escrowController_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(escrowController_ != address(0),"INVALID! Zero Address");
-        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
         escrowController = escrowController_;
     }
 
-    function setStableCoin(string calldata _stablecoin) public {
-        require(IFactory(IFundFactory(fundFactory).getMasterFactory()).owner() == msg.sender,"Only Owner can call");
+    function setStableCoin(string calldata _stablecoin) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
         stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
     }

@@ -203,7 +203,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
     )external {
         require(AgentRole(IFund(_fund).getToken()).isAgent(msg.sender), "Invalid Issuer");
         for(uint i=0; i < _address.length; i++){
-            IFund(_fund).shareDividend(_address[i], _dividend[i], _userIds[i], _dividendIds[i], stableCoin_);
+            IFund(_fund).shareDividend(_address[i], _dividend[i], _userIds[i], _dividendIds[i], stableCoin_, msg.sender);
             emit DividendDistributed(_address[i], _dividend[i], _userIds[i], _dividendIds[i]);
         }
     }

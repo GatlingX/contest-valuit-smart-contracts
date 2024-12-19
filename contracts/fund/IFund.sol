@@ -23,5 +23,6 @@ interface IFund {
                             uint256  _dividend,
                             string calldata _userIds,
                             string calldata _dividendIds,  
-                            address stableCoin_) external;
+                            address stableCoin_,
+                            address _agent) external;
 }

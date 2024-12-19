@@ -8,7 +8,7 @@ async function main() {
 
 
     await hre.run("verify:verify", {
-        address: "0xbC850857f0AfF613708097fA776319396d90A18D",
+        address: "0x689C8ff410C4bEf88DB997627f447fDeB91442F9",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/fund/Fund.sol:Fund",
@@ -16,15 +16,15 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0xBd36441C0fBbEc1335b14817E357d62f339F8dCb",
+        address: "0xbDF9bEbE582C113089CE91ea01d211B8fDD01452",
         //Path of your main contract.
-        constructorArguments:["0xbC850857f0AfF613708097fA776319396d90A18D"],
+        constructorArguments:["0xB8c220D64aDA3FC5637d035444BD03951537FDB8"],
         contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
     });
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x9A5FCb65b9A82b4fE54BBa3e191c4f9D3601118D",
+        address: "0x3be51D2Db859193aEA530f8b72B9bcDc38a67163",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/fund/EquityConfig.sol:EquityConfig",
@@ -32,15 +32,15 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x9b0c06f5ADC7e56393C13c9866903112838fF5C6",
+        address: "0xAB040145B5d93159Dc248A38A690F266A9e2c273",
         //Path of your main contract.
-        constructorArguments:["0x9A5FCb65b9A82b4fE54BBa3e191c4f9D3601118D"],
+        constructorArguments:["0x3be51D2Db859193aEA530f8b72B9bcDc38a67163"],
         contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
     });
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0xD8179f0c1f691618031934c247c236b3A11529Aa",
+        address: "0x31bb8736284A43EEE1F798B98634728D9f12f321",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/factory/FundFactory.sol:FundFactory",
@@ -48,7 +48,7 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0xdFc729Ea55333d91DE197D06b724804A143e1De4",
+        address: "0x1B7E0939F7a00697DEadB57770ae3731d68f0cd9",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/factory/FactoryProxy.sol:FactoryProxy",

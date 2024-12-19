@@ -25,6 +25,11 @@ contract Fund is IFund, Initializable, FundStorage {
         _setValues(_data);
     }
 
+    modifier onlyAgent(address _token) {
+        require(ITKN(_token).isAgent(msg.sender), "Only Token Agent can call");
+        _;
+    }
+
     function getNAV() view external returns (uint256){
         return NAVLatestPrice;
     }
@@ -45,20 +50,17 @@ contract Fund is IFund, Initializable, FundStorage {
         return offChainPrice;
     }
 
-    function setNAV(uint256 _latestNAV, string memory actionID) external returns(bool){
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setNAV(uint256 _latestNAV, string memory actionID) external onlyAgent(token) returns(bool){
         NAVLatestPrice = _latestNAV;
         emit NAVUpdated(_latestNAV, actionID);
         return true;
     }
 
-    function setAssetPriceOffChain(uint256 _newPrice) external {
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent(token){
         tokenPrice = _newPrice;
     }
 
-    function setOffChainPrice(bool _status) external{
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setOffChainPrice(bool _status) external onlyAgent(token){
         offChainPrice = _status;
     }
 
@@ -66,30 +68,27 @@ contract Fund is IFund, Initializable, FundStorage {
                             uint256 _dividend,
                             string calldata _userIds,
                             string calldata _dividendIds,  
-                            address stableCoin_) public {
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+                            address stableCoin_,
+                            address _agent) public onlyAgent(token){
         require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
     
-        TransferHelper.safeTransferFrom(stableCoin_, msg.sender, _address, _dividend);
+        TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, _dividend);
         dividendStatus[_dividendIds] = true;
         emit DividendDistributed(_address, _dividend, _userIds, _dividendIds);
         
     }
 
-    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external {
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent(token){
         minInvestment = _newMinInvestment;
         emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
     }
 
-    function setMaxInvestment(uint256 _newMaxInvestment, string memory actionID) external {
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setMaxInvestment(uint256 _newMaxInvestment, string memory actionID) external onlyAgent(token){
         maxInvestment = _newMaxInvestment;
         emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
     }
 
-    function setProjectedYield(uint256 _newProjectedYield, string memory actionID) external {
-        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
+    function setProjectedYield(uint256 _newProjectedYield, string memory actionID) external onlyAgent(token){
         projectedYield = _newProjectedYield;
         emit ProjectedYieldUpdated(_newProjectedYield, actionID);
     }

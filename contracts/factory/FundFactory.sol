@@ -20,29 +20,30 @@ contract FundFactory is
         adminWallet = msg.sender;
     }
 
+    modifier onlyOwner(address _factory) {
+        require(IFactory(_factory).owner() == msg.sender, "Only Owner can call");
+        _;
+    }
+
     function setImpl(
         address _implFund,
         address _implEquityConfig
-    ) public {
-        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+    ) public onlyOwner(masterFactory){
         implFund = _implFund;
         implEquityConfig = _implEquityConfig;
     }
 
-    function setMasterFactory(address factory_) external{
-        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set master Factory");
+    function setMasterFactory(address factory_) external onlyOwner(masterFactory){
         masterFactory = factory_;
     }
 
-    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external {
-        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external onlyOwner(masterFactory){
         require(_adminFee >= 0 && _adminFee <=2000, "Fee Out of Bound");
         adminFee[_token] = _adminFee;
         emit AdminFeeUpdated(_token, _adminFee, actionID, block.timestamp);
     }
 
-    function setAdminWallet(address _newWallet, string calldata _actionID) external {
-        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can set implementation");
+    function setAdminWallet(address _newWallet, string calldata _actionID) external onlyOwner(masterFactory){
         require(_newWallet != address(0),"Zero Address");
         adminWallet = _newWallet;
         emit AdminWalletUpdated(adminWallet, _actionID, block.timestamp);
@@ -52,9 +53,8 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) public{
+        string memory mappingValue) public onlyOwner(masterFactory){
 
-        require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
         require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
         _proxy =address(new ProxyV1());
@@ -82,9 +82,8 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) public{
+        string memory mappingValue) public onlyOwner(masterFactory){
 
-            require(IFactory(masterFactory).owner() == msg.sender,"Only Owner can create");
             require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
             _proxy =address(new ProxyV1());
