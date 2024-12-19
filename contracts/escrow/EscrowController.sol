@@ -139,6 +139,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchMintTokens(address _token, address[] calldata _toList, uint256[] calldata _amounts, string[] calldata orderIDs) external{
         require (AgentRole(_token).isAgent(msg.sender), "Invalid Issuer");
+        require(_toList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _toList.length; i++){
             IToken(_token).mint(_toList[i], _amounts[i]);
             emit TokensMinted(_toList[i], _amounts[i], orderIDs[i]);
@@ -147,6 +148,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchBurnTokens(address _token, address[] calldata _fromList, uint256[] calldata _amounts, string[] calldata orderIDs) external{
         require (AgentRole(_token).isAgent(msg.sender), "Invalid Issuer");
+        require(_fromList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _fromList.length; i++){
             IToken(_token).burn(_fromList[i], _amounts[i]);
             emit TokensBurned(_fromList[i], _amounts[i], orderIDs[i]);
@@ -155,6 +157,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external{
         require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+        require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).freezePartialTokens(_userAddresses[i], _amounts[i]);
             emit UserTokensFrozen(_userAddresses[i], _amounts[i], orderIDs[i]);
@@ -163,6 +166,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchUnFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external {
         require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+        require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).unfreezePartialTokens(_userAddresses[i], _amounts[i]);
             emit UserTokensUnFrozen(_userAddresses[i], _amounts[i], orderIDs[i]);
@@ -171,6 +175,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchForceTransferTokens(address _token, address[] calldata _userAddresses, address[] calldata _toAddresses,uint256[] calldata _amounts, string[] calldata orderIDs) external {
         require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+        require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).forcedTransfer(_userAddresses[i], _toAddresses[i], _amounts[i]);
             emit ForceTransferred(_userAddresses[i], _toAddresses[i], _amounts[i], orderIDs[i]);
@@ -179,6 +184,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
     function batchSetAddressFrozen(address _token, address[] calldata _userAddresses, bool[] calldata _freeze, string[] calldata actionIDs) external {
         require (AgentRole(_token).isAgent(msg.sender), "Invalid Agent");
+        require(_userAddresses.length == _freeze.length && _freeze.length == actionIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).setAddressFrozen(_userAddresses[i], _freeze[i]);
             emit UserAddressFrozen(_userAddresses[i], _freeze[i], actionIDs[i]);
@@ -194,6 +200,9 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
     ) external {
         IIdentityRegistry ir = IToken(_token).identityRegistry();
         require(AgentRole(address(ir)).isAgent(msg.sender),"Not an Identity Registry Agent");
+        require(_userAddress.length == _onchainID.length &&
+             _onchainID.length == _country.length && 
+             _country.length == _userIDs.length, "Array length mismatch");
         for(uint i=0; i < _userAddress.length; i++){
             IIdentityRegistry(ir).registerIdentity(_userAddress[i], _onchainID[i], _country[i]);
             emit UserIdentityRegistered(_userAddress[i], address(_onchainID[i]), _userIDs[i]);
@@ -209,6 +218,9 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         address stableCoin_
     )external {
         require(AgentRole(IFund(_fund).getToken()).isAgent(msg.sender), "Invalid Issuer");
+        require(_address.length == _dividend.length &&
+             _dividend.length == _userIds.length && 
+             _userIds.length == _dividendIds.length, "Array length mismatch");
         for(uint i=0; i < _address.length; i++){
             IFund(_fund).shareDividend(_address[i], _dividend[i], _userIds[i], _dividendIds[i], stableCoin_, msg.sender);
             emit DividendDistributed(_address[i], _dividend[i], _userIds[i], _dividendIds[i]);
