@@ -3,6 +3,12 @@
 pragma solidity 0.8.17;
 
 contract MCStorage {
+
+    event WrapperUpdated(
+        address Wrapper,
+        bool _status
+    );
+
     /// token linked to the compliance contract
     address internal _tokenBound;
 

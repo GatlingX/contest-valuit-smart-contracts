@@ -31,10 +31,12 @@ contract FundFactory is
     ) public onlyOwner(masterFactory){
         implFund = _implFund;
         implEquityConfig = _implEquityConfig;
+        emit ImplementationsUpdated(implFund, implEquityConfig);
     }
 
     function setMasterFactory(address factory_) external onlyOwner(masterFactory){
         masterFactory = factory_;
+        emit MasterFactoryUpdated(masterFactory);
     }
 
     function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external onlyOwner(masterFactory){

@@ -33,6 +33,15 @@ contract FundFactoryStorage {
         uint256 timeStamp
     );
 
+    event ImplementationsUpdated(
+        address FundImplementation,
+        address EquityConfigImplementation
+    );
+
+    event MasterFactoryUpdated(
+        address MasterFactory
+    );
+
     mapping(address => uint16) internal adminFee;
     mapping(address => address) internal fundLinked;
     mapping(address => uint8) internal assetType;

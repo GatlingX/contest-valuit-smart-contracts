@@ -163,6 +163,7 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
         require(_wrapper != address(0),"Zero Address");
         wrapper = _wrapper;
         wrapperSet = _enabled;
+        emit WrapperUpdated(_wrapper, _enabled);
     }
 
     function getWrapper() external view override returns (address){

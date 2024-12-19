@@ -38,4 +38,21 @@ contract WrapperStorage {
         uint256 timestamp
     );
 
+    event OnChainIDUpdated(
+        address _newID
+    );
+
+    event FundFactoryUpdated(
+        address fundFactory
+    );
+
+    event EscrowControllerUpdated(
+        address escrowController
+    );
+
+    event StableCoinUpdated(
+        address stableCoinAddress,
+        string stableCoin
+    );
+
 }

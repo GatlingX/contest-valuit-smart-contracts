@@ -34,21 +34,25 @@ contract Wrapper is WrapperStorage,Initializable{
 
     function setOnchainID(address _onChainID) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         wrapperOnchainID = _onChainID;
+        emit OnChainIDUpdated(_onChainID);
     }
 
     function setFundFactory(address fundFactory_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(fundFactory_ != address(0),"INVALID! Zero Address");
         fundFactory = fundFactory_;
+        emit FundFactoryUpdated(fundFactory_);
     }
 
     function setEscrowController(address escrowController_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(escrowController_ != address(0),"INVALID! Zero Address");
         escrowController = escrowController_;
+        emit EscrowControllerUpdated(escrowController_);
     }
 
     function setStableCoin(string calldata _stablecoin) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
         stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
+        emit StableCoinUpdated(stableCoin, _stablecoin);
     }
 
     function createWrapToken(address _erc3643, uint16 _countryCode) public {
