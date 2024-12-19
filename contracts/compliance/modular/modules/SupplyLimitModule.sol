@@ -31,7 +31,6 @@ contract SupplyLimitModule is AbstractModuleUpgradeable {
 
     /**
      *  @dev sets supply limit.
-     *  Supply limit has to be smaller or equal to the actual supply.
      *  @param _limit max amount of tokens to be created
      *  Only the owner of the Compliance smart contract can call this function
      *  emits an `SupplyLimitSet` event
