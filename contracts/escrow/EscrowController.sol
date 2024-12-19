@@ -64,8 +64,8 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
         receivedAmount[orderID] = _amount;
         orderCreated[msg.sender][orderID] = true;
-        pendingOrderAmount[investorOrders[orderID].coin] += investorOrders[orderID].value;
-        totalPendingOrderAmount += investorOrders[orderID].value;
+        pendingOrderAmount[investorOrders[orderID].coin] += _amount;
+        totalPendingOrderAmount += _amount;
 
         emit AmountReceived(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
@@ -77,36 +77,42 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
 
         uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
+        uint256 orderValue = investorOrders[orderID].value;
+        uint256 orderTokens = investorOrders[orderID].tokens;
+
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
-                                    investorOrders[orderID].value - ((investorOrders[orderID].value * adminFee)/10000));
+                                    orderValue - ((orderValue * adminFee)/10000));
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     IFundFactory(fundFactory).getAdminWallet(), 
                                     (investorOrders[orderID].value * adminFee)/10000);
         
-        IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, investorOrders[orderID].tokens);
+        IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
 
-        pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
-        totalPendingOrderAmount -= investorOrders[orderID].value;
+        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
+        totalPendingOrderAmount -= orderValue;
         investorOrders[orderID].status = true;
 
-        emit OrderSettled(orderID, msg.sender, investorOrders[orderID].value, investorOrders[orderID].tokens);
+        emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
     }
 
     function rejectOrder(string calldata orderID) external {
         require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
         require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Executed");
+
+        uint256 orderValue = investorOrders[orderID].value;
+
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     investorOrders[orderID].investor, 
-                                    investorOrders[orderID].value);
-        pendingOrderAmount[investorOrders[orderID].coin] -= investorOrders[orderID].value;
-        totalPendingOrderAmount -= investorOrders[orderID].value;
+                                    orderValue);
+        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
+        totalPendingOrderAmount -= orderValue;
         investorOrders[orderID].status = true;
 
-        emit OrderRejected(orderID, msg.sender, investorOrders[orderID].value);
+        emit OrderRejected(orderID, msg.sender, orderValue);
     }
 
     function batchSettlement(string[] calldata orderIDs,address fundFactory) public {
