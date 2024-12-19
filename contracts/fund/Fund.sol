@@ -69,7 +69,7 @@ contract Fund is IFund, Initializable, FundStorage {
                             string calldata _userIds,
                             string calldata _dividendIds,  
                             address stableCoin_,
-                            address _agent) public onlyAgent(token){
+                            address _agent) external onlyAgent(token){
         require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
     
         TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, _dividend);

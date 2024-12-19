@@ -20,7 +20,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract Wrapper is WrapperStorage,Initializable{
 
-    function init(address _erc20Impl, address _fundFactory) public initializer{
+    function init(address _erc20Impl, address _fundFactory) external initializer{
         require(_erc20Impl != address(0) && _fundFactory != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
         fundFactory = _fundFactory;
@@ -32,30 +32,30 @@ contract Wrapper is WrapperStorage,Initializable{
     }
 
 
-    function setOnchainID(address _onChainID) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setOnchainID(address _onChainID) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         wrapperOnchainID = _onChainID;
         emit OnChainIDUpdated(_onChainID);
     }
 
-    function setFundFactory(address fundFactory_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setFundFactory(address fundFactory_) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(fundFactory_ != address(0),"INVALID! Zero Address");
         fundFactory = fundFactory_;
         emit FundFactoryUpdated(fundFactory_);
     }
 
-    function setEscrowController(address escrowController_) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setEscrowController(address escrowController_) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(escrowController_ != address(0),"INVALID! Zero Address");
         escrowController = escrowController_;
         emit EscrowControllerUpdated(escrowController_);
     }
 
-    function setStableCoin(string calldata _stablecoin) public onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setStableCoin(string calldata _stablecoin) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
         require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
         stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
         emit StableCoinUpdated(stableCoin, _stablecoin);
     }
 
-    function createWrapToken(address _erc3643, uint16 _countryCode) public {
+    function createWrapToken(address _erc3643, uint16 _countryCode) external {
         require(_erc3643 != address(0),"INVALID! Zero Address");
         require(!isWrapped[_erc3643], "Token already wrapped");
         require (AgentRole(_erc3643).isAgent(msg.sender), "Invalid Creator");
@@ -91,7 +91,7 @@ contract Wrapper is WrapperStorage,Initializable{
         emit WrapTokenCreated(_erc3643,_proxy);
     }
 
-    function toERC20(address _erc3643, uint256 _amount) public {
+    function toERC20(address _erc3643, uint256 _amount) external {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
         require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
         require(IModularCompliance(IToken(_erc3643).compliance()).getWrapper() == address(this), "Invalid wrapper");
@@ -117,7 +117,7 @@ contract Wrapper is WrapperStorage,Initializable{
             emit TokenLocked(_erc3643,getERC20[_erc3643], _amount, taxAmount, block.timestamp);
     }
 
-    function toERC3643(address _erc20, uint256 _amount) public {
+    function toERC3643(address _erc20, uint256 _amount) external {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
         uint256 taxAmount = _takeTax(

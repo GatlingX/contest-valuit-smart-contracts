@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
-    function init(address [] memory  stableCoin_, address _masterFactory) public initializer {
+    function init(address [] memory  stableCoin_, address _masterFactory) external initializer {
         stablecoin["usdc"] = stableCoin_[0];
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
@@ -117,13 +117,13 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit OrderRejected(orderID, msg.sender, orderValue);
     }
 
-    function batchSettlement(string[] calldata orderIDs,address fundFactory) public {
+    function batchSettlement(string[] calldata orderIDs,address fundFactory) external {
         for (uint256 i = 0; i < orderIDs.length; i++) {
             settlement(orderIDs[i], fundFactory);
         }
     }
 
-    function setStableCoin(string calldata coin, address _stablecoin) public onlyOwner{
+    function setStableCoin(string calldata coin, address _stablecoin) external onlyOwner{
         require(_stablecoin != address(0),"Zero Address");
         require(stablecoin[coin] == address(0), "Stablecoin in use, update disallowed");
         stablecoin[coin] = _stablecoin;
@@ -132,7 +132,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit StableCoinUpdated(coin, _stablecoin);
     }
 
-    function setMasterFactory(address _masterFactory) public onlyOwner{
+    function setMasterFactory(address _masterFactory) external onlyOwner{
         require(_masterFactory != address(0), "Invalid Zero Address");
         masterFactory = _masterFactory;
     }

@@ -15,7 +15,7 @@ contract FundFactory is
     FundFactoryStorage,
     Initializable
 {
-    function init(address _factory) public initializer {
+    function init(address _factory) external initializer {
         masterFactory = _factory;
         adminWallet = msg.sender;
     }
@@ -28,7 +28,7 @@ contract FundFactory is
     function setImpl(
         address _implFund,
         address _implEquityConfig
-    ) public onlyOwner(masterFactory){
+    ) external onlyOwner(masterFactory){
         implFund = _implFund;
         implEquityConfig = _implEquityConfig;
         emit ImplementationsUpdated(implFund, implEquityConfig);
@@ -55,7 +55,7 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) public onlyOwner(masterFactory){
+        string memory mappingValue) external onlyOwner(masterFactory){
 
         require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
@@ -84,7 +84,7 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) public onlyOwner(masterFactory){
+        string memory mappingValue) external onlyOwner(masterFactory){
 
             require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 

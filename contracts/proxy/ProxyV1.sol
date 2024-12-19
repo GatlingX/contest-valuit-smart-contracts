@@ -82,7 +82,7 @@ contract ProxyV1{
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferProxyOwnership(address newOwner) public onlyProxyOwner {
+    function transferProxyOwnership(address newOwner) external onlyProxyOwner {
         require(newOwner != address(0), 'OwnedUpgradeabilityProxy: INVALID');
         emit ProxyOwnershipTransferred(proxyOwner(), newOwner);
         setUpgradeabilityOwner(newOwner);
@@ -92,7 +92,7 @@ contract ProxyV1{
      * @dev Allows the proxy owner to upgrade the current version of the proxy.
      * @param implementation representing the address of the new implementation to be set.
      */
-    function upgradeTo(address newImplementation) public onlyProxyOwner {
+    function upgradeTo(address newImplementation) external onlyProxyOwner {
         _upgradeTo(newImplementation);
     }
 
@@ -103,7 +103,7 @@ contract ProxyV1{
      * @param data represents the msg.data to bet sent in the low level call. This parameter may include the function
      * signature of the implementation to be called with the needed payload
      */
-    function upgradeToAndCall(address newImplementation, bytes memory data) payable public onlyProxyOwner {
+    function upgradeToAndCall(address newImplementation, bytes memory data) payable external onlyProxyOwner {
         _upgradeTo(newImplementation);
         (bool success, ) = address(this).call{ value: msg.value }(data);
         require(success, "OwnedUpgradeabilityProxy: INVALID");
