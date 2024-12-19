@@ -60,7 +60,7 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
     function moduleCheck(
         address _from,
         address /*_to*/,
-        uint256 _value,
+        uint256 /*_value*/,
         address _compliance
     ) external view override returns (bool) {
         if (_from == address(0)) {
@@ -69,7 +69,7 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
         else if (_isTokenAgent(_compliance, _from)) {
             return true;
         }
-        else if(block.timestamp < holdTime[msg.sender]){
+        else if(block.timestamp < holdTime[_compliance]){
             return false;
         }
         return true;
