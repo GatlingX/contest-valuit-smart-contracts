@@ -248,12 +248,14 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     ) external override onlyAgent returns (bool) {
         require(balanceOf(_lostWallet) != 0, "no tokens to recover");
         IIdentity _onchainID = IIdentity(_investorOnchainID);
-        bytes32 _key = keccak256(abi.encode(_newWallet));
-        if (_onchainID.keyHasPurpose(_key, 1)) {
-            uint256 investorTokens = balanceOf(_lostWallet);
-            uint256 frozenTokens = _frozenTokens[_lostWallet];
-            _tokenIdentityRegistry.registerIdentity(_newWallet, _onchainID, _tokenIdentityRegistry.investorCountry
-                (_lostWallet));
+            if (!_tokenIdentityRegistry.contains(_newWallet)) {
+                uint256 investorTokens = balanceOf(_lostWallet);
+                uint256 frozenTokens = _frozenTokens[_lostWallet];
+                _tokenIdentityRegistry.registerIdentity(
+                    _newWallet,
+                    _onchainID,
+                    _tokenIdentityRegistry.investorCountry(_lostWallet)
+                );
             forcedTransfer(_lostWallet, _newWallet, investorTokens);
             if (frozenTokens > 0) {
                 freezePartialTokens(_newWallet, frozenTokens);
