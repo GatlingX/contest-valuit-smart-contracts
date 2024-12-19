@@ -17,6 +17,10 @@ contract SupplyLimitModule is AbstractModuleUpgradeable {
      */
     event SupplyLimitSet(address _compliance, uint256 _limit);
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @dev initializes the contract and sets the initial state.
      * @notice This function should only be called once during the contract deployment.

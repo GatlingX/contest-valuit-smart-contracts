@@ -24,6 +24,10 @@ contract CountryRestrictModule is AbstractModuleUpgradeable {
      */
     event RemovedRestrictedCountry(address indexed _compliance, uint16 _country);
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @dev initializes the contract and sets the initial state.
      * @notice This function should only be called once during the contract deployment.
