@@ -82,6 +82,10 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         uint256 adminFeeAmount = (orderValue * adminFee) / FEE_DENOMINATOR;
         uint256 netAmount = orderValue - adminFeeAmount;
 
+        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
+        totalPendingOrderAmount -= orderValue;
+        investorOrders[orderID].status = true;
+
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
                                     netAmount);
@@ -91,10 +95,6 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
                                     adminFeeAmount);
         
         IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
-
-        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
-        totalPendingOrderAmount -= orderValue;
-        investorOrders[orderID].status = true;
 
         emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
     }
@@ -106,12 +106,13 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
 
         uint256 orderValue = investorOrders[orderID].value;
 
-        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    investorOrders[orderID].investor, 
-                                    orderValue);
         pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
         totalPendingOrderAmount -= orderValue;
         investorOrders[orderID].status = true;
+
+        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
+                                    investorOrders[orderID].investor, 
+                                    orderValue);
 
         emit OrderRejected(orderID, msg.sender, orderValue);
     }
