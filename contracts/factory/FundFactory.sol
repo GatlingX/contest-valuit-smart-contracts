@@ -57,7 +57,7 @@ contract FundFactory is
 
         require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
-        _proxy =address(new ProxyV1());
+        address _proxy =address(new ProxyV1());
 
         (bool success, ) = _proxy.call(
                 abi.encodeWithSelector(0x3659cfe6, implFund)
@@ -86,7 +86,7 @@ contract FundFactory is
 
             require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
-            _proxy =address(new ProxyV1());
+            address _proxy =address(new ProxyV1());
 
             (bool success, ) = _proxy.call(
                 abi.encodeWithSelector(0x3659cfe6, implEquityConfig)

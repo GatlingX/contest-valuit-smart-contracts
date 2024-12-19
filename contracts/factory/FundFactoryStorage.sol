@@ -41,7 +41,6 @@ contract FundFactoryStorage {
     address public masterFactory;
     address public implFund;
     address public implEquityConfig;
-    address internal _proxy;
     address internal adminWallet;
     
 }
