@@ -10,7 +10,6 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/factory/IFundFactory.sol";
 import "contracts/factory/ITREXFactory.sol";
 import "contracts/fund/IFund.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract EscrowController is OwnableUpgradeable, EscrowStorage{
@@ -32,14 +31,14 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         uint128 _amount
     ) external onlyOwner {
         if(isStableCoin[_tokenAddr]){
-            SafeERC20.safeTransfer(
-                IERC20(_tokenAddr),
+            TransferHelper.safeTransfer(
+                _tokenAddr,
                 _to,
                 IToken(_tokenAddr).balanceOf(address(this)) - pendingOrderAmount[stableCoinName[_tokenAddr]]
             );
         } else{
-                SafeERC20.safeTransfer(
-                    IERC20(_tokenAddr),
+                TransferHelper.safeTransfer(
+                    _tokenAddr,
                     _to,
                     _amount
                 );
