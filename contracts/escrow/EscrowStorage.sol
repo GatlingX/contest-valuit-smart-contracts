@@ -111,6 +111,7 @@ contract EscrowStorage {
     }
     
     uint256 public totalPendingOrderAmount;
+    uint16 public FEE_DENOMINATOR = 10000;
 
     address public masterFactory;
 

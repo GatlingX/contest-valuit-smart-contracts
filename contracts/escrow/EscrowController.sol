@@ -79,15 +79,16 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
         uint256 orderValue = investorOrders[orderID].value;
         uint256 orderTokens = investorOrders[orderID].tokens;
-
+        uint256 adminFeeAmount = (orderValue * adminFee) / FEE_DENOMINATOR;
+        uint256 netAmount = orderValue - adminFeeAmount;
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     msg.sender, 
-                                    orderValue - ((orderValue * adminFee)/10000));
+                                    netAmount);
 
         TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
                                     IFundFactory(fundFactory).getAdminWallet(), 
-                                    (investorOrders[orderID].value * adminFee)/10000);
+                                    adminFeeAmount);
         
         IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
 
