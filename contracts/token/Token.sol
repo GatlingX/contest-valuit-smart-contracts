@@ -164,6 +164,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     ) external override whenNotPaused returns (bool) {
         require(!_frozen[_to] && !_frozen[_from], "wallet is frozen");
         require(_amount <= balanceOf(_from) - (_frozenTokens[_from]), "Insufficient Balance");
+        require(_allowances[_from][msg.sender] >= _amount, "Allowance exceeded");
         if (_tokenIdentityRegistry.isVerified(_to) && _tokenCompliance.canTransfer(_from, _to, _amount)) {
             _approve(_from, msg.sender, _allowances[_from][msg.sender] - (_amount));
             _transfer(_from, _to, _amount);
