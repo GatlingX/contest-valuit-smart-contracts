@@ -28,7 +28,7 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
     }
 
     function setHoldTime(uint256 holdTime_) external onlyComplianceCall {
-        require(holdTime_ > block.timestamp && holdTime_ !=0, "Hold Time cannot be less than current timestamp"); 
+        require(holdTime_ > block.timestamp, "Hold Time cannot be less than current timestamp"); 
         require(!isHoldTimeSet[msg.sender], "Reset of Hold Time not allowed");
 
         holdTime[msg.sender] = holdTime_;
