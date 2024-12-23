@@ -4,6 +4,31 @@ pragma solidity 0.8.17;
 
 interface IEquityConfig {
 
+    event ValuationUpdated(
+        uint256 newValuation,
+        string actionID
+    );
+
+    event MinimumInvestmentUpdated(
+        uint256 newMinimumInvestment,
+        string actionID
+    );
+
+    event MaximumInvestmentUpdated(
+        uint256 newMaximumInvestment,
+        string actionID
+    );
+
+    event ProjectedYieldUpdated(
+        uint256 newProjectedYield,
+        string actionID
+    );
+
+    event DERatioUpdated(
+        string newDERatio,
+        string actionID
+    );
+
     function getCurrentValuation() external view returns(uint256);
 
     function getMinInvestment() external view returns(uint256);

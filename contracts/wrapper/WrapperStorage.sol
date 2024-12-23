@@ -16,44 +16,6 @@ contract WrapperStorage {
     address public fundFactory;
     address public escrowController;
     address public stableCoin;
-    
-    event WrapTokenCreated(
-        address _erc3643,
-        address _erc20
-    );
-
-    event TokenLocked(
-        address _erc3643,
-        address _erc20,
-        uint256 _amount,
-        uint256 _tax,
-        uint256 timestamp
-    );
-
-    event TokenUnlocked(
-        address _erc3643,
-        address _erc20,
-        uint256 _amount,
-        uint256 _tax,
-        uint256 timestamp
-    );
-
-    event OnChainIDUpdated(
-        address _newID
-    );
-
-    event FundFactoryUpdated(
-        address fundFactory
-    );
-
-    event EscrowControllerUpdated(
-        address escrowController
-    );
-
-    event StableCoinUpdated(
-        address stableCoinAddress,
-        string stableCoin
-    );
 
     /**
      * @dev Storage gap to reserve space for future upgrades.

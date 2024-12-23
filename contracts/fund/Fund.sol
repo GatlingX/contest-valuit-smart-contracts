@@ -3,13 +3,13 @@
 pragma solidity 0.8.17;
 
 import 'contracts/fund/IFund.sol';
-import "contracts/fund/FundStorage.sol";
 import 'contracts/fund/ITKN.sol';
 import 'contracts/escrow/TransferHelper.sol';
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "contracts/fund/FundStorage.sol";
 
 
-contract Fund is IFund, Initializable, FundStorage {
+contract Fund is IFund, Initializable, FundStorage{
 
     function init(address _token, bytes memory _data) external initializer{
         factory = address(msg.sender);

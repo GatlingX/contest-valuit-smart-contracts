@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "contracts/wrapper/WrapperStorage.sol";
+
 import "../roles/AgentRole.sol";
 import "contracts/proxy/ProxyV1.sol";
 import "contracts/token/IToken.sol";
@@ -15,10 +15,12 @@ import "contracts/escrow/IEscrowController.sol";
 import "contracts/fund/IFund.sol";
 import "contracts/fund/IEquityConfig.sol";
 import "contracts/compliance/modular/IModularCompliance.sol";
+import "contracts/wrapper/IWrapper.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "contracts/wrapper/WrapperStorage.sol";
 
 
-contract Wrapper is WrapperStorage,Initializable{
+contract Wrapper is WrapperStorage,Initializable, IWrapper{
 
     function init(address _erc20Impl, address _fundFactory) external initializer{
         require(_erc20Impl != address(0) && _fundFactory != address(0),"INVALID! Zero Address");

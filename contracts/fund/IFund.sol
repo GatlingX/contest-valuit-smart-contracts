@@ -4,6 +4,33 @@ pragma solidity 0.8.17;
 
 interface IFund {
 
+    event NAVUpdated(
+        uint256 latestNAV,
+        string actionID
+    );
+
+    event MinimumInvestmentUpdated(
+        uint256 newMinimumInvestment,
+        string actionID
+    );
+
+    event MaximumInvestmentUpdated(
+        uint256 newMaximumInvestment,
+        string actionID
+    );
+
+    event ProjectedYieldUpdated(
+        uint256 newProjectedYield,
+        string actionID
+    );
+
+    event DividendDistributed(
+        address investor,
+        uint256 amount,
+        string _userID,
+        string _dividendID
+    );
+
     /**
     @dev Retrieves the latest Net Asset Value (NAV) price from the APIConsumer contract.
     Updates the NAVLatestPrice variable with the retrieved value.

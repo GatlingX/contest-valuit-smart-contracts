@@ -4,44 +4,6 @@ pragma solidity 0.8.17;
 
 contract FundFactoryStorage {
 
-    event FundCreated(
-        address _FundProxy,
-        string mappingValue
-    );
-
-    event EquityConfigCreated(
-        address _EquityConfigProxy,
-        string mappingValue
-    );
-
-    event Whitelisted(
-        address UserAddress,
-        address OfferingAddress,
-        string salt
-    );
-
-    event AdminFeeUpdated(
-        address token,
-        uint16 newFee,
-        string id,
-        uint256 timeStamp
-    );
-
-    event AdminWalletUpdated(
-        address newAdminWallet,
-        string id,
-        uint256 timeStamp
-    );
-
-    event ImplementationsUpdated(
-        address FundImplementation,
-        address EquityConfigImplementation
-    );
-
-    event MasterFactoryUpdated(
-        address MasterFactory
-    );
-
     mapping(address => uint16) internal adminFee;
     mapping(address => address) internal fundLinked;
     mapping(address => uint8) internal assetType;

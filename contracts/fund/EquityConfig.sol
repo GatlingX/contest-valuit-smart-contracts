@@ -3,12 +3,13 @@
 
 pragma solidity 0.8.17;
 
-import "contracts/fund/EquityConfigStorage.sol";
-import 'contracts/fund/ITKN.sol';
+import "contracts/fund/ITKN.sol";
+import "contracts/fund/IEquityConfig.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "contracts/fund/EquityConfigStorage.sol";
 
 
-contract EquityConfig is Initializable, EquityConfigStorage {
+contract EquityConfig is Initializable, EquityConfigStorage, IEquityConfig {
 
     function init(address _token, bytes memory _data) external initializer{
         factory = address(msg.sender);

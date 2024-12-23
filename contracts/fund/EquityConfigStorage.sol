@@ -7,31 +7,6 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 
 contract EquityConfigStorage {
 
-    event ValuationUpdated(
-        uint256 newValuation,
-        string actionID
-    );
-
-    event MinimumInvestmentUpdated(
-        uint256 newMinimumInvestment,
-        string actionID
-    );
-
-    event MaximumInvestmentUpdated(
-        uint256 newMaximumInvestment,
-        string actionID
-    );
-
-    event ProjectedYieldUpdated(
-        uint256 newProjectedYield,
-        string actionID
-    );
-
-    event DERatioUpdated(
-        string newDERatio,
-        string actionID
-    );
-
     string public fundName;
     string internal DERatio;
 

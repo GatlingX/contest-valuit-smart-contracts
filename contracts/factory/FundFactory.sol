@@ -1,18 +1,19 @@
 //SPDX-License-Identifier: GPL-3.0
 
 import "contracts/proxy/ProxyV1.sol";
-import "contracts/factory/FundFactoryStorage.sol";
 import "contracts/fund/IFactory.sol";
 import "contracts/token/IToken.sol";
+import "contracts/factory/IFundFactory.sol";
 import "contracts/registry/interface/IIdentityRegistry.sol";
 import "../roles/AgentRole.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "contracts/factory/FundFactoryStorage.sol";
 
 
 pragma solidity 0.8.17;
 
 contract FundFactory is
-    FundFactoryStorage,
+    FundFactoryStorage, IFundFactory,
     Initializable
 {
     function init(address _factory) external initializer {

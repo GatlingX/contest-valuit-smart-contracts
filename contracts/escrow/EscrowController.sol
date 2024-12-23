@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.17;
 
-import "contracts/escrow/EscrowStorage.sol";
 import "../roles/AgentRole.sol";
 import "contracts/token/IToken.sol";
 import "contracts/escrow/TransferHelper.sol";
@@ -10,9 +9,11 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/factory/IFundFactory.sol";
 import "contracts/factory/ITREXFactory.sol";
 import "contracts/fund/IFund.sol";
+import "contracts/escrow/IEscrowController.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "contracts/escrow/EscrowStorage.sol";
 
-contract EscrowController is OwnableUpgradeable, EscrowStorage{
+contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowController{
 
     function init(address [] memory  stableCoin_, address _masterFactory) external initializer {
         stablecoin["usdc"] = stableCoin_[0];
