@@ -26,30 +26,29 @@ contract Wrapper is WrapperStorage,Initializable{
         fundFactory = _fundFactory;
     }
 
-    modifier onlyOwner(address _factory) {
-        require(IFactory(_factory).owner() == msg.sender, "Only Owner can call");
+    modifier onlyOwner() {
+        require(getFactoryOwner() == msg.sender, "Only Owner can call");
         _;
     }
 
-
-    function setOnchainID(address _onChainID) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setOnchainID(address _onChainID) external onlyOwner{
         wrapperOnchainID = _onChainID;
         emit OnChainIDUpdated(_onChainID);
     }
 
-    function setFundFactory(address fundFactory_) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setFundFactory(address fundFactory_) external onlyOwner{
         require(fundFactory_ != address(0),"INVALID! Zero Address");
         fundFactory = fundFactory_;
         emit FundFactoryUpdated(fundFactory_);
     }
 
-    function setEscrowController(address escrowController_) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setEscrowController(address escrowController_) external onlyOwner{
         require(escrowController_ != address(0),"INVALID! Zero Address");
         escrowController = escrowController_;
         emit EscrowControllerUpdated(escrowController_);
     }
 
-    function setStableCoin(string calldata _stablecoin) external onlyOwner((IFundFactory(fundFactory).getMasterFactory())){
+    function setStableCoin(string calldata _stablecoin) external onlyOwner{
         require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
         stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
         emit StableCoinUpdated(stableCoin, _stablecoin);
@@ -179,5 +178,10 @@ contract Wrapper is WrapperStorage,Initializable{
             TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
             return taxAmount;
         }
+    }
+
+    // Helper function to retrieve the factory owner
+    function getFactoryOwner() internal view returns (address) {
+        return IFactory(IFundFactory(fundFactory).getMasterFactory()).owner();
     }
 }

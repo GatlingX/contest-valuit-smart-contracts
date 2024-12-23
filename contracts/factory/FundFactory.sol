@@ -20,32 +20,32 @@ contract FundFactory is
         adminWallet = msg.sender;
     }
 
-    modifier onlyOwner(address _factory) {
-        require(IFactory(_factory).owner() == msg.sender, "Only Owner can call");
+    modifier onlyOwner() {
+        require(IFactory(masterFactory).owner() == msg.sender, "Only Owner can call");
         _;
     }
 
     function setImpl(
         address _implFund,
         address _implEquityConfig
-    ) external onlyOwner(masterFactory){
+    ) external onlyOwner{
         implFund = _implFund;
         implEquityConfig = _implEquityConfig;
         emit ImplementationsUpdated(implFund, implEquityConfig);
     }
 
-    function setMasterFactory(address factory_) external onlyOwner(masterFactory){
+    function setMasterFactory(address factory_) external onlyOwner{
         masterFactory = factory_;
         emit MasterFactoryUpdated(masterFactory);
     }
 
-    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external onlyOwner(masterFactory){
+    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external onlyOwner{
         require(_adminFee >= 0 && _adminFee <=2000, "Fee Out of Bound");
         adminFee[_token] = _adminFee;
         emit AdminFeeUpdated(_token, _adminFee, actionID, block.timestamp);
     }
 
-    function setAdminWallet(address _newWallet, string calldata _actionID) external onlyOwner(masterFactory){
+    function setAdminWallet(address _newWallet, string calldata _actionID) external onlyOwner{
         require(_newWallet != address(0),"Zero Address");
         adminWallet = _newWallet;
         emit AdminWalletUpdated(adminWallet, _actionID, block.timestamp);
@@ -55,7 +55,7 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) external onlyOwner(masterFactory){
+        string memory mappingValue) external onlyOwner{
 
         require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 
@@ -84,7 +84,7 @@ contract FundFactory is
         bytes memory _data, 
         uint16 _adminFee,
         uint256 _totalTokenSupply,
-        string memory mappingValue) external onlyOwner(masterFactory){
+        string memory mappingValue) external onlyOwner{
 
             require(fundLinked[_token] == address(0), "Token already linked to a Fund or Equity");
 

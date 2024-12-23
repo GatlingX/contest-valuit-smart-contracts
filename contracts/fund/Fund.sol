@@ -25,8 +25,8 @@ contract Fund is IFund, Initializable, FundStorage {
         _setValues(_data);
     }
 
-    modifier onlyAgent(address _token) {
-        require(ITKN(_token).isAgent(msg.sender), "Only Token Agent can call");
+    modifier onlyAgent() {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         _;
     }
 
@@ -50,17 +50,17 @@ contract Fund is IFund, Initializable, FundStorage {
         return offChainPrice;
     }
 
-    function setNAV(uint256 _latestNAV, string memory actionID) external onlyAgent(token) returns(bool){
+    function setNAV(uint256 _latestNAV, string memory actionID) external onlyAgent returns(bool){
         NAVLatestPrice = _latestNAV;
         emit NAVUpdated(_latestNAV, actionID);
         return true;
     }
 
-    function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent(token){
+    function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent{
         tokenPrice = _newPrice;
     }
 
-    function setOffChainPrice(bool _status) external onlyAgent(token){
+    function setOffChainPrice(bool _status) external onlyAgent{
         offChainPrice = _status;
     }
 
@@ -69,7 +69,7 @@ contract Fund is IFund, Initializable, FundStorage {
                             string calldata _userIds,
                             string calldata _dividendIds,  
                             address stableCoin_,
-                            address _agent) external onlyAgent(token){
+                            address _agent) external onlyAgent{
         require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
     
         TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, _dividend);
@@ -78,17 +78,17 @@ contract Fund is IFund, Initializable, FundStorage {
         
     }
 
-    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent(token){
+    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent{
         minInvestment = _newMinInvestment;
         emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
     }
 
-    function setMaxInvestment(uint256 _newMaxInvestment, string memory actionID) external onlyAgent(token){
+    function setMaxInvestment(uint256 _newMaxInvestment, string memory actionID) external onlyAgent{
         maxInvestment = _newMaxInvestment;
         emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
     }
 
-    function setProjectedYield(uint256 _newProjectedYield, string memory actionID) external onlyAgent(token){
+    function setProjectedYield(uint256 _newProjectedYield, string memory actionID) external onlyAgent{
         projectedYield = _newProjectedYield;
         emit ProjectedYieldUpdated(_newProjectedYield, actionID);
     }

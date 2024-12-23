@@ -24,43 +24,43 @@ contract EquityConfig is Initializable, EquityConfigStorage {
         currentValuation = launchValuation;
     }
 
-    modifier onlyAgent(address _token) {
-        require(ITKN(_token).isAgent(msg.sender), "Only Token Agent can call");
+    modifier onlyAgent() {
+        require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         _;
     }
 
-    function setValuation(uint256 _latestValuation, string memory actionID) external onlyAgent(token) returns(bool){
+    function setValuation(uint256 _latestValuation, string memory actionID) external onlyAgent returns(bool){
         previousValutaion = currentValuation;
         currentValuation = _latestValuation;
         emit ValuationUpdated(_latestValuation, actionID);
         return true;
     }
 
-    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent(token){
+    function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent{
         minInvestment = _newMinInvestment;
         emit MinimumInvestmentUpdated(_newMinInvestment, actionID);
     }
 
-    function setMaxInvesrment(uint256 _newMaxInvestment, string memory actionID) external onlyAgent(token){
+    function setMaxInvesrment(uint256 _newMaxInvestment, string memory actionID) external onlyAgent{
         maxInvestment = _newMaxInvestment;
         emit MaximumInvestmentUpdated(_newMaxInvestment, actionID);
     }
 
-    function setProjectedYeild(uint256 _newProjectedYield, string memory actionID) external onlyAgent(token){
+    function setProjectedYeild(uint256 _newProjectedYield, string memory actionID) external onlyAgent{
         projectedYield = _newProjectedYield;
         emit ProjectedYieldUpdated(_newProjectedYield, actionID);
     }
 
-    function setDERatio(string memory _newDERatio, string memory actionID) external onlyAgent(token){
+    function setDERatio(string memory _newDERatio, string memory actionID) external onlyAgent{
         DERatio = _newDERatio;
         emit DERatioUpdated(_newDERatio, actionID);
     }
 
-    function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent(token){
+    function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent{
         tokenPrice = _newPrice;
     }
 
-    function setOffChainPrice(bool _status) external onlyAgent(token){
+    function setOffChainPrice(bool _status) external onlyAgent{
         offChainPrice = _status;
     }
 

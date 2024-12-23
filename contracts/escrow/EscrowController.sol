@@ -25,6 +25,20 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         __Ownable_init_unchained();
     } 
 
+    modifier onlyAgent(address _token) {
+        require(AgentRole(_token).isAgent(msg.sender), "Invalid Agent");
+        _;
+    }
+
+    modifier onlyAgentOrTA(address _token) {
+        require(
+            AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender),
+            "Invalid Agent"
+        );
+        _;
+    }
+
+
     function rescueAnyERC20Tokens(
         address _tokenAddr,
         address _to,
@@ -70,11 +84,9 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit AmountReceived(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
 
-    function settlement(string calldata orderID, address fundFactory) public {
+    function settlement(string calldata orderID, address fundFactory) public onlyAgent(investorOrders[orderID].asset){
         require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
-        require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Already Settled");
-
 
         uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
         uint256 orderValue = investorOrders[orderID].value;
@@ -99,9 +111,8 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
     }
 
-    function rejectOrder(string calldata orderID) external {
+    function rejectOrder(string calldata orderID) external onlyAgent(investorOrders[orderID].asset){
         require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
-        require (AgentRole(investorOrders[orderID].asset).isAgent(msg.sender), "Invalid Issuer");
         require (!investorOrders[orderID].status, "Order Executed");
 
         uint256 orderValue = investorOrders[orderID].value;
@@ -137,8 +148,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         masterFactory = _masterFactory;
     }
 
-    function batchMintTokens(address _token, address[] calldata _toList, uint256[] calldata _amounts, string[] calldata orderIDs) external{
-        require (AgentRole(_token).isAgent(msg.sender), "Invalid Issuer");
+    function batchMintTokens(address _token, address[] calldata _toList, uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgent(_token){
         require(_toList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _toList.length; i++){
             IToken(_token).mint(_toList[i], _amounts[i]);
@@ -146,8 +156,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function batchBurnTokens(address _token, address[] calldata _fromList, uint256[] calldata _amounts, string[] calldata orderIDs) external{
-        require (AgentRole(_token).isAgent(msg.sender), "Invalid Issuer");
+    function batchBurnTokens(address _token, address[] calldata _fromList, uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgent(_token){
         require(_fromList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _fromList.length; i++){
             IToken(_token).burn(_fromList[i], _amounts[i]);
@@ -155,8 +164,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function batchFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external{
-        require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+    function batchFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgentOrTA(_token){
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).freezePartialTokens(_userAddresses[i], _amounts[i]);
@@ -164,8 +172,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function batchUnFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external {
-        require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+    function batchUnFreezePartialTokens(address _token, address[] calldata _userAddresses, uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgentOrTA(_token){
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).unfreezePartialTokens(_userAddresses[i], _amounts[i]);
@@ -173,8 +180,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function batchForceTransferTokens(address _token, address[] calldata _userAddresses, address[] calldata _toAddresses,uint256[] calldata _amounts, string[] calldata orderIDs) external {
-        require (AgentRole(_token).isAgent(msg.sender) || AgentRole(_token).isTA(msg.sender), "Invalid Agent");
+    function batchForceTransferTokens(address _token, address[] calldata _userAddresses, address[] calldata _toAddresses,uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgentOrTA(_token){
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).forcedTransfer(_userAddresses[i], _toAddresses[i], _amounts[i]);
@@ -182,8 +188,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage{
         }
     }
 
-    function batchSetAddressFrozen(address _token, address[] calldata _userAddresses, bool[] calldata _freeze, string[] calldata actionIDs) external {
-        require (AgentRole(_token).isAgent(msg.sender), "Invalid Agent");
+    function batchSetAddressFrozen(address _token, address[] calldata _userAddresses, bool[] calldata _freeze, string[] calldata actionIDs) external onlyAgent(_token){
         require(_userAddresses.length == _freeze.length && _freeze.length == actionIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).setAddressFrozen(_userAddresses[i], _freeze[i]);
