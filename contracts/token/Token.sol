@@ -410,6 +410,9 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     function mint(address _to, uint256 _amount) public override onlyAgent {
         require(_tokenIdentityRegistry.isVerified(_to), "Identity is not verified.");
         require(_tokenCompliance.canTransfer(address(0), _to, _amount), "Compliance not followed");
+        if(_frozen[_to]){
+            _totalFrozen += _amount;
+        }
         _mint(_to, _amount);
         _tokenCompliance.created(_to, _amount);
     }
@@ -425,6 +428,9 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
             _frozenTokens[_userAddress] = _frozenTokens[_userAddress] - (tokensToUnfreeze);
             emit TokensUnfrozen(_userAddress, tokensToUnfreeze);
         }
+        if(_frozen[_userAddress]){
+            _totalFrozen -= _amount;
+        }
         _burn(_userAddress, _amount);
         _tokenCompliance.destroyed(_userAddress, _amount);
     }
@@ -434,7 +440,11 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      */
     function setAddressFrozen(address _userAddress, bool _freeze) public override onlyAgent {
         _frozen[_userAddress] = _freeze;
-        _totalFrozen += balanceOf(_userAddress);
+        if(_freeze){
+            _totalFrozen += balanceOf(_userAddress);
+        } else{
+            _totalFrozen -= balanceOf(_userAddress);
+        }
 
         emit AddressFrozen(_userAddress, _freeze, msg.sender);
     }
