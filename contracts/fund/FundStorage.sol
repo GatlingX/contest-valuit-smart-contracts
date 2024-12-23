@@ -51,4 +51,9 @@ contract FundStorage {
     bool public offChainPrice;
 
     mapping(string => bool) internal dividendStatus;
+
+    /**
+     * @dev Storage gap to reserve space for future upgrades.
+     */
+    uint256[50] private __gap; 
 }

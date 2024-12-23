@@ -47,4 +47,9 @@ contract EquityConfigStorage {
     uint256 public tokenPrice;
 
     bool public offChainPrice;
+
+    /**
+     * @dev Storage gap to reserve space for future upgrades.
+     */
+    uint256[50] private __gap; 
 }

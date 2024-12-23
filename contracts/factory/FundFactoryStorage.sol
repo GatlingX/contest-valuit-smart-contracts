@@ -51,5 +51,10 @@ contract FundFactoryStorage {
     address public implFund;
     address public implEquityConfig;
     address internal adminWallet;
+
+    /**
+     * @dev Storage gap to reserve space for future upgrades.
+     */
+    uint256[50] private __gap; 
     
 }
