@@ -89,10 +89,10 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
         require (!investorOrders[orderID].status, "Order Already Settled");
 
-        uint16 adminFee = IFundFactory(fundFactory).getAdminFee(investorOrders[orderID].asset);
+        uint16 escrowFee = IFundFactory(fundFactory).getEscrowFee(investorOrders[orderID].asset);
         uint256 orderValue = investorOrders[orderID].value;
         uint256 orderTokens = investorOrders[orderID].tokens;
-        uint256 adminFeeAmount = (orderValue * adminFee) / FEE_DENOMINATOR;
+        uint256 adminFeeAmount = (orderValue * escrowFee) / FEE_DENOMINATOR;
         uint256 netAmount = orderValue - adminFeeAmount;
 
         pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;

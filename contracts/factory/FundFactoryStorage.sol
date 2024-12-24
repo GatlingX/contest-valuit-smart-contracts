@@ -4,10 +4,20 @@ pragma solidity 0.8.17;
 
 contract FundFactoryStorage {
 
-    mapping(address => uint16) internal adminFee;
+    struct Fees {
+        uint16 escrowFee;
+        uint16 wrapFee;
+        uint16 dividendFee;
+        uint16 redemptionFee;
+    }
+
+    error FeeOutOfBound();
+
+    mapping(address => Fees) internal Fee;
     mapping(address => address) internal fundLinked;
     mapping(address => uint8) internal assetType;
     mapping(address => uint256) internal tokenTotalSupply;
+    mapping(address => bool) internal adminFeeSet;
 
     address public masterFactory;
     address public implFund;

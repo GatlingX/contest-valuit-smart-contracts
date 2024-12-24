@@ -27,6 +27,7 @@ interface IFund {
     event DividendDistributed(
         address investor,
         uint256 amount,
+        uint256 taxAmount,
         string _userID,
         string _dividendID
     );

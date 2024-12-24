@@ -21,7 +21,6 @@ interface IWrapper {
         address _erc3643,
         address _erc20,
         uint256 _amount,
-        uint256 _tax,
         uint256 timestamp
     );
 

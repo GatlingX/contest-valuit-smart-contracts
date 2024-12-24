@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 
 import 'contracts/fund/IFund.sol';
 import 'contracts/fund/ITKN.sol';
+import 'contracts/factory/IFundFactory.sol';
 import 'contracts/escrow/TransferHelper.sol';
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "contracts/fund/FundStorage.sol";
@@ -71,11 +72,17 @@ contract Fund is IFund, Initializable, FundStorage{
                             address stableCoin_,
                             address _agent) external onlyAgent{
         require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
-    
-        TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, _dividend);
+
+        uint16 dividendFee = IFundFactory(factory).getDividendFee(token);
+        address adminWallet = IFundFactory(factory).getAdminWallet();
+        uint256 adminFeeAmount = (_dividend * dividendFee) / FEE_DENOMINATOR;
+        uint256 netAmount = _dividend - adminFeeAmount;
+
         dividendStatus[_dividendIds] = true;
-        emit DividendDistributed(_address, _dividend, _userIds, _dividendIds);
-        
+
+        TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, netAmount);
+        TransferHelper.safeTransferFrom(stableCoin_, _agent, adminWallet, adminFeeAmount);
+        emit DividendDistributed(_address, netAmount, adminFeeAmount, _userIds, _dividendIds);
     }
 
     function setMinInvestment(uint256 _newMinInvestment, string memory actionID) external onlyAgent{

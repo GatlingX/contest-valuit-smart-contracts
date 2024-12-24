@@ -22,7 +22,10 @@ interface IFundFactory {
 
     event AdminFeeUpdated(
         address token,
-        uint16 newFee,
+        uint16 escrowFee,
+        uint16 wrapFee,
+        uint16 dividendFee,
+        uint16 redemptionFee,
         string id,
         uint256 timeStamp
     );
@@ -42,7 +45,13 @@ interface IFundFactory {
         address MasterFactory
     );
 
-    function getAdminFee(address _token) external view returns(uint16);
+    function getEscrowFee(address _token) external view returns(uint16);
+
+    function getWrapFee(address _token) external view returns(uint16);
+
+    function getDividendFee(address _token) external view returns(uint16);
+
+    function getRedemptionFee(address _token) external view returns(uint16);
 
     function getAdminWallet() external view returns(address);
 

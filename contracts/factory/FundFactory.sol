@@ -40,11 +40,38 @@ contract FundFactory is
         emit MasterFactoryUpdated(masterFactory);
     }
 
-    function setAdminFee(address _token, uint16 _adminFee, string memory actionID) external onlyOwner{
-        require(_adminFee >= 0 && _adminFee <=2000, "Fee Out of Bound");
-        adminFee[_token] = _adminFee;
-        emit AdminFeeUpdated(_token, _adminFee, actionID, block.timestamp);
-    }
+    function setFee(address _token, 
+                uint16 _escrowFee,
+                uint16 _wrapFee,
+                uint16 _dividendFee,
+                uint16 _redemptionFee,
+                string memory actionID) external onlyOwner{
+        require(_escrowFee >= 0 && _escrowFee <=2000, "Fee Out of Bound");
+        require(_wrapFee >= 0 && _wrapFee <=2000, "Fee Out of Bound");
+        require(!adminFeeSet[_token], "Admin Fee Reset Not Allowed!!");
+        if((_escrowFee >= 0 && _escrowFee <=2000) && 
+            (_wrapFee >= 0 && _wrapFee <=2000) &&
+            (_dividendFee >= 0 && _dividendFee <=2000) &&
+            (_redemptionFee >= 0 && _redemptionFee <=2000)){
+                revert FeeOutOfBound();
+        }
+
+        Fee[_token].escrowFee = _escrowFee;
+        Fee[_token].wrapFee = _wrapFee;
+        Fee[_token].dividendFee = _dividendFee;
+        Fee[_token].redemptionFee = _redemptionFee;
+
+        adminFeeSet[_token] = true;
+        
+        emit AdminFeeUpdated(
+                _token, 
+                _escrowFee,
+                _wrapFee,
+                _dividendFee,
+                _redemptionFee, 
+                actionID, 
+                block.timestamp);
+        }
 
     function setAdminWallet(address _newWallet, string calldata _actionID) external onlyOwner{
         require(_newWallet != address(0),"Zero Address");
@@ -54,7 +81,6 @@ contract FundFactory is
 
     function createFund (address _token, 
         bytes memory _data, 
-        uint16 _adminFee,
         uint256 _totalTokenSupply,
         string memory mappingValue) external onlyOwner{
 
@@ -74,7 +100,6 @@ contract FundFactory is
                 ));
             require(success, "FUND Intiatialization Failed");
 
-            adminFee[_token] = _adminFee;
             fundLinked[_token] = _proxy;
             assetType[_token] = 1;
             tokenTotalSupply[_token] = _totalTokenSupply;
@@ -83,7 +108,6 @@ contract FundFactory is
 
     function createEquityConfig (address _token, 
         bytes memory _data, 
-        uint16 _adminFee,
         uint256 _totalTokenSupply,
         string memory mappingValue) external onlyOwner{
 
@@ -103,15 +127,26 @@ contract FundFactory is
                 ));
             require(success, "Equity Configuration Intiatialization Failed");
 
-            adminFee[_token] = _adminFee;
             fundLinked[_token] = _proxy;
             assetType[_token] = 2;
             tokenTotalSupply[_token] = _totalTokenSupply;
             emit EquityConfigCreated(_proxy, mappingValue);
     }
 
-    function getAdminFee(address _token) external view returns(uint16){
-        return adminFee[_token];
+    function getEscrowFee(address _token) external view returns(uint16){
+        return Fee[_token].escrowFee;
+    }
+
+    function getWrapFee(address _token) external view returns(uint16){
+        return Fee[_token].wrapFee;
+    }
+
+    function getDividendFee(address _token) external view returns(uint16){
+        return Fee[_token].dividendFee;
+    }
+
+    function getRedemptionFee(address _token) external view returns(uint16){
+        return Fee[_token].redemptionFee;
     }
 
     function getAdminWallet() external view returns(address){

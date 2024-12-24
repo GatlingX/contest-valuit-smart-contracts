@@ -121,22 +121,13 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
     function toERC3643(address _erc20, uint256 _amount) external {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
-        uint256 taxAmount = _takeTax(
-                getERC3643[_erc20],
-                _amount,
-                IToken(getERC3643[_erc20]).decimals(),
-                IToken(stableCoin).decimals(),
-                msg.sender,
-                IFundFactory(fundFactory).getAdminWallet()
-            );
-
         IToken(_erc20).burn(msg.sender, _amount);
             TransferHelper.safeTransfer(
-            getERC3643[_erc20], 
-            msg.sender, 
-            _amount);
+                getERC3643[_erc20], 
+                msg.sender, 
+                _amount);
             lockedERC3643[getERC3643[_erc20]] -= _amount;
-            emit TokenUnlocked(getERC3643[_erc20], _erc20, _amount, taxAmount, block.timestamp);
+            emit TokenUnlocked(getERC3643[_erc20], _erc20, _amount, block.timestamp);
     }
 
     function _takeTax(
@@ -150,9 +141,9 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
         address fund = IFundFactory(fundFactory).getFund(_erc3643);
         uint8 fundType = IFundFactory(fundFactory).getAssetType(_erc3643);
 
-        uint256 adminFee = IFundFactory(fundFactory).getAdminFee(_erc3643);
+        uint16 wrapFee = IFundFactory(fundFactory).getWrapFee(_erc3643);
         
-        if (adminFee == 0) return 0;
+        if (wrapFee == 0) return 0;
 
         uint256 netAssetValue = (fundType == 1)
             ? IFund(fund).getNAV()
@@ -166,7 +157,7 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
             // Calculate the order value in stablecoin decimals
             uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
             // Calculate the admin fee (tax amount) in stablecoin decimals
-            uint256 taxAmount = (orderValue * adminFee) / 10000;
+            uint256 taxAmount = (orderValue * wrapFee) / 10000;
             // Perform the tax transfer
             TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
             return taxAmount;
@@ -175,7 +166,7 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
             //tokenPrice is with 6 decimals
             uint256 tokenPrice = IFund(fund).getOffChainPrice();
             uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 6);
-            uint256 taxAmount = (orderValue * adminFee) / 10000;
+            uint256 taxAmount = (orderValue * wrapFee) / 10000;
             // Perform the tax transfer
             TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);
             return taxAmount;
