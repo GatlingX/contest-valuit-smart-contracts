@@ -46,13 +46,11 @@ contract FundFactory is
                 uint16 _dividendFee,
                 uint16 _redemptionFee,
                 string memory actionID) external onlyOwner{
-        require(_escrowFee >= 0 && _escrowFee <=2000, "Fee Out of Bound");
-        require(_wrapFee >= 0 && _wrapFee <=2000, "Fee Out of Bound");
         require(!adminFeeSet[_token], "Admin Fee Reset Not Allowed!!");
-        if((_escrowFee >= 0 && _escrowFee <=2000) && 
-            (_wrapFee >= 0 && _wrapFee <=2000) &&
-            (_dividendFee >= 0 && _dividendFee <=2000) &&
-            (_redemptionFee >= 0 && _redemptionFee <=2000)){
+        if((_escrowFee < 0 && _escrowFee >2000) && 
+            (_wrapFee < 0 && _wrapFee >2000) &&
+            (_dividendFee < 0 && _dividendFee > 2000) &&
+            (_redemptionFee < 0 && _redemptionFee > 2000)){
                 revert FeeOutOfBound();
         }
 

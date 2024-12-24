@@ -99,6 +99,18 @@ interface IEscrowController {
         string _dividendID
     );
 
+    event RedemptionAndBurn(
+        address token,
+        address userAddress,
+        uint256 tokensBurned,
+        uint256 principalAmount,
+        uint256 profitAmount,
+        string stableCoin,
+        uint256 amountRedeemed,
+        uint256 taxCollected,
+        string orderID
+    );
+
     function getStableCoin(string calldata _stablecoin) external view returns(address);
 
     function getStableCoinName(address stableCoin) external view returns(string memory);

@@ -129,9 +129,59 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         emit OrderRejected(orderID, msg.sender, orderValue);
     }
 
+    function redemptionAndBurn(address _token,
+            address _userAddress, 
+            uint256 _burnAmount, 
+            uint256 _principalAmount, 
+            uint256 _profitAmount, 
+            string calldata coin,
+            address fundFactory,
+            string calldata orderID) public onlyAgent(_token){
+
+                require(ITREXFactory(masterFactory).tokenDeployedByMe(_token),"Asset not allowed");
+                require(_token != address(0),"Zero Address not allowed");
+                require(_burnAmount > 0 && _principalAmount > 0, "Amount should be greater than 0");
+                require(stablecoin[coin] != address(0), "Unsupported stablecoin");
+
+                if(_profitAmount == 0){
+                    TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, _userAddress, _principalAmount);
+                    IToken(_token).burn(_userAddress, _burnAmount);
+
+                    emit RedemptionAndBurn(_token, _userAddress, _burnAmount, _principalAmount, _profitAmount, coin, _principalAmount, 0, orderID);
+                } else{
+                    uint16 redemptionFee = IFundFactory(fundFactory).getRedemptionFee(_token);
+                    uint256 adminFeeAmount = (_profitAmount * redemptionFee) / FEE_DENOMINATOR;
+                    uint256 netAmount = _principalAmount + redemptionFee - adminFeeAmount;
+
+                    TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, _userAddress, netAmount);
+                    TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, IFundFactory(fundFactory).getAdminWallet(), adminFeeAmount);
+                    IToken(_token).burn(_userAddress, _burnAmount);
+
+                    emit RedemptionAndBurn(_token, _userAddress, _burnAmount, _principalAmount, _profitAmount, coin, netAmount, adminFeeAmount, orderID);
+                }
+    }
+
     function batchSettlement(string[] calldata orderIDs,address fundFactory) external {
         for (uint256 i = 0; i < orderIDs.length; i++) {
             settlement(orderIDs[i], fundFactory);
+        }
+    }
+
+    function batchRedemptionAndBurn(address _token,
+            address[] calldata _userAddress, 
+            uint256[] calldata _burnAmount, 
+            uint256[] calldata _principalAmount, 
+            uint256[] calldata _profitAmount, 
+            string calldata coin,
+            address fundFactory,
+            string[] calldata orderID
+            ) external {
+                require(_userAddress.length == _burnAmount.length && 
+                    _burnAmount.length == _principalAmount.length &&
+                    _principalAmount.length == _profitAmount.length &&
+                    _profitAmount.length == orderID.length,"Array length mismatch");
+                for (uint16 i = 0; i < orderID.length; i++) {
+                    redemptionAndBurn(_token, _userAddress[i], _burnAmount[i], _principalAmount[i], _profitAmount[i], coin,fundFactory, orderID[i]);
         }
     }
 

@@ -25,6 +25,7 @@ export default {
           enabled: true,
           runs: 200,
           },
+          viaIR: true,
         },
       },
       {
@@ -34,6 +35,7 @@ export default {
           enabled: true,
           runs: 200,
           },
+          viaIR: true,
         },
       },
     

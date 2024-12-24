@@ -63,8 +63,8 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
         require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
         require(IModularCompliance(IToken(_erc3643).compliance()).getWrapper() == address(this), "Invalid wrapper");
 
-        string memory name = string.concat("VW",IToken(_erc3643).name());
-        string memory symbol = string.concat("VW",IToken(_erc3643).symbol());
+        string memory name = string.concat("vw",IToken(_erc3643).name());
+        string memory symbol = string.concat("vw",IToken(_erc3643).symbol());
         uint8 decimals = IToken(_erc3643).decimals();
 
         _proxy =address(new ProxyV1());
