@@ -60,7 +60,7 @@ async function main() {
 
     // console.log(fundAttached);
 
-    await fundAttached.init("0x59FA898063EC4560E1ade0b4B522b3abb3DF4BA8");
+    await fundAttached.init("0xCeb60e3323E39b33f720ddDEDEF277165dab121C");
 
     console.log("Fund Factory Initialized");
     await sleep(time);

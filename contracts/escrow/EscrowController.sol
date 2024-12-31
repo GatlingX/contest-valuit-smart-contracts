@@ -22,6 +22,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         stableCoinName[stableCoin_[1]] = "usdt";
         isStableCoin[stableCoin_[0]] = true;
         isStableCoin[stableCoin_[1]] = true;
+        FEE_DENOMINATOR = 10000;
         masterFactory = _masterFactory;
         __Ownable_init_unchained();
     } 
@@ -203,7 +204,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_toList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _toList.length; i++){
             IToken(_token).mint(_toList[i], _amounts[i]);
-            emit TokensMinted(_toList[i], _amounts[i], orderIDs[i]);
+            emit TokensMinted(_toList[i], _amounts[i], orderIDs[i], _token);
         }
     }
 
@@ -211,7 +212,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_fromList.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _fromList.length; i++){
             IToken(_token).burn(_fromList[i], _amounts[i]);
-            emit TokensBurned(_fromList[i], _amounts[i], orderIDs[i]);
+            emit TokensBurned(_fromList[i], _amounts[i], orderIDs[i], _token);
         }
     }
 
@@ -219,7 +220,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).freezePartialTokens(_userAddresses[i], _amounts[i]);
-            emit UserTokensFrozen(_userAddresses[i], _amounts[i], orderIDs[i]);
+            emit UserTokensFrozen(_userAddresses[i], _amounts[i], orderIDs[i], _token);
         }
     }
 
@@ -227,7 +228,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).unfreezePartialTokens(_userAddresses[i], _amounts[i]);
-            emit UserTokensUnFrozen(_userAddresses[i], _amounts[i], orderIDs[i]);
+            emit UserTokensUnFrozen(_userAddresses[i], _amounts[i], orderIDs[i], _token);
         }
     }
 
@@ -235,7 +236,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).forcedTransfer(_userAddresses[i], _toAddresses[i], _amounts[i]);
-            emit ForceTransferred(_userAddresses[i], _toAddresses[i], _amounts[i], orderIDs[i]);
+            emit ForceTransferred(_userAddresses[i], _toAddresses[i], _amounts[i], orderIDs[i], _token);
         }
     }
 
@@ -243,7 +244,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(_userAddresses.length == _freeze.length && _freeze.length == actionIDs.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).setAddressFrozen(_userAddresses[i], _freeze[i]);
-            emit UserAddressFrozen(_userAddresses[i], _freeze[i], actionIDs[i]);
+            emit UserAddressFrozen(_userAddresses[i], _freeze[i], actionIDs[i], _token);
         }
     }
 
@@ -279,7 +280,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
              _userIds.length == _dividendIds.length, "Array length mismatch");
         for(uint i=0; i < _address.length; i++){
             IFund(_fund).shareDividend(_address[i], _dividend[i], _userIds[i], _dividendIds[i], stableCoin_, msg.sender);
-            emit DividendDistributed(_address[i], _dividend[i], _userIds[i], _dividendIds[i]);
+            emit DividendDistributed(_address[i], _dividend[i], _userIds[i], _dividendIds[i], address(IFund(_fund).getToken()));
         }
     }
 

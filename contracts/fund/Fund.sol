@@ -24,6 +24,7 @@ contract Fund is IFund, Initializable, FundStorage{
         projectedYield) = abi.decode(_data, (uint256, uint256, string, uint256));
 
         _setValues(_data);
+        FEE_DENOMINATOR = 10000;
     }
 
     modifier onlyAgent() {

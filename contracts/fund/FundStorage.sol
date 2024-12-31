@@ -20,7 +20,7 @@ contract FundStorage {
     uint256 public minInvestment;
     uint256 public maxInvestment;
     uint256 public tokenPrice;
-    uint16 public FEE_DENOMINATOR = 10000;
+    uint16 public FEE_DENOMINATOR;
 
     bool public offChainPrice;
 

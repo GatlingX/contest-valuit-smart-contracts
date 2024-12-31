@@ -34,37 +34,43 @@ interface IEscrowController {
     event TokensMinted(
         address toAddress, 
         uint256 amount, 
-        string orderID);
+        string orderID,
+        address token);
 
     event TokensBurned(
         address fromAddress, 
         uint256 amount, 
-        string orderID
+        string orderID,
+        address token
     );
 
     event UserTokensFrozen(
         address fromAddress, 
         uint256 amount, 
-        string orderID
+        string orderID,
+        address token
     );
 
     event UserTokensUnFrozen(
         address fromAddress, 
         uint256 amount, 
-        string orderID
+        string orderID,
+        address token
     );
 
     event ForceTransferred(
         address fromAddress,
         address toAddress, 
         uint256 amount, 
-        string orderID
+        string orderID,
+        address token
     );
 
     event UserAddressFrozen(
         address userAddress,
         bool isFrozen,
-        string actionID
+        string actionID,
+        address token
     );
 
     event UserIdentityRegistered(
@@ -96,7 +102,8 @@ interface IEscrowController {
         address investor,
         uint256 amount,
         string _userID,
-        string _dividendID
+        string _dividendID,
+        address token
     );
 
     event RedemptionAndBurn(
