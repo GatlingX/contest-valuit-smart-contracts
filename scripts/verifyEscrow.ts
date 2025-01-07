@@ -22,7 +22,7 @@ async function main() {
   // await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x26Eb08b57256284644aefa719946AFd0a7694D39",
+        address: "0x02BC646a8e415cc3a3814DCA4eDFb6e5dC972CB1",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/escrow/EscrowController.sol:EscrowController",

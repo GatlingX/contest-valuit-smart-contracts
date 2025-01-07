@@ -68,6 +68,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         require(!orderCreated[msg.sender][orderID], "Order Already Created");
         require(ITREXFactory(masterFactory).tokenDeployedByMe(_token),"Asset not allowed");
         require(stablecoin[coin] != address(0), "Unsupported stablecoin");
+        require(IToken(stablecoin[coin]).allowance(msg.sender, address(this)) >= _amount, "Insufficient Allowance");
 
         investorOrders[orderID].investor = msg.sender;
         investorOrders[orderID].asset = _token;
@@ -76,14 +77,11 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         investorOrders[orderID].coin = coin;
         investorOrders[orderID].status = false;
 
-        TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, address(this), _amount);
-
-        receivedAmount[orderID] = _amount;
         orderCreated[msg.sender][orderID] = true;
         pendingOrderAmount[investorOrders[orderID].coin] += _amount;
         totalPendingOrderAmount += _amount;
 
-        emit AmountReceived(_token, msg.sender, _amount, _tokens, orderID, coin);
+        emit OrderCreated(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
 
     function settlement(string calldata orderID, address fundFactory) public onlyAgent(investorOrders[orderID].asset){
@@ -100,17 +98,33 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         totalPendingOrderAmount -= orderValue;
         investorOrders[orderID].status = true;
 
-        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    msg.sender, 
-                                    netAmount);
+        TransferHelper.safeTransferFrom(stablecoin[investorOrders[orderID].coin], 
+                                        investorOrders[orderID].investor,
+                                        msg.sender, 
+                                        netAmount);
 
-        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    IFundFactory(fundFactory).getAdminWallet(), 
-                                    adminFeeAmount);
+        TransferHelper.safeTransferFrom(stablecoin[investorOrders[orderID].coin], 
+                                        investorOrders[orderID].investor,
+                                        IFundFactory(fundFactory).getAdminWallet(), 
+                                        adminFeeAmount);
         
         IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
 
         emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
+    }
+
+    function cancelOrder(string calldata orderID) external {
+        require(investorOrders[orderID].investor == msg.sender, "Only Creator can cancel the order");
+        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
+        require (!investorOrders[orderID].status, "Order Executed");
+
+        uint256 orderValue = investorOrders[orderID].value;
+
+        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
+        totalPendingOrderAmount -= orderValue;
+        investorOrders[orderID].status = true;
+
+        emit OrderCancelled(orderID, msg.sender, orderValue);
     }
 
     function rejectOrder(string calldata orderID) external onlyAgent(investorOrders[orderID].asset){
@@ -122,10 +136,6 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
         totalPendingOrderAmount -= orderValue;
         investorOrders[orderID].status = true;
-
-        TransferHelper.safeTransfer(stablecoin[investorOrders[orderID].coin], 
-                                    investorOrders[orderID].investor, 
-                                    orderValue);
 
         emit OrderRejected(orderID, msg.sender, orderValue);
     }

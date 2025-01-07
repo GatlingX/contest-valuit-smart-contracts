@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 interface IEscrowController {
 
-    event AmountReceived(
+    event OrderCreated(
         address _asset,
         address _investor,
         uint256 amountValue,
@@ -24,6 +24,12 @@ interface IEscrowController {
         string orderID,
         address _Issuer,
         uint256 refundedValue
+    );
+
+    event OrderCancelled(
+        string orderID, 
+        address userAddress, 
+        uint256 orderValue
     );
 
     event StableCoinUpdated(

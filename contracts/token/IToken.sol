@@ -399,4 +399,6 @@ interface IToken is IERC20 {
 
 
     function totalSupply() external view override returns (uint256);
+
+    function allowance(address owner, address spender) external view returns (uint256);
 }
