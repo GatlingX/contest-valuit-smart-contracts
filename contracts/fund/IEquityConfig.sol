@@ -29,6 +29,14 @@ interface IEquityConfig {
         string actionID
     );
 
+    event DividendDistributed(
+        address investor,
+        uint256 amount,
+        uint256 taxAmount,
+        string _userID,
+        string _dividendID
+    );
+
     function getCurrentValuation() external view returns(uint256);
 
     function getMinInvestment() external view returns(uint256);

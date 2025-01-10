@@ -5,8 +5,10 @@ pragma solidity 0.8.17;
 
 import "contracts/fund/ITKN.sol";
 import "contracts/fund/IEquityConfig.sol";
+import 'contracts/factory/IFundFactory.sol';
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "contracts/fund/EquityConfigStorage.sol";
+import 'contracts/escrow/TransferHelper.sol';
 
 
 contract EquityConfig is Initializable, EquityConfigStorage, IEquityConfig {
@@ -23,11 +25,32 @@ contract EquityConfig is Initializable, EquityConfigStorage, IEquityConfig {
         projectedYield,
         DERatio) = abi.decode(_data, (uint256, uint256, uint256, uint256, string));
         currentValuation = launchValuation;
+        FEE_DENOMINATOR = 10000;
     }
 
     modifier onlyAgent() {
         require(ITKN(token).isAgent(msg.sender), "Only Token Agent can call");
         _;
+    }
+
+    function shareDividend(address _address, 
+                            uint256 _dividend,
+                            string calldata _userIds,
+                            string calldata _dividendIds,  
+                            address stableCoin_,
+                            address _agent) external onlyAgent{
+        require(!dividendStatus[_dividendIds],"Dividend Already Distributed");
+
+        uint16 dividendFee = IFundFactory(factory).getDividendFee(token);
+        address adminWallet = IFundFactory(factory).getAdminWallet();
+        uint256 adminFeeAmount = (_dividend * dividendFee) / FEE_DENOMINATOR;
+        uint256 netAmount = _dividend - adminFeeAmount;
+
+        dividendStatus[_dividendIds] = true;
+
+        TransferHelper.safeTransferFrom(stableCoin_, _agent, _address, netAmount);
+        TransferHelper.safeTransferFrom(stableCoin_, _agent, adminWallet, adminFeeAmount);
+        emit DividendDistributed(_address, netAmount, adminFeeAmount, _userIds, _dividendIds);
     }
 
     function setValuation(uint256 _latestValuation, string memory actionID) external onlyAgent returns(bool){

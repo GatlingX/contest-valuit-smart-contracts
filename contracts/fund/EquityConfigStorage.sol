@@ -20,8 +20,11 @@ contract EquityConfigStorage {
     uint256 internal previousValutaion;
     uint256 internal currentValuation;
     uint256 public tokenPrice;
+    uint16 public FEE_DENOMINATOR;
 
     bool public offChainPrice;
+
+    mapping(string => bool) internal dividendStatus;
 
     /**
      * @dev Storage gap to reserve space for future upgrades.
