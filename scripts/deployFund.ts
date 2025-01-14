@@ -60,12 +60,12 @@ async function main() {
 
     // console.log(fundAttached);
 
-    await fundAttached.init("0xCeb60e3323E39b33f720ddDEDEF277165dab121C");
+    await fundAttached.init("0xC20C2BE7462D9D710b336641d15a4917F3b0Bfa0",{gasLimit:3567532});
 
     console.log("Fund Factory Initialized");
     await sleep(time);
 
-    await fundAttached.setImpl(implAuth.address, implAuthEQUITYCONFIG.address);
+    await fundAttached.setImpl(implAuth.address, implAuthEQUITYCONFIG.address,{gasLimit:3567532});
     console.log("Fund Implementation set");
 
     

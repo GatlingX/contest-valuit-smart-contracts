@@ -51,12 +51,19 @@ export default {
       accounts:[`0x${process.env.PVTKEY}`],
       timeout: 2000000,
     },
+    holesky: {
+      url: `https://ethereum-holesky.publicnode.com`,
+      chainId: 17000,
+      accounts: [`0x${process.env.PVTKEY}`],
+      gasLimit: 1000000000, // Adjust gas limit as needed
+    },
     
   },
   etherscan: {
     apiKey: {
       // avalanche: `${process.env.AVAX_API}`,
       "base-sepolia": `${process.env.BASE_API}`,
+      holesky: `${process.env.ETH_API}`,
       
     },
     customChains: [
@@ -68,6 +75,14 @@ export default {
          browserURL: "https://sepolia.basescan.org"
         }
       },
+      {
+        network: "holesky",
+        chainId: 17000,
+        urls: {
+          apiURL: "https://api-holesky.etherscan.io/api",
+          browserURL: "https://holesky.etherscan.io"
+        }
+      }
     ],
   },
   typechain: {

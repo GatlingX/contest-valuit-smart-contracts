@@ -54,5 +54,7 @@ interface IEquityConfig {
     function getOffChainPrice() external view returns(uint256);
 
     function getOffChainPriceStatus() external view returns(bool);
+    
+    function getToken() view external returns (address);
 }
 

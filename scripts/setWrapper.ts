@@ -14,22 +14,22 @@ async function main() {
     
     let time = 5000;
 
-    const wrapper = await WRAPPER.attach("0x8cA812CC10C060837426569b35e7aB2338ECDB0C");
+    const wrapper = await WRAPPER.attach("0xbA2bBD93FA6a5B18ED15269f261b676fC5d58E25");
     console.log("Proxy Attached");
 
     sleep(time);
 
-    await wrapper.setEscrowController("0x90751145f8E00C0a956907D4EaA28BDa97b38251");
+    await wrapper.setEscrowController("0x503c08A37fF5Ab51Da984668E8C8B14539aB1Fa2",{gasLimit:3567532});
     console.log("Escrow Set");
 
     sleep(time);
 
-    await wrapper.setStableCoin("usdc");
+    await wrapper.setStableCoin("usdc",{gasLimit:3567532});
     console.log("Stable coin Set");
 
     sleep(time);
 
-    await wrapper.setOnchainID("0xd6d10b9c916542982Ce9dF739540fCfB129132B6");
+    await wrapper.setOnchainID("0xf06757246c60DdF79d6f2b6D1475F179cbEaADee",{gasLimit:3567532});
     console.log("OnchainID set");
     
 

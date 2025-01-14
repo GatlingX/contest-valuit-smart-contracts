@@ -123,4 +123,8 @@ contract EquityConfig is Initializable, EquityConfigStorage, IEquityConfig {
     function getOffChainPriceStatus() public view returns(bool){
         return offChainPrice;
     }
+
+    function getToken() view external returns (address){
+        return token;
+    }
 }

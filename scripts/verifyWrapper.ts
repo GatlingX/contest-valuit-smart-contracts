@@ -7,7 +7,7 @@ async function main() {
 
 
     await hre.run("verify:verify", {
-        address: "0x075b3a4d5cf8710Ea352C628C9eb2b9D43F3316d",
+        address: "0xB5E3b2F035EbE2d1828a28858105CaFF5491dAf4",
         //Path of your main contract.
         constructorArguments:[],
         contract: "contracts/token/VERC20.sol:VERC20",
@@ -15,15 +15,15 @@ async function main() {
     await sleep(3000);
 
     await hre.run("verify:verify", {
-        address: "0x346EdeB01dA0f09691825eBed6A2b4c550d5E75e",
+        address: "0x5E877eA97369d8Cc10f6751AB9dAFb66AFfA2627",
         //Path of your main contract.
-        constructorArguments:["0x075b3a4d5cf8710Ea352C628C9eb2b9D43F3316d"],
+        constructorArguments:["0xB5E3b2F035EbE2d1828a28858105CaFF5491dAf4"],
         contract: "contracts/onchainID/proxy/ImplementationAuthority.sol:ImplementationAuthority",
     });
     await sleep(3000);
 
     await hre.run("verify:verify", {
-      address: "0x381C20632F89aba1EABc2094aa4473f34d39Be09",
+      address: "0x456890392DFb8327C02B2dE317FB336cf7136275",
       //Path of your main contract.
       constructorArguments:[],
       contract: "contracts/wrapper/Wrapper.sol:Wrapper",
@@ -31,7 +31,7 @@ async function main() {
   await sleep(3000);
 
   await hre.run("verify:verify", {
-    address: "0x8cA812CC10C060837426569b35e7aB2338ECDB0C",
+    address: "0xbA2bBD93FA6a5B18ED15269f261b676fC5d58E25",
     //Path of your main contract.
     constructorArguments:[],
     contract: "contracts/wrapper/WrapperProxy.sol:WrapperProxy",
