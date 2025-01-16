@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
+
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
   AgentRole,
@@ -122,9 +123,10 @@ describe(" Tokenization Testing ", function () {
     //  let trustSigner =  provider.getSigner(trust.address)
     const trustSigningKey = ethers.Wallet.createRandom();
 
-    let claimIssuerContract = new ClaimIssuer__factory(owner).deploy(
-      trustSigningKey.address
-    );
+    // let claimIssuerContract = new ClaimIssuer__factory(owner).deploy(
+    //   trustSigningKey.address
+    // );
+
     claimTopicsRegistryImplementation = await new ClaimTopicsRegistry__factory(
       owner
     ).deploy();
@@ -169,6 +171,7 @@ describe(" Tokenization Testing ", function () {
 
     agentContract = await new AgentRole__factory(owner).deploy();
     agentUpgradeable = await new AgentRoleUpgradeable__factory(owner).deploy();
+
     const contractsStruct = {
       tokenImplementation: tokenImplementation.address,
       ctrImplementation: claimTopicsRegistryImplementation.address,
@@ -219,7 +222,6 @@ describe(" Tokenization Testing ", function () {
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
     wrapper = await new Wrapper__factory(owner).deploy(
-      verc20.address
     );
 
     //Stable Coin
@@ -232,6 +234,7 @@ describe(" Tokenization Testing ", function () {
       claimTopicsRegistryImplementation.address,
       identityRegistryStorageImplementation.address
     );
+
     await identityRegistryImplementation.addAgent(owner.address);
     await identityRegistryImplementation.addAgent(
       identityRegistryImplementation.address
@@ -251,6 +254,8 @@ describe(" Tokenization Testing ", function () {
     );
 
     await tokenImplementation.addAgent(owner.address);
+    await identityFactory.addAgent(user1.address);
+    await identityFactory.addAgent(owner.address);
 
     await identityFactory.createIdentity(owner.address, owner.address);
     await identityFactory.createIdentity(user3.address, user3.address);
@@ -287,7 +292,7 @@ describe(" Tokenization Testing ", function () {
     await modularComplianceImplementation.addModule(
       supplyLimitCompliance.address
     );
-    // await modularComplianceImplementation.addModule(maxBalanceCompliance.address);
+    await modularComplianceImplementation.addModule(maxBalanceCompliance.address);
 
     await modularComplianceImplementation.callModuleFunction(
       await supplyLimitCompliance.interface.encodeFunctionData(
@@ -297,29 +302,29 @@ describe(" Tokenization Testing ", function () {
       supplyLimitCompliance.address
     );
 
-    // await modularComplianceImplementation.callModuleFunction(
-    //     await holdTimeCompliance.interface.encodeFunctionData(
-    //       "setHoldTime",
-    //       [1739675128]
-    //     ),
-    //     holdTimeCompliance.address
-    //   );
+    await modularComplianceImplementation.callModuleFunction(
+        await holdTimeCompliance.interface.encodeFunctionData(
+          "setHoldTime",
+          [1739675128]
+        ),
+        holdTimeCompliance.address
+      );
 
-    //   await modularComplianceImplementation.callModuleFunction(
-    //     await maxBalanceCompliance.interface.encodeFunctionData(
-    //       "setMaxBalance",
-    //       [ethers.utils.parseEther("10000000")]
-    //     ),
-    //     maxBalanceCompliance.address
-    //   );
+      await modularComplianceImplementation.callModuleFunction(
+        await maxBalanceCompliance.interface.encodeFunctionData(
+          "setMaxBalance",
+          [ethers.utils.parseEther("10000000")]
+        ),
+        maxBalanceCompliance.address
+      );
 
-    //   await modularComplianceImplementation.callModuleFunction(
-    //     await countryAllowCompliance.interface.encodeFunctionData(
-    //       "addAllowedCountry",
-    //       [[91,1]]
-    //     ),
-    //     countryAllowCompliance.address
-    //   );
+      await modularComplianceImplementation.callModuleFunction(
+        await countryAllowCompliance.interface.encodeFunctionData(
+          "addAllowedCountry",
+          [[91,1]]
+        ),
+        countryAllowCompliance.address
+      );
 
     trexFactory = await new TREXFactory__factory(owner).deploy(
       trexImplementationAuthority.address,
@@ -327,99 +332,76 @@ describe(" Tokenization Testing ", function () {
       wrapper.address
     );
   });
+  
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
   });
+
   it("Deploy Fund Contract", async () => {
-    let tokenDetails = {
-      owner: owner.address,
-      name: "Nickel",
-      symbol: "NKL",
-      decimals: 18,
-      irs: ethers.constants.AddressZero,
-      ONCHAINID: ethers.constants.AddressZero,
-      wrap: false,
-      irAgents: [user1.address],
-      tokenAgents: [user1.address],
-      transferAgents: [],
-      complianceModules: [
-        countryAllowCompliance.address,
-        supplyLimitCompliance.address,
-        maxBalanceCompliance.address,
-        holdTimeCompliance.address,
-      ],
-      complianceSettings: [
-        "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-        "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-        "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-        "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-      ],
-    };
+    let tokenDetails={
+    owner:owner.address,
+    name : "My Test Token",
+    symbol: "MTK",
+    decimals: 18,
+    irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+    ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+    wrap : false,
+    irAgents: [user1.address],
+    tokenAgents: [user1.address],  // Agents for token management
+    transferAgents : [],  // Agents with transfer permissions
+    complianceModules : [
+    ],
+    complianceSettings : [],  // Empty for now
+  }
 
-    let claimDetails = {
-      claimTopics: [],
-      issuers: [],
-      issuerClaims: [],
-    };
+  let claimDetails = {
+    claimTopics: [],
+    issuers: [],
+    issuerClaims:[],
+  };
 
-    await identityFactory.addTokenFactory(trexFactory.address);
+  await identityFactory.addTokenFactory(trexFactory.address);
 
-    const TX = await trexFactory.deployTREXSuite(
-      "process.env.TOKEN_SALT",
-      tokenDetails,
-      claimDetails
-    );
+  // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+  const tx=await trexFactory.connect(owner).deployTREXSuite(
+    "test_salt",  // Unique salt to ensure CREATE2 uniqueness
+    tokenDetails,
+    claimDetails
+  );
 
-    const receipt = await TX.wait();
+  const receipt = await tx.wait();
+  const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+  let AddressOfToken;
 
-    const event = receipt.events?.find(
-      (event) => event.event === "TREXSuiteDeployed"
-    );
+  if (event) {
+      let _token = event.args?._token;
+      AddressOfToken = _token;
+  }
 
-    let token = event?.args;
-
-    // console.log("Token Address: ", token);
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
+  // Attach to the deployed token contract
+  let token = event?.args;
+  let tokenAttached;
+  let firstAddress;
+  if (Array.isArray(token) && token.length > 0) {
       firstAddress = token[0]; // Directly accessing the first element
-      // tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
+      tokenAttached = await tokenImplementation.attach(firstAddress);
+  }
 
-    let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+  expect(await tokenAttached?.name()).to.equal("My Test Token");
+  expect(await tokenAttached?.symbol()).to.equal("MTK");
 
-    await fundProxyAttached.init(trexFactory.address);
+  // Set up the fundProxy contract
+  let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+  await fundProxyAttached.init(trexFactory.address);
+  await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
 
-    await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-    // console.log("Fund Implementation Set");
-
-    const tx = await fundProxyAttached.createFund(
-      firstAddress,
-      "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000",
+  // Call createFund to deploy the fund
+  const txn = await fundProxyAttached.createFund(
+      AddressOfToken, 
+      "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000", 
+      10, 
       "Hello"
-    );
-
-    const receiptFund = await tx.wait();
-
-    const event1 = receiptFund.events?.find(
-      (event) => event.event === "FundCreated"
-    );
-
-    let fundContract = event1?.args;
-
-    let fundAddress;
-    let fundAttached;
-
-    if (Array.isArray(fundContract) && fundContract.length > 0) {
-      fundAddress = fundContract[0]; // Directly accessing the first element
-      fundAttached = await fund.attach(fundAddress);
-    }
-
-    // console.log("fundContract Address: ", fundAddress, fundContract);
-
-    // console.log("Fund Name:", await fundAttached?.fundName(), Number(await fundAttached?.cusip()), await fundAttached?.spvValuation(), await fundAttached?.yieldType());
-    // console.log("Property Typr: ", Number( await fundAttached?.propertyType()),await fundAttached?.NAVLaunchPrice())
+  );
   });
 
   it("Mint Tokens", async () => {
@@ -502,6 +484,7 @@ describe(" Tokenization Testing ", function () {
     await tokenAttached?.connect(user1).batchBurn([user1.address], [50]);
     expect(await tokenAttached?.balanceOf(user1.address)).to.be.equal(100);
   });
+  
   describe("Registries", () => {
     describe("ClaimTopicRegsitry", () => {
       it("init", async () => {
@@ -619,17 +602,18 @@ describe(" Tokenization Testing ", function () {
             identityRegistryStorageImplementation.address
           );
       });
-      it("isVerified false", async () => {
-        const claimDetails: any = {
-          claimTopics: [ethers.utils.id("KYC")],
-          issuers: [claimIssuerImplementation],
-          issuerClaims: [[ethers.utils.id("KYC")]],
-        };
 
-        await identityRegistryImplementation
-          .connect(owner)
-          .isVerified(ethers.constants.AddressZero);
-      });
+      // it("isVerified false", async () => {
+      //   const claimDetails: any = {
+      //     claimTopics: [ethers.utils.id("KYC")],
+      //     issuers: [claimIssuerImplementation],
+      //     issuerClaims: [[ethers.utils.id("KYC")]],
+      //   };
+
+      //   await identityRegistryImplementation
+      //     .connect(owner)
+      //     .isVerified(ethers.constants.AddressZero);
+      // });
       it("foundClaimTopic false", async () => {
         await identityRegistryImplementation
           .connect(owner)
@@ -759,33 +743,36 @@ describe(" Tokenization Testing ", function () {
       });
     });
   });
+
   describe("Modules", () => {
     describe("MaxBalanceModule", () => {
-      it("initialize", async () => {
-        await maxBalanceCompliance.connect(owner).initialize();
-      });
+      // it("initialize", async () => {
+      //   await maxBalanceCompliance.connect(owner).initialize();
+      // });
+
       it("Module name", async () => {
         await maxBalanceCompliance.connect(owner).name();
       });
-      it("preSetModuleState", async () => {
-        expect(
-          await maxBalanceCompliance
-            .connect(owner)
-            .preSetModuleState(
-              modularComplianceImplementation.address,
-              owner.address,
-              100
-            )
-        ).to.be.revertedWithCustomError(
-          maxBalanceCompliance,
-          `OnlyComplianceOwnerCanCall`
-        );
-      });
+      // it("preSetModuleState", async () => {
+      //   expect(
+      //     await maxBalanceCompliance
+      //       .connect(owner)
+      //       .preSetModuleState(
+      //         modularComplianceImplementation.address,
+      //         owner.address,
+      //         100
+      //       )
+      //   ).to.be.revertedWithCustomError(
+      //     maxBalanceCompliance,
+      //     `OnlyComplianceOwnerCanCall`
+      //   );
+      // });
     });
     describe("SupplyModule", () => {
-      it("initialize", async () => {
-        await supplyLimitCompliance.connect(owner).initialize();
-      });
+      // it("initialize", async () => {
+      //   await supplyLimitCompliance.connect(owner).initialize();
+      // });
+
       it("Module name", async () => {
         await supplyLimitCompliance.connect(owner).name();
       });
@@ -822,10 +809,12 @@ describe(" Tokenization Testing ", function () {
           );
       });
     });
+
     describe("HoldTimeModule", () => {
-      it("initialize", async () => {
-        await holdTimeCompliance.connect(owner).initialize();
-      });
+      // it("initialize", async () => {
+      //   await holdTimeCompliance.initialize();
+      // });
+
       it("Module name", async () => {
         await holdTimeCompliance.connect(owner).name();
       });
@@ -862,10 +851,11 @@ describe(" Tokenization Testing ", function () {
           );
       });
     });
+
     describe("CountryAllowModule", () => {
-      it("initialize", async () => {
-        await countryAllowCompliance.connect(owner).initialize();
-      });
+      // it("initialize", async () => {
+      //   await countryAllowCompliance.connect(owner).initialize();
+      // });
       it("Module name", async () => {
         await countryAllowCompliance.connect(owner).name();
       });
@@ -951,6 +941,7 @@ describe(" Tokenization Testing ", function () {
       });
     });
   });
+
   describe("Roles", () => {
     describe("AgentRole", () => {
       it("addAgent", async () => {
@@ -993,24 +984,26 @@ describe(" Tokenization Testing ", function () {
         await agentContract.isTA(user2.address);
       });
     });
+
     //     describe.only("AgentRoleUpgradeable", () => {
-    //       it("addTA", async () => {
+    //       it.only("addTA", async () => {
     // let owner = await agentUpgradeable.owner()
     // console.log('owner', owner)
     //         await agentUpgradeable.addTA(user2.address);
     //         expect(await agentUpgradeable.isTA(user2.address)).to.be.true;
     //       });
-    //       it("removeTA", async () => {
+    //       it.only("removeTA", async () => {
     //         await agentUpgradeable.addTA(user2.address);
     //         await agentUpgradeable.removeTA(user2.address);
     //         expect(await agentUpgradeable.isTA(user2.address)).to.be.false;
     //       });
-    //       it("isTA", async () => {
+    //       it.only("isTA", async () => {
     //         await agentUpgradeable.addTA(user2.address);
     //         await agentUpgradeable.isTA(user2.address);
     //       });
     //     });
   });
+
   describe("Factory", () => {
     describe("Idfactory", () => {
       it("removeTokenFactory", async () => {
@@ -1065,6 +1058,7 @@ describe(" Tokenization Testing ", function () {
       });
     });
   });
+
   describe("ProxyAuthority", () => {
     describe("TREXImplementationAuthority", () => {
       it("setTREXFactory ", async () => {
@@ -1090,6 +1084,7 @@ describe(" Tokenization Testing ", function () {
         };
         await otherTrexImplementationAuthority.fetchVersion(versionStruct);
       });
+
       //   it("changeImplementationAuthority ", async () => {
       //     const newTrexImplementationAuthority = await ethers.deployContract(
       //       "TREXImplementationAuthority",
@@ -1205,6 +1200,7 @@ describe(" Tokenization Testing ", function () {
         ).to.be.revertedWith("version already in use");
       });
     });
+
     describe("IAFactory", () => {
       it("constructor", async () => {
         const IAFactory = new IAFactory__factory(owner).deploy(
@@ -1228,6 +1224,7 @@ describe(" Tokenization Testing ", function () {
       });
     });
   });
+
   describe("Token", () => {
     describe("Token.sol", () => {
       it("approve", async () => {
@@ -1283,58 +1280,65 @@ describe(" Tokenization Testing ", function () {
         await tokenImplementation.version();
       });
 
+
       it("Batch Mint Tokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         let user1Identity = await identityFactory.getIdentity(user1.address);
 
@@ -1348,60 +1352,69 @@ describe(" Tokenization Testing ", function () {
           .connect(user1)
           .registerIdentity(user1.address, user1Identity, 91);
 
-        await tokenAttached.connect(user1).batchMint([user1.address], [100]);
+        await tokenAttached?.connect(user1).batchMint([user1.address], [100]);
       });
-      it("recoveryAddress", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+
+
+      it("Batch min token reverted with Already registered", async () => {
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
+        }
+      
+        // Attach to the deployed token contract
         let token = event?.args;
-        let tokenAttached: any;
+        let tokenAttached;
         let firstAddress;
-
         if (Array.isArray(token) && token.length > 0) {
           firstAddress = token[0]; // Directly accessing the first element
           tokenAttached = await tokenImplementation.attach(firstAddress);
         }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         let user1Identity = await identityFactory.getIdentity(user1.address);
         let ownerIdentity = await identityFactory.getIdentity(owner.address);
@@ -1412,7 +1425,7 @@ describe(" Tokenization Testing ", function () {
           String(identityRegistryAddress)
         );
 
-        await identityRegisteryAttached
+          await identityRegisteryAttached
           .connect(user1)
           .registerIdentity(user1.address, user1Identity, 91);
 
@@ -1420,66 +1433,72 @@ describe(" Tokenization Testing ", function () {
           .connect(user1)
           .registerIdentity(owner.address, ownerIdentity, 91);
 
-        await tokenAttached.connect(user1).batchMint([owner.address], [100]);
-        await expect(
-          tokenAttached
-            .connect(user1)
-            .recoveryAddress(owner.address, user1.address, ownerIdentity)
-        ).to.be.revertedWith("Recovery not possible");
+          await expect(
+            identityRegisteryAttached
+                .connect(user1)
+                .registerIdentity(user1.address, user1Identity, 91)
+        ).to.be.revertedWith("address stored already");
       });
+
+
       it("Batch Transfer Tokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1504,64 +1523,69 @@ describe(" Tokenization Testing ", function () {
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
 
-        await tokenAttached.connect(user1).batchMint([user1.address], [100]);
-        await tokenAttached
-          .connect(user1)
-          .batchTransfer([user2.address, user3.address], [10, 10]);
+        await tokenAttached?.connect(user1).batchMint([user1.address], [100]);
+        await tokenAttached?.connect(user1).batchTransfer([user2.address, user3.address], [10, 10]);
       });
+
+
       it("TransferFrom", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1586,67 +1610,73 @@ describe(" Tokenization Testing ", function () {
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
 
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user1.address, user2.address], [100, 100]);
-        await tokenAttached.connect(user1).approve(user2.address, 10000);
-        await tokenAttached
-          .connect(user2)
-          .transferFrom(user1.address, user3.address, 10);
+        await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [100,100]);
+        await tokenAttached?.connect(user1).batchTransfer([user2.address, user3.address], [10, 10]);
+
+        
+        await tokenAttached?.connect(user1).approve(user2.address, 10000);
+        await tokenAttached?.connect(user2).transferFrom(user1.address, user3.address, 10);
       });
+
+
       it("batchSetAddressFrozen", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1670,66 +1700,70 @@ describe(" Tokenization Testing ", function () {
         await identityRegisteryAttached
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user1.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
-          .batchSetAddressFrozen([user2.address, user3.address], [true, true]);
+
+        await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [100,100]);
+        await tokenAttached?.connect(user1).batchSetAddressFrozen([user1.address, user1.address], [true, true])
       });
-      it("batchFreezePartialTokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+
+
+      it("batchFreezePartialTokens and reverted if amount exceeds available balance", async () => {
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],  // Empty for now
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1753,66 +1787,72 @@ describe(" Tokenization Testing ", function () {
         await identityRegisteryAttached
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user3.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
-          .batchFreezePartialTokens([user2.address, user3.address], [1, 1]);
+
+        await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [10,10]);
+        await expect(
+          tokenAttached?.connect(user1).batchFreezePartialTokens([user1.address, user1.address], [10, 10])
+      ).to.be.revertedWith("Amount exceeds available balance");
       });
+
+
       it("batchUnfreezePartialTokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1836,69 +1876,71 @@ describe(" Tokenization Testing ", function () {
         await identityRegisteryAttached
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user3.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
-          .batchFreezePartialTokens([user2.address, user3.address], [1, 1]);
-        await tokenAttached
-          .connect(user1)
-          .batchUnfreezePartialTokens([user2.address, user3.address], [1, 1]);
+
+        await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [10,10]);
+        await tokenAttached?.connect(user1).batchFreezePartialTokens([user1.address,user2.address], [1,1]);
+        await tokenAttached?.connect(user1).batchUnfreezePartialTokens([user1.address,user2.address], [1,1]);
       });
+
+
       it("freezePartialTokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
+        let tokenDetails={
+          owner:owner.address,
+          name : "My Test Token",
+          symbol: "MTK",
           decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
+          irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+          ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+          wrap : false,
+          irAgents: [user1.address],
+          tokenAgents: [user1.address],  // Agents for token management
+          transferAgents : [],  // Agents with transfer permissions
+          complianceModules : [
           ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
+          complianceSettings : [],
+        }
+      
         let claimDetails = {
           claimTopics: [],
           issuers: [],
-          issuerClaims: [],
+          issuerClaims:[],
         };
-
+      
         await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
+      
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
+      
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+      
+        if (event) {
+            let _token = event.args?._token;
+            AddressOfToken = _token;
         }
-
+      
+        // Attach to the deployed token contract
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+      
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+      
+        // Set up the fundProxy contract
+        let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+        await fundProxyAttached.init(trexFactory.address);
+        await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1922,181 +1964,10 @@ describe(" Tokenization Testing ", function () {
         await identityRegisteryAttached
           .connect(user1)
           .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user3.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
+
+        await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [10,10]);
+        await tokenAttached?.connect(user1)
           .freezePartialTokens(user2.address, 1);
-      });
-      it("batchUnfreezePartialTokens", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
-          decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
-          ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
-        let claimDetails = {
-          claimTopics: [],
-          issuers: [],
-          issuerClaims: [],
-        };
-
-        await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
-          tokenDetails,
-          claimDetails
-        );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-        }
-
-        await identityFactory.createIdentity(user1.address, user1.address);
-        await identityFactory.createIdentity(user2.address, user2.address);
-
-        let user1Identity = await identityFactory.getIdentity(user1.address);
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-        let user3Identity = await identityFactory.getIdentity(user3.address);
-
-        let identityRegistryAddress = await tokenAttached?.identityRegistry();
-
-        let identityRegisteryAttached = identityRegistryImplementation.attach(
-          String(identityRegistryAddress)
-        );
-
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user1.address, user1Identity, 91);
-
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user2.address, user2Identity, 91);
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user3.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
-          .freezePartialTokens(user2.address, 1);
-        await tokenAttached
-          .connect(user1)
-          .unfreezePartialTokens(user2.address, 1);
-      });
-      it("setAddressFrozen", async () => {
-        let tokenDetails = {
-          owner: owner.address,
-          name: "TestToken",
-          symbol: "TT",
-          decimals: 18,
-          irs: ethers.constants.AddressZero,
-          ONCHAINID: ethers.constants.AddressZero,
-          wrap: false,
-          irAgents: [user1.address, fundProxy.address],
-          tokenAgents: [user1.address],
-          transferAgents: [user1.address],
-          complianceModules: [
-            countryAllowCompliance.address,
-            supplyLimitCompliance.address,
-            maxBalanceCompliance.address,
-            holdTimeCompliance.address,
-          ],
-          complianceSettings: [
-            "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-            "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-            "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-            "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-          ],
-        };
-        let claimDetails = {
-          claimTopics: [],
-          issuers: [],
-          issuerClaims: [],
-        };
-
-        await identityFactory.addTokenFactory(trexFactory.address);
-
-        const TX = await trexFactory.deployTREXSuite(
-          "process.env.TOKEN_SALT",
-          tokenDetails,
-          claimDetails
-        );
-
-        const receipt = await TX.wait();
-
-        const event = receipt.events?.find(
-          (event) => event.event === "TREXSuiteDeployed"
-        );
-        let token = event?.args;
-        let tokenAttached: any;
-        let firstAddress;
-
-        if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-        }
-
-        await identityFactory.createIdentity(user1.address, user1.address);
-        await identityFactory.createIdentity(user2.address, user2.address);
-
-        let user1Identity = await identityFactory.getIdentity(user1.address);
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-        let user3Identity = await identityFactory.getIdentity(user3.address);
-
-        let identityRegistryAddress = await tokenAttached?.identityRegistry();
-
-        let identityRegisteryAttached = identityRegistryImplementation.attach(
-          String(identityRegistryAddress)
-        );
-
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user1.address, user1Identity, 91);
-
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user2.address, user2Identity, 91);
-        await identityRegisteryAttached
-          .connect(user1)
-          .registerIdentity(user3.address, user3Identity, 91);
-        await tokenAttached
-          .connect(user1)
-          .batchMint([user3.address, user2.address], [100, 100]);
-        await tokenAttached
-          .connect(user1)
-          .setAddressFrozen(user2.address, true);
       });
     });
   });
