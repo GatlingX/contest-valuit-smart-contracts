@@ -98,5 +98,3 @@ export default {
     timeout: 2000000,
   },
 }
-
-

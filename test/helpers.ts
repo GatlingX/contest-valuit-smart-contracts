@@ -185,21 +185,23 @@ describe(" Tokenization Testing ", function () {
 
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
-    wrapper = await new Wrapper__factory(owner).deploy(
-      verc20.address
-    );
+    // wrapper = await new Wrapper__factory(owner).deploy(
+    //   verc20.address
+    // );
 
     await fundProxy.upgradeTo(fundFactory.address);
 
-    trexFactory = await new TREXFactory__factory(owner).deploy(
-      trexImplementationAuthority.address,
-      identityFactory.address,
-      wrapper.address
-    );
+    // trexFactory = await new TREXFactory__factory(owner).deploy(
+    //   trexImplementationAuthority.address,
+    //   identityFactory.address,
+    //   wrapper.address
+    // );
+    
     usdcToken = await new USDC__factory(owner).deploy();
     usdtToken = await new USDT__factory(owner).deploy();
 
   });
+
   it("USDC Helper", async () => {
     await usdcToken.mint(owner.address, 10000);
     let balance = await usdcToken.balanceOf(owner.address);

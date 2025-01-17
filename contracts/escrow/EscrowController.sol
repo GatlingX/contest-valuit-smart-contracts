@@ -109,7 +109,6 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                                         adminFeeAmount);
         
         IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
-
         emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
     }
 
