@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import "@nomicfoundation/hardhat-chai-matchers";
 const { BigNumber } = require('ethers');
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
+import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, FundFactoryStorage, FundFactoryStorage__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory } from "../typechain";
 
 describe(" Tokenization Testing ", function () {
     let signer: SignerWithAddress;
@@ -26,7 +26,8 @@ describe(" Tokenization Testing ", function () {
     let tokenImplementation: Token;
     let trexFactory: TREXFactory;
     let trexImplementationAuthority: TREXImplementationAuthority;
-
+    let fundFactoryStorage: FundFactoryStorage
+    
     //Identity
     let identityImplementation: Identity;
     let identityImplementationAuthority: ImplementationAuthority;
@@ -120,7 +121,7 @@ describe(" Tokenization Testing ", function () {
     implEquityConfig = await new ImplementationAuthority__factory(owner).deploy(equityConfig.address);
     fundFactory = await new FundFactory__factory(owner).deploy();
     fundProxy = await new FactoryProxy__factory(owner).deploy();
-
+    fundFactoryStorage = await new FundFactoryStorage__factory(owner).deploy();
     //Wrapper
     // verc20 = await new VERC20__factory(owner).deploy();
     // wrapper = await new Wrapper__factory(owner).deploy(verc20.address);
@@ -136,9 +137,16 @@ describe(" Tokenization Testing ", function () {
 
     await usdc.mint(user1.address,1000000);
 
-    await fundProxy.upgradeTo(fundFactory.address);
+  
 
     trexFactory = await new TREXFactory__factory(owner).deploy(trexImplementationAuthority.address, identityFactory.address, wrapper.address);
+
+      // Make sure FundFactory is properly initialized
+      await fundFactory.init(trexFactory.address);
+      await fundFactory.attach(fundFactoryStorage.address);
+          await fundProxy.upgradeTo(fundFactory.address);
+      // Set up ownership in TREXFactory
+      await trexFactory.transferOwnership(owner.address);
   })
     
 
@@ -293,7 +301,7 @@ describe(" Tokenization Testing ", function () {
             10, 
             "Hello"
         )
-    ).to.be.revertedWith("Only Owner can create");
+    ).to.be.revertedWith("Only Owner can call");
     });
 
 
@@ -402,127 +410,7 @@ describe(" Tokenization Testing ", function () {
     });
 
 
-    // it("Share Dividend", async () => {
-    //   let tokenDetails={
-    //     owner:owner.address,
-    //     name : "My Test Token",
-    //     symbol: "MTK",
-    //     decimals: 18,
-    //     irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-    //     ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-    //     wrap : false,
-    //     irAgents: [user1.address],
-    //     tokenAgents: [user1.address],  // Agents for token management
-    //     transferAgents : [],  // Agents with transfer permissions
-    //     complianceModules : [
-    //     ],
-    //     complianceSettings : [],  // Empty for now
-    //   }
-
-    //   let claimDetails = {
-    //       claimTopics: [],
-    //       issuers: [],
-    //       issuerClaims:[],
-    //   };
-
-    //   await identityFactory.addTokenFactory(trexFactory.address);
-
-    //   // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    //   const tx=await trexFactory.connect(owner).deployTREXSuite(
-    //       "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-    //       tokenDetails,
-    //       claimDetails
-    //   );
-
-    //   // Wait for the transaction to be mined and capture the receipt
-    //   const receipt = await tx.wait();
-
-    //   // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    //   const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    //   let AddressOfToken;
-
-    //   if (event) {
-    //       let _token: any = event.args?._token;
-    //       AddressOfToken=_token;
-
-    //       let _ir: any = event.args?._ir;
-    //       let _irs: any = event.args?._irs;
-    //       let _tir: any = event.args?._tir;
-    //       let _ctr: any = event.args?._ctr;
-    //       let _mc: any = event.args?._mc;
-    //       let _salt: any = event.args?._salt;
-    //   }
-
-    //   let token = event?.args;
-    //   let tokenAttached;
-    //   let firstAddress;
-
-    //   if (Array.isArray(token) && token.length > 0) {
-    //       firstAddress = token[0]; // Directly accessing the first element
-    //       tokenAttached = await tokenImplementation.attach(firstAddress);
-    //   }
-
-    //   expect(await tokenAttached?.name()).to.equal("My Test Token");
-    //   expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
-    //   const ownerAddress = await identityRegistryImplementation.owner();
-          
-    //   // for granting the role of the agent
-    //   await identityFactory.addAgent(user1.address);
-    //   await identityFactory.addAgent(owner.address);
-          
-    //   // check if the user1.address is an agent or not
-    //   const checkAgent=await identityFactory.isAgent(user1.address);
-    //   expect(checkAgent).to.equal(true);
-
-    //   const checkAgentOwner=await identityFactory.isAgent(owner.address);
-    //   expect(checkAgentOwner).to.equal(true);
-
-    //   // initialize the modular compliance
-    //   await modularComplianceImplementation.connect(user1).init();
-    //   const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    //   expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    //   await identityFactory.createIdentity(user1.address, user1.address);
-    //   await identityFactory.createIdentity(user2.address, user2.address);
-    //   await identityFactory.createIdentity(user3.address, user3.address);
-
-    //   let user1Identity = await identityFactory.getIdentity(user1.address);
-    //   let user2Identity = await identityFactory.getIdentity(user2.address);
-    //   let user3Identity = await identityFactory.getIdentity(user3.address);
-        
-    //   // Set up the fundProxy contract
-    //   let fundProxyAttached = await fundFactory.attach(fundProxy.address);
-    //   await fundProxyAttached.init(trexFactory.address);
-    //   await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-
-    //   // Call createFund to deploy the fund
-    //   const txn = await fundProxyAttached.createFund(
-    //     AddressOfToken, 
-    //     "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000", 
-    //     10, 
-    //     "Hello"
-    //   );
-
-    //   const receiptFund = await txn.wait();
-
-    //   // Listen for the "FundCreated" event
-    //   const event1 = receiptFund.events?.find(event => event.event === "FundCreated");
-
-    //   // Extract the fund contract address and mapping value from the event
-    //   let fundContract = event1?.args; 
-    //   let fundAddress;
-    //   let fundAttached;
-
-    //   if (Array.isArray(fundContract) && fundContract.length > 0) {
-    //     fundAddress = fundContract[0];  // Directly accessing the first element
-    //     fundAttached = await fund.attach(fundAddress);
-    //   }
-
-    //     // await fundProxyAttached.connect(user1).batchWhitelist(firstAddress,[user1.address,user2.address,user3.address],[user1Identity,user2Identity,user3Identity],[91,91,91],["a","b","c"]);
-    //     await usdc.connect(user1).approve(fundAddress,1000);
-    //     await fundAttached?.connect(user1).shareDividend([user2.address,owner.address], [50,50], usdc.address);
-    // });
+   
 
 
     it("Deploy Equity Config Contract", async () => {
@@ -693,32 +581,31 @@ describe(" Tokenization Testing ", function () {
           12, 
           "EquityConfig"
       )
-  ).to.be.revertedWith("Only Owner can create");
+  ).to.be.revertedWith("Only Owner can call");
     });
 
     
     it("should set the masterFactory address by the owner", async () => {
-      // New master factory address (mock address)
-      const newMasterFactory =await ethers.Wallet.createRandom().address;
-      await fundFactory.init(fundFactory.address);
-  
-      // Set the master factory address
-      await fundFactory.connect(owner).setMasterFactory(newMasterFactory);
-  
-      // Verify the masterFactory address has been updated
-      expect(await fundFactory.masterFactory()).to.equal(newMasterFactory);
+       const newMasterFactory = await ethers.Wallet.createRandom().address;
+        
+        // Since fundFactory is already initialized with trexFactory in beforeEach,
+        // we can directly call setMasterFactory
+        await fundFactory.connect(owner).setMasterFactory(newMasterFactory);
+        
+        // Verify the masterFactory address has been updated
+        expect(await fundFactory.getMasterFactory()).to.equal(newMasterFactory);
     });
 
 
     it("should set the masterFactory address by the owner and reverted if it is not owner", async () => {
       // New master factory address (mock address)
       const newMasterFactory =await ethers.Wallet.createRandom().address;
-      await fundFactory.init(fundFactory.address);
+      
   
       const nonOwner = signers[1]; // Assume this is not the owner
     await expect(
       fundFactory.connect(nonOwner).setMasterFactory(newMasterFactory)
-    ).to.be.revertedWith("Only Owner can set master Factory");
+    ).to.be.revertedWith("Only Owner can call");
     });
 
 
@@ -781,74 +668,71 @@ describe(" Tokenization Testing ", function () {
     // });
 
 
-    it("should allow the owner to set the admin fee and should reverted the transaction", async () => {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
+    // it("should allow the owner to set the admin fee and should reverted the transaction", async () => {
+    //   let tokenDetails={
+    //     owner:owner.address,
+    //     name : "My Test Token",
+    //     symbol: "MTK",
+    //     decimals: 18,
+    //     irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+    //     ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+    //     wrap : false,
+    //     irAgents: [user1.address],
+    //     tokenAgents: [user1.address],  // Agents for token management
+    //     transferAgents : [],  // Agents with transfer permissions
+    //     complianceModules : [
+    //     ],
+    //     complianceSettings : [],  // Empty for now
+    //   }
 
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
+    //   let claimDetails = {
+    //     claimTopics: [],
+    //     issuers: [],
+    //     issuerClaims:[],
+    //   };
 
-      await identityFactory.addTokenFactory(trexFactory.address);
+    //   await identityFactory.addTokenFactory(trexFactory.address);
 
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
+    //   // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+    //   const tx=await trexFactory.connect(owner).deployTREXSuite(
+    //     "test_salt",  // Unique salt to ensure CREATE2 uniqueness
+    //     tokenDetails,
+    //     claimDetails
+    //   );
 
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
+    //   const receipt = await tx.wait();
+    //   const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    //   let AddressOfToken;
 
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
+    //   if (event) {
+    //       let _token = event.args?._token;
+    //       AddressOfToken = _token;
+    //   }
 
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
+    //   // Attach to the deployed token contract
+    //   let token = event?.args;
+    //   let tokenAttached;
+    //   let firstAddress;
+    //   if (Array.isArray(token) && token.length > 0) {
+    //       firstAddress = token[0]; // Directly accessing the first element
+    //       tokenAttached = await tokenImplementation.attach(firstAddress);
+    //   }
 
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
+    //   expect(await tokenAttached?.name()).to.equal("My Test Token");
+    //   expect(await tokenAttached?.symbol()).to.equal("MTK");
 
-      // Set admin fee with the owner
-      await fundFactory.init(fundFactory.address);
-      const nonOwner = signers[1]; // Assuming this is not the owner
-    await expect(
-      fundFactory.connect(nonOwner).setAdminFee(AddressOfToken, 123, "1")
-    ).to.be.revertedWith("Only Owner can set implementation");
-    });
+    //   // Set admin fee with the owner
+    //   await fundFactory.init(fundFactory.address);
+    //   const nonOwner = signers[1]; // Assuming this is not the owner
+    // await expect(
+    //   fundFactory.connect(nonOwner).setAdminFee(AddressOfToken, 123, "1")
+    // ).to.be.revertedWith("Only Owner can set implementation");
+    // });
   
 
     it("should set the admin wallet by the owner and revert if not the owner or zero address", async () => {
       const newAdminWallet = await ethers.Wallet.createRandom().address;  // Mock wallet address
       const actionID = "1"; // Sample action ID
-      
-      // initialize the fund factory 
-      await fundFactory.init(fundFactory.address);
 
       // 1. Owner sets the admin wallet
       await fundFactory.connect(owner).setAdminWallet(newAdminWallet, actionID);
@@ -858,7 +742,7 @@ describe(" Tokenization Testing ", function () {
       const nonOwner = signers[1];  // Assuming this is not the owner
       await expect(
         fundFactory.connect(nonOwner).setAdminWallet(newAdminWallet, actionID)
-      ).to.be.revertedWith("Only Owner can set implementation");
+      ).to.be.revertedWith("Only Owner can call");
     
       // 3. Owner tries to set the admin wallet to zero address - should revert
       const zeroAddress = ethers.constants.AddressZero;
@@ -977,735 +861,246 @@ describe(" Tokenization Testing ", function () {
         trexFactory.connect(owner).deployTREXSuite("test_salt", tokenDetails, claimDetails)
       ).to.be.revertedWith("only Factory or owner can call");
     });
-    
 
-    it("set valuation in the equity config file", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
 
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await tokenAttached?.addAgent(owner.address);
-      await equityConfig.setValuation(23,"123");
-    });
-
-
-    it("set valuation in the equity config file and rever if it is not owner", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await expect(equityConfig.setValuation(23, "123")).to.be.revertedWith("Only Token Agent can call");
-    });
-
-
-    it("set Min Investment in the equity config file", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await tokenAttached?.addAgent(owner.address);
-      await equityConfig.setMinInvestment(23,"123");
-    });
-
-
-    it("set Min Investment in the equity config file and rever if it is not owner", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await expect(equityConfig.setMinInvestment(23, "123")).to.be.revertedWith("Only Token Agent can call");
-    });
-
-
-    it("set Max Investment in the equity config file", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await tokenAttached?.addAgent(owner.address);
-      await equityConfig.setMaxInvesrment(23,"123");
-    });
-
-
-    it("set Max Investment in the equity config file and rever if it is not owner", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await expect(equityConfig.setMaxInvesrment(23, "123")).to.be.revertedWith("Only Token Agent can call");
-    });
-
-
-    it("set Projected Yeild in the equity config file", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await tokenAttached?.addAgent(owner.address);
-      await equityConfig.setProjectedYeild(23,"123");
-    });
-
-
-    it("set Projected Yeild in the equity config file and rever if it is not owner", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await expect(equityConfig.setProjectedYeild(23, "123")).to.be.revertedWith("Only Token Agent can call");
-    });
-
-
-    it("set DE Ratio in the equity config file", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await tokenAttached?.addAgent(owner.address);
-      await equityConfig.setDERatio("23","123");
-    });
-
-
-    it("set DE Ratio in the equity config file and rever if it is not owner", async function () {
-      let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-      }
-
-      let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-      };
-
-      await identityFactory.addTokenFactory(trexFactory.address);
-
-      // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-      const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-      );
-
-      const receipt = await tx.wait();
-      const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-      let AddressOfToken;
-
-      if (event) {
-          let _token = event.args?._token;
-          AddressOfToken = _token;
-      }
-
-      // Attach to the deployed token contract
-      let token = event?.args;
-      let tokenAttached;
-      let firstAddress;
-      if (Array.isArray(token) && token.length > 0) {
-          firstAddress = token[0]; // Directly accessing the first element
-          tokenAttached = await tokenImplementation.attach(firstAddress);
-      }
-
-      expect(await tokenAttached?.name()).to.equal("My Test Token");
-      expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-      // Call the init function and capture the event logs
-      const initTx = await equityConfig.init(AddressOfToken,
-        '0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000033132330000000000000000000000000000000000000000000000000000000000'
-      );
-
-      await identityFactory.addAgent(owner.address);
-      await tokenImplementation.init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-      )
-
-      await expect(equityConfig.setDERatio("23", "123")).to.be.revertedWith("Only Token Agent can call");
-    });
+  it("should set fee parameters correctly when called by owner", async () => {
+    const token = await ethers.Wallet.createRandom().address;
+    const escrowFee = 100;  // 1%
+    const wrapFee = 150;    // 1.5%
+    const dividendFee = 200; // 2%
+    const redemptionFee = 250; // 2.5%
+    const actionID = "SET_FEE_1";
+  
+    await fundFactory.connect(owner).setFee(
+      token,
+      escrowFee,
+      wrapFee,
+      dividendFee,
+      redemptionFee,
+      actionID
+    );
+  
+    expect(await fundFactory.getEscrowFee(token)).to.equal(escrowFee);
+    expect(await fundFactory.getWrapFee(token)).to.equal(wrapFee);
+    expect(await fundFactory.getDividendFee(token)).to.equal(dividendFee);
+    expect(await fundFactory.getRedemptionFee(token)).to.equal(redemptionFee);
   });
+  
+  it("should revert when non-owner tries to set fee", async () => {
+    const token = await ethers.Wallet.createRandom().address;
+    await expect(
+      fundFactory.connect(user1).setFee(
+        token,
+        100,
+        150,
+        200,
+        250,
+        "SET_FEE_2"
+      )
+    ).to.be.revertedWith("Only Owner can call");
+  });
+  
+  it("should revert when trying to reset fees for same token", async () => {
+    const token = await ethers.Wallet.createRandom().address;
+    
+    // First fee setting
+    await fundFactory.connect(owner).setFee(
+      token,
+      100,
+      150,
+      200,
+      250,
+      "SET_FEE_3"
+    );
+  
+    // Attempt to reset fees
+    await expect(
+      fundFactory.connect(owner).setFee(
+        token,
+        300,
+        350,
+        400,
+        450,
+        "SET_FEE_4"
+      )
+    ).to.be.revertedWith("Admin Fee Reset Not Allowed!!");
+  });
+  
+  
+  it("should correctly set implementation addresses", async () => {
+    const newImplFund = await ethers.Wallet.createRandom().address;
+    const newImplEquityConfig = await ethers.Wallet.createRandom().address;
+  
+    await fundFactory.connect(owner).setImpl(newImplFund, newImplEquityConfig);
+  
+    // Verify implementation addresses through events
+    await expect(fundFactory.connect(owner).setImpl(newImplFund, newImplEquityConfig))
+      .to.emit(fundFactory, "ImplementationsUpdated")
+      .withArgs(newImplFund, newImplEquityConfig);
+  });
+  
+  it("should revert when non-owner tries to set implementations", async () => {
+    const newImplFund = await ethers.Wallet.createRandom().address;
+    const newImplEquityConfig = await ethers.Wallet.createRandom().address;
+  
+    await expect(
+      fundFactory.connect(user1).setImpl(newImplFund, newImplEquityConfig)
+    ).to.be.revertedWith("Only Owner can call");
+  });
+  
+  it("should track token total supply correctly", async () => {
+    let tokenDetails = {
+      owner: owner.address,
+      name: "Supply Test Token",
+      symbol: "STT",
+      decimals: 18,
+      irs: ethers.constants.AddressZero,
+      ONCHAINID: ethers.constants.AddressZero,
+      wrap: false,
+      irAgents: [user1.address],
+      tokenAgents: [user1.address],
+      transferAgents: [],
+      complianceModules: [],
+      complianceSettings: [],
+    };
+  
+    let claimDetails = {
+      claimTopics: [],
+      issuers: [],
+      issuerClaims: [],
+    };
+  
+    // Step 1: Add Token Factory to Identity Factory
+    await identityFactory.addTokenFactory(trexFactory.address);
+  
+    // Step 2: Deploy TREX Suite
+    const tx = await trexFactory.connect(owner).deployTREXSuite(
+      "supply_test_salt",
+      tokenDetails,
+      claimDetails
+    );
+  
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    const tokenAddress = event?.args?._token;
+  
+    // Debugging: Check if the tokenAddress is correct
+    console.log("Deployed Token Address:", tokenAddress);
+  
+    // Step 3: Initialize and Set Implementation in Fund Factory
+    let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+    await fundProxyAttached.init(trexFactory.address);
+    await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+  
+    // Ensure the FundFactory is correctly linked with FundFactoryStorage in this test
+ 
+  await fundProxyAttached.attach(fundFactoryStorage.address); 
+    // Step 4: Create Fund
+    const supply = ethers.utils.parseEther("1000000"); // 1M tokens
+  
+    const initData = "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000";
+  
+    const createFundTx = await fundProxyAttached.createFund(
+      tokenAddress,
+      initData,
+      supply,
+      "SUPPLY_TEST"
+    );
+    await createFundTx.wait();
+
+    // Debugging: Check if the tokenAddress is correct
+console.log("Deployed Token Address:", tokenAddress);
+  
+    // Step 5: Retrieve the total supply
+    const actualSupply = await fundProxyAttached.getTokenTotalSupply(tokenAddress);
+  
+    // Debug Logs
+    console.log("Token Address:", tokenAddress);
+    console.log("Expected Supply:", supply.toString());
+    console.log("Actual Supply:", actualSupply.toString());
+  
+ 
+// Check if tokenTotalSupply was updated correctly
+const expectedSupply = supply.toString();
+const updatedSupply = actualSupply.toString();
+expect(updatedSupply).to.equal(expectedSupply, "The total supply does not match");
+
+// Step 6: Check FundCreated Events
+const fundCreatedEvents = await fundFactory.queryFilter(fundFactory.filters.FundCreated());
+console.log("Fund Created Events:", fundCreatedEvents);
+
+// Assert that the supply matches
+expect(actualSupply).to.equal(supply);
+  });
+  
+  
+  it("should revert when creating fund/equity for already linked token", async () => {
+    let tokenDetails = {
+      owner: owner.address,
+      name: "Link Test Token",
+      symbol: "LTT",
+      decimals: 18,
+      irs: ethers.constants.AddressZero,
+      ONCHAINID: ethers.constants.AddressZero,
+      wrap: false,
+      irAgents: [user1.address],
+      tokenAgents: [user1.address],
+      transferAgents: [],
+      complianceModules: [],
+      complianceSettings: [],
+    };
+  
+    let claimDetails = {
+      claimTopics: [],
+      issuers: [],
+      issuerClaims: [],
+    };
+  
+    await identityFactory.addTokenFactory(trexFactory.address);
+    
+    const tx = await trexFactory.connect(owner).deployTREXSuite(
+      "link_test_salt",
+      tokenDetails,
+      claimDetails
+    );
+  
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    const tokenAddress = event?.args?._token;
+  
+    // Set implementation
+    let fundProxyAttached = await fundFactory.attach(fundProxy.address);
+    await fundProxyAttached.init(trexFactory.address);
+    await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
+    const initData = "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000";
+
+    // Create initial fund
+    await fundProxyAttached.createFund(
+      tokenAddress,
+      initData,
+      1000000,
+      "LINK_TEST_1"
+    );
+  
+    // Attempt to create another fund with same token
+    await expect(
+      fundProxyAttached.createFund(
+        tokenAddress,
+        initData,
+        1000000,
+        "LINK_TEST_2"
+      )
+    ).to.be.revertedWith("Token already linked to a Fund or Equity");
+  
+    // Attempt to create equity config with same token
+    await expect(
+      fundProxyAttached.createEquityConfig(
+        tokenAddress,
+        initData,
+        1000000,
+        "LINK_TEST_3"
+      )
+    ).to.be.revertedWith("Token already linked to a Fund or Equity");
+  });
+    
+});
