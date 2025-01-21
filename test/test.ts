@@ -984,8 +984,6 @@ describe(" Tokenization Testing ", function () {
     const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
     const tokenAddress = event?.args?._token;
   
-    // Debugging: Check if the tokenAddress is correct
-    console.log("Deployed Token Address:", tokenAddress);
   
     // Step 3: Initialize and Set Implementation in Fund Factory
     let fundProxyAttached = await fundFactory.attach(fundProxy.address);
@@ -1007,17 +1005,10 @@ describe(" Tokenization Testing ", function () {
       "SUPPLY_TEST"
     );
     await createFundTx.wait();
-
-    // Debugging: Check if the tokenAddress is correct
-console.log("Deployed Token Address:", tokenAddress);
   
     // Step 5: Retrieve the total supply
     const actualSupply = await fundProxyAttached.getTokenTotalSupply(tokenAddress);
-  
-    // Debug Logs
-    console.log("Token Address:", tokenAddress);
-    console.log("Expected Supply:", supply.toString());
-    console.log("Actual Supply:", actualSupply.toString());
+
   
  
 // Check if tokenTotalSupply was updated correctly

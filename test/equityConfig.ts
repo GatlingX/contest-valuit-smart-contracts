@@ -1260,7 +1260,6 @@ describe("Token Configuration Tests", function() {
     const receipt = await tx.wait();
     const event = receipt.events?.find(e => e.event === "TREXSuiteDeployed");
     const tokenAddress = event?.args?._token;
-    console.log("Token deployed at:", tokenAddress);
 
     // Set up fees with different rates for different operations
     await fundFactoryAttached.setFee(
@@ -1284,7 +1283,6 @@ describe("Token Configuration Tests", function() {
       ]
     );
 
-    console.log("Creating equity config...");
     await fundFactoryAttached.createEquityConfig(
       tokenAddress,
       initData,
@@ -1298,17 +1296,14 @@ describe("Token Configuration Tests", function() {
     // Deploy and mint USDC (6 decimals)
     const usdc = await new USDC__factory(owner).deploy();
     await usdc.mint(owner.address, ethers.utils.parseUnits("1000000", 6)); 
-    console.log("USDC minted to owner");
 
     // Approve USDC for dividend
     const dividendAmount = ethers.utils.parseUnits("10000", 6); 
     await usdc.approve(equityConfigAddress, dividendAmount);
-    console.log("USDC approved for dividend");
 
     // Check admin balance before distribution
     const adminWallet = await fundFactoryAttached.getAdminWallet();
     const adminBalanceBefore = await usdc.balanceOf(adminWallet);
-    console.log("Admin Balance Before Distribution:", adminBalanceBefore.toString());
 
     // Distribute dividend
     const dividendTx = await equityConfig.shareDividend(
@@ -1319,7 +1314,6 @@ describe("Token Configuration Tests", function() {
       usdc.address,
       owner.address
     );
-    console.log("Dividend distributed");
 
     // Check balances after distribution
     const user2Balance = await usdc.balanceOf(user2.address);
@@ -1327,17 +1321,11 @@ describe("Token Configuration Tests", function() {
 
     // Calculate the positive change in admin balance as the admin fee
     const actualAdminFee = adminBalanceAfter.sub(adminBalanceBefore);
-    console.log("User2 Balance:", user2Balance.toString());
-    console.log("Admin Balance After Distribution:", adminBalanceAfter.toString());
-    console.log("Actual Admin Fee (from balance change):", actualAdminFee.toString());
-
+    
     // Expected fee calculation
     const feePercentage = 1200;
     const expectedAdminFee = dividendAmount.mul(feePercentage).div(10000); 
     const expectedNetAmount = dividendAmount.sub(expectedAdminFee); 
-
-    console.log("Expected Net Amount:", expectedNetAmount.toString());
-    console.log("Expected Admin Fee:", expectedAdminFee.toString());
 
     // Assertions
     expect(user2Balance).to.equal(expectedNetAmount);  

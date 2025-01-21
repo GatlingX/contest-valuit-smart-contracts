@@ -142,7 +142,6 @@ describe("IdentityRegistry", function () {
    
     it("Should allow registering an identity", async function () {
 
-        console.log("Agent Added", await identityRegistryStorage.owner());
       
         // Register identity
        await identityRegistry.registerIdentity(
@@ -329,18 +328,15 @@ describe("IdentityRegistry", function () {
 
     // Debug: Check if the claim topic was added correctly
     const claimTopics = await claimTopicsRegistry.getClaimTopics();
-    console.log("Claim Topics:", claimTopics);
     expect(claimTopics.length).to.equal(1);
     expect(claimTopics[0]).to.equal(claimTopic);
 
     // Debug: Verify the user identity is correctly stored in the Identity Registry
     const userIdentity = await identityRegistry.identity(user1.address);
-    console.log("User Identity:", userIdentity);
     expect(userIdentity).to.not.equal(ethers.constants.AddressZero);
 
     // Verify that the user is not verified because no claims are linked to the user
     const isVerified = await identityRegistry.connect(owner).isVerified(user1.address);
-    console.log("Is Verified:", isVerified);
     expect(isVerified).to.be.false;
     });
 

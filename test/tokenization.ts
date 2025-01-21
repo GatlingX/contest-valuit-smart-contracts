@@ -70,7 +70,6 @@ describe(" Tokenization Testing ", function () {
 
   // const trustSigningKey = ethers.Wallet.createRandom();
 
-  // console.log("claimIssuerSigningKey ", trustSigningKey);
 
   //Implementation
   let claimTopicsRegistryImplementation: ClaimTopicsRegistry;

@@ -36,7 +36,6 @@ describe("ClaimIssuer Contract Testing", function () {
     try {
       await claimIssuerContract.connect(owner).initialize(manager.address);
     } catch (err) {
-      console.log("Initialization skipped: ");
     }
   });
 
@@ -171,17 +170,14 @@ describe("ClaimIssuer Contract Testing", function () {
       try {
           await claimIssuerContract.connect(manager).revokeClaim(dataHash, claimIssuerContract.address);
       } catch (error) {
-          console.log("RevokeClaim error:");
       }
   
       // Alternative revokeClaimBySignature
       const tx = await claimIssuerContract.connect(manager).revokeClaimBySignature(sampleSignature);
       const receipt = await tx.wait();
-      console.log("Emitted events:", receipt.events);
   
       // Check revocation
       const isRevoked = await claimIssuerContract.isClaimRevoked(sampleSignature);
-      console.log("Is claim revoked:", isRevoked);
   
       expect(isRevoked).to.be.true;
   
@@ -202,7 +198,6 @@ describe("ClaimIssuer Contract Testing", function () {
       const tx = await claimIssuerContract.connect(manager).revokeClaimBySignature(sampleSignature);
 
       const isRevoked = await claimIssuerContract.isClaimRevoked(sampleSignature);
-      console.log("Is claim revoked:", isRevoked);
 
       const dataHash = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
