@@ -161,7 +161,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                 } else{
                     uint16 redemptionFee = IFundFactory(fundFactory).getRedemptionFee(_token);
                     uint256 adminFeeAmount = (_profitAmount * redemptionFee) / FEE_DENOMINATOR;
-                    uint256 netAmount = _principalAmount + redemptionFee - adminFeeAmount;
+                    uint256 netAmount = _principalAmount - adminFeeAmount;
 
                     TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, _userAddress, netAmount);
                     TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, IFundFactory(fundFactory).getAdminWallet(), adminFeeAmount);
