@@ -318,9 +318,6 @@ it("it sets the call update identity and reverted if it is not Not an Identity R
         let _ctr: any = event.args?._ctr;
         let _mc: any = event.args?._mc;
         let _salt: any = event.args?._salt;
-    
-       
-        
     }
 
     let token = event?.args;
