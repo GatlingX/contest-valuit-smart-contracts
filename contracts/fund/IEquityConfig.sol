@@ -37,6 +37,14 @@ interface IEquityConfig {
         string _dividendID
     );
 
+    event AssetPriceOffChainUpdated(
+        uint256 _newPrice
+    );
+
+    event OffChainPriceUpdated(
+        bool status
+    );
+
     function getCurrentValuation() external view returns(uint256);
 
     function getMinInvestment() external view returns(uint256);
@@ -56,5 +64,7 @@ interface IEquityConfig {
     function getOffChainPriceStatus() external view returns(bool);
     
     function getToken() view external returns (address);
+
+    function setValuation(uint256 _latestValuation, string memory actionID) external returns(bool);
 }
 

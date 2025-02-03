@@ -82,10 +82,12 @@ contract EquityConfig is Initializable, EquityConfigStorage, IEquityConfig {
 
     function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent{
         tokenPrice = _newPrice;
+        emit AssetPriceOffChainUpdated(_newPrice);
     }
 
     function setOffChainPrice(bool _status) external onlyAgent{
         offChainPrice = _status;
+        emit OffChainPriceUpdated(_status);
     }
 
     function getCurrentValuation() external view returns(uint256){

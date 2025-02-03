@@ -155,7 +155,7 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
             // Calculate the token price in 18 decimals
             uint256 tokenPrice = (netAssetValue * (10 ** 18) / IFundFactory(fundFactory).getTokenTotalSupply(_erc3643));
             // Calculate the order value in stablecoin decimals
-            uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 18);
+            uint256 orderValue = (((_amount * tokenPrice)/ (10 ** erc3643Decimals)) * (10 ** stableCoinDecimals)) / (10 ** 18);
             // Calculate the admin fee (tax amount) in stablecoin decimals
             uint256 taxAmount = (orderValue * wrapFee) / 10000;
             // Perform the tax transfer
@@ -165,7 +165,7 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
         else{
             //tokenPrice is with 6 decimals
             uint256 tokenPrice = IFund(fund).getOffChainPrice();
-            uint256 orderValue = (((_amount / (10 ** erc3643Decimals)) * tokenPrice) * (10 ** stableCoinDecimals)) / (10 ** 6);
+            uint256 orderValue = (((_amount * tokenPrice)/ (10 ** erc3643Decimals)) * (10 ** stableCoinDecimals)) / (10 ** 6);
             uint256 taxAmount = (orderValue * wrapFee) / 10000;
             // Perform the tax transfer
             TransferHelper.safeTransferFrom(stableCoin, payer, adminWallet, taxAmount);

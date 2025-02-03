@@ -60,10 +60,12 @@ contract Fund is IFund, Initializable, FundStorage{
 
     function setAssetPriceOffChain(uint256 _newPrice) external onlyAgent{
         tokenPrice = _newPrice;
+        emit AssetPriceOffChainUpdated(_newPrice);
     }
 
     function setOffChainPrice(bool _status) external onlyAgent{
         offChainPrice = _status;
+        emit OffChainPriceUpdated(_status);
     }
 
     function shareDividend(address _address, 

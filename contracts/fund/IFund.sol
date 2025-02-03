@@ -32,6 +32,14 @@ interface IFund {
         string _dividendID
     );
 
+    event AssetPriceOffChainUpdated(
+        uint256 _newPrice
+    );
+
+    event OffChainPriceUpdated(
+        bool status
+    );
+
     /**
     @dev Retrieves the latest Net Asset Value (NAV) price from the APIConsumer contract.
     Updates the NAVLatestPrice variable with the retrieved value.
@@ -53,4 +61,6 @@ interface IFund {
                             string calldata _dividendIds,  
                             address stableCoin_,
                             address _agent) external;
+
+    function setNAV(uint256 _latestNAV, string memory actionID) external returns(bool);
 }

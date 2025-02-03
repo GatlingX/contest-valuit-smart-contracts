@@ -17,13 +17,14 @@ contract EscrowStorage {
     uint16 public FEE_DENOMINATOR;
 
     address public masterFactory;
+    address public fundFactory;
 
     mapping(string => uint256) public pendingOrderAmount;
     mapping(string => address) internal stablecoin;
     mapping(address => string) internal stableCoinName;
     mapping(address => bool) public isStableCoin;
     mapping(string => InvestorOrder) public investorOrders;
-    mapping(address => mapping(string => bool)) public orderCreated;
+    mapping(string => bool) public redemptionStatus;
 
     /**
      * @dev Storage gap to reserve space for future upgrades.

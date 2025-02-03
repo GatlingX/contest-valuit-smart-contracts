@@ -124,6 +124,28 @@ interface IEscrowController {
         string orderID
     );
 
+    event MasterFactoryUpdated(
+        address masterFactory
+    );
+
+    event FundFactoryUpdated(
+        address fundFactory
+    );
+
+    event NAVUpdated(
+        address assetAddress,
+        address fundAddress,
+        uint256 latestNAV,
+        string actionID
+    );
+
+    event ValuationUpdated(
+        address assetAddress,
+        address equityAddress,
+        uint256 latestValuation,
+        string actionID
+    );
+
     function getStableCoin(string calldata _stablecoin) external view returns(address);
 
     function getStableCoinName(address stableCoin) external view returns(string memory);

@@ -247,6 +247,7 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         address _investorOnchainID
     ) external override onlyAgent returns (bool) {
         require(balanceOf(_lostWallet) != 0, "no tokens to recover");
+        require(_lostWallet != _newWallet, "Cannot recover to the same wallet");
         IIdentity _onchainID = IIdentity(_investorOnchainID);
         bytes32 _key = keccak256(abi.encode(_newWallet));
         if (_onchainID.keyHasPurpose(_key, 1)) {
@@ -395,6 +396,18 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
             uint256 tokensToUnfreeze = _amount - (freeBalance);
             _frozenTokens[_from] = _frozenTokens[_from] - (tokensToUnfreeze);
             emit TokensUnfrozen(_from, tokensToUnfreeze);
+            // Since we forcibly unfreeze these tokens, we must also reduce totalFrozen if NOT fully frozen
+            if(!_frozen[_from]){
+                _totalFrozen -= tokensToUnfreeze; 
+            }
+        }
+        // If the address is fully frozen, we must reduce totalFrozen by _amount
+        if (_frozen[_from]) {
+            _totalFrozen -= _amount;
+        }
+        // If the recipient is fully frozen, its effective frozen amount increases by _amount.
+        if (_frozen[_to]) {
+            _totalFrozen += _amount;
         }
         if (_tokenIdentityRegistry.isVerified(_to)) {
             _transfer(_from, _to, _amount);
@@ -427,6 +440,11 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
             uint256 tokensToUnfreeze = _amount - (freeBalance);
             _frozenTokens[_userAddress] = _frozenTokens[_userAddress] - (tokensToUnfreeze);
             emit TokensUnfrozen(_userAddress, tokensToUnfreeze);
+
+            // Only adjust _totalFrozen for the tokens that are unfrozen
+            if (!_frozen[_userAddress]) {
+                _totalFrozen -= tokensToUnfreeze;
+            }
         }
         if(_frozen[_userAddress]){
             _totalFrozen -= _amount;
@@ -439,12 +457,21 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
      *  @dev See {IToken-setAddressFrozen}.
      */
     function setAddressFrozen(address _userAddress, bool _freeze) public override onlyAgent {
+        // Frozen before
+        uint256 oldFrozenAmount = _frozen[_userAddress]
+            ? balanceOf(_userAddress) // Fully frozen => entire balance counted
+            : _frozenTokens[_userAddress]; // Partially frozen => only _frozenTokens counted
+        // Subtract from _totalFrozen (to remove old state)
+        _totalFrozen -= oldFrozenAmount;
+        // Update the freeze state
         _frozen[_userAddress] = _freeze;
-        if(_freeze){
-            _totalFrozen += (balanceOf(_userAddress) - _frozenTokens[_userAddress]);
-        } else{
-            _totalFrozen -= (balanceOf(_userAddress) - _frozenTokens[_userAddress]);
-        }
+        
+        // New state
+        uint256 newFrozenAmount = _frozen[_userAddress]
+            ? balanceOf(_userAddress)
+            : _frozenTokens[_userAddress];
+        // Update _totalFrozen
+        _totalFrozen += newFrozenAmount;
 
         emit AddressFrozen(_userAddress, _freeze, msg.sender);
     }
@@ -456,7 +483,9 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         uint256 balance = balanceOf(_userAddress);
         require(balance >= _frozenTokens[_userAddress] + _amount, "Amount exceeds available balance");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] + (_amount);
-        _totalFrozen += _amount;
+        if(!_frozen[_userAddress]){
+            _totalFrozen += _amount;
+        }
         emit TokensFrozen(_userAddress, _amount);
     }
 
@@ -466,7 +495,9 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
     function unfreezePartialTokens(address _userAddress, uint256 _amount) public override onlyAgents {
         require(_frozenTokens[_userAddress] >= _amount, "Amount should be less than or equal to frozen tokens");
         _frozenTokens[_userAddress] = _frozenTokens[_userAddress] - (_amount);
-        _totalFrozen -= _amount;
+        if(!_frozen[_userAddress]){
+            _totalFrozen -= _amount;
+        }
         emit TokensUnfrozen(_userAddress, _amount);
     }
 

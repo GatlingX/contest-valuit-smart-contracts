@@ -9,13 +9,14 @@ import "contracts/registry/interface/IIdentityRegistry.sol";
 import "contracts/factory/IFundFactory.sol";
 import "contracts/factory/ITREXFactory.sol";
 import "contracts/fund/IFund.sol";
+import "contracts/fund/IEquityConfig.sol";
 import "contracts/escrow/IEscrowController.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "contracts/escrow/EscrowStorage.sol";
 
 contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowController{
 
-    function init(address [] memory  stableCoin_, address _masterFactory) external initializer {
+    function init(address [] memory  stableCoin_, address _masterFactory, address _fundFactory) external initializer {
         stablecoin["usdc"] = stableCoin_[0];
         stablecoin["usdt"] = stableCoin_[1];
         stableCoinName[stableCoin_[0]] = "usdc";
@@ -24,6 +25,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         isStableCoin[stableCoin_[1]] = true;
         FEE_DENOMINATOR = 10000;
         masterFactory = _masterFactory;
+        fundFactory = _fundFactory;
         __Ownable_init_unchained();
     } 
 
@@ -41,31 +43,19 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
     }
 
 
-    function rescueAnyERC20Tokens(
-        address _tokenAddr,
-        address _to,
-        uint128 _amount
-    ) external onlyOwner {
-        if(isStableCoin[_tokenAddr]){
-            TransferHelper.safeTransfer(
-                _tokenAddr,
-                _to,
-                IToken(_tokenAddr).balanceOf(address(this)) - pendingOrderAmount[stableCoinName[_tokenAddr]]
-            );
-        } else{
-                TransferHelper.safeTransfer(
-                    _tokenAddr,
-                    _to,
-                    _amount
-                );
-            }    
+    function rescueAnyERC20Tokens(address _tokenAddr, address _to, uint128 _amount) external onlyOwner {
+        TransferHelper.safeTransfer(
+            _tokenAddr,
+            _to,
+            _amount
+        );
     }
 
+
     function deposit(address _token, uint256 _amount, uint256 _tokens, string calldata orderID, string calldata coin) external {
-        require(_token != address(0),"Zero Address not allowed");
         require(_amount > 0, "Amount should be greater than 0");
         require(IToken(_token).identityRegistry().isVerified(msg.sender), "Investor not whitelisted");
-        require(!orderCreated[msg.sender][orderID], "Order Already Created");
+        require(investorOrders[orderID].investor == address(0), "Order Already Created");
         require(ITREXFactory(masterFactory).tokenDeployedByMe(_token),"Asset not allowed");
         require(stablecoin[coin] != address(0), "Unsupported stablecoin");
         require(IToken(stablecoin[coin]).allowance(msg.sender, address(this)) >= _amount, "Insufficient Allowance");
@@ -77,66 +67,66 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
         investorOrders[orderID].coin = coin;
         investorOrders[orderID].status = false;
 
-        orderCreated[msg.sender][orderID] = true;
         pendingOrderAmount[investorOrders[orderID].coin] += _amount;
         totalPendingOrderAmount += _amount;
 
         emit OrderCreated(_token, msg.sender, _amount, _tokens, orderID, coin);
     }
 
-    function settlement(string calldata orderID, address fundFactory) public onlyAgent(investorOrders[orderID].asset){
-        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
-        require (!investorOrders[orderID].status, "Order Already Settled");
+    function settlement(string calldata orderID) public onlyAgent(investorOrders[orderID].asset){
+        InvestorOrder storage order = investorOrders[orderID];
 
-        uint16 escrowFee = IFundFactory(fundFactory).getEscrowFee(investorOrders[orderID].asset);
-        uint256 orderValue = investorOrders[orderID].value;
-        uint256 orderTokens = investorOrders[orderID].tokens;
-        uint256 adminFeeAmount = (orderValue * escrowFee) / FEE_DENOMINATOR;
-        uint256 netAmount = orderValue - adminFeeAmount;
+        require(order.investor != address(0), "Order does not exist");
+        require (!order.status, "Order Already Settled");
 
-        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
-        totalPendingOrderAmount -= orderValue;
-        investorOrders[orderID].status = true;
+        uint16 escrowFee = IFundFactory(fundFactory).getEscrowFee(order.asset);
+        uint256 adminFeeAmount = (order.value * escrowFee) / FEE_DENOMINATOR;
+        uint256 netAmount = order.value - adminFeeAmount;
 
-        TransferHelper.safeTransferFrom(stablecoin[investorOrders[orderID].coin], 
-                                        investorOrders[orderID].investor,
+        pendingOrderAmount[order.coin] -= order.value;
+        totalPendingOrderAmount -= order.value;
+        order.status = true;
+
+        TransferHelper.safeTransferFrom(stablecoin[order.coin], 
+                                        order.investor,
                                         msg.sender, 
                                         netAmount);
 
-        TransferHelper.safeTransferFrom(stablecoin[investorOrders[orderID].coin], 
-                                        investorOrders[orderID].investor,
+        TransferHelper.safeTransferFrom(stablecoin[order.coin], 
+                                        order.investor,
                                         IFundFactory(fundFactory).getAdminWallet(), 
                                         adminFeeAmount);
         
-        IToken(investorOrders[orderID].asset).mint(investorOrders[orderID].investor, orderTokens);
-        emit OrderSettled(orderID, msg.sender, orderValue, orderTokens);
+        IToken(order.asset).mint(order.investor, order.tokens);
+        emit OrderSettled(orderID, msg.sender, order.value, order.tokens);
     }
 
     function cancelOrder(string calldata orderID) external {
-        require(investorOrders[orderID].investor == msg.sender, "Only Creator can cancel the order");
-        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
-        require (!investorOrders[orderID].status, "Order Executed");
+        InvestorOrder storage order = investorOrders[orderID];
 
-        uint256 orderValue = investorOrders[orderID].value;
+        require(order.investor == msg.sender, "Only Creator can cancel the order");
+        require(!order.status, "Order Executed");
 
-        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
-        totalPendingOrderAmount -= orderValue;
-        investorOrders[orderID].status = true;
+        pendingOrderAmount[order.coin] -= order.value;
+        totalPendingOrderAmount -= order.value;
 
-        emit OrderCancelled(orderID, msg.sender, orderValue);
+        order.status = true;
+
+        emit OrderCancelled(orderID, msg.sender, order.value);
     }
 
     function rejectOrder(string calldata orderID) external onlyAgent(investorOrders[orderID].asset){
-        require(orderCreated[investorOrders[orderID].investor][orderID], "Order does not exist");
-        require (!investorOrders[orderID].status, "Order Executed");
+        InvestorOrder storage order = investorOrders[orderID];
 
-        uint256 orderValue = investorOrders[orderID].value;
+        require(order.investor != address(0), "Order does not exist");
+        require(!order.status, "Order Executed");
 
-        pendingOrderAmount[investorOrders[orderID].coin] -= orderValue;
-        totalPendingOrderAmount -= orderValue;
-        investorOrders[orderID].status = true;
+        pendingOrderAmount[order.coin] -= order.value;
+        totalPendingOrderAmount -= order.value;
 
-        emit OrderRejected(orderID, msg.sender, orderValue);
+        order.status = true;
+
+        emit OrderRejected(orderID, msg.sender, order.value);
     }
 
     function redemptionAndBurn(address _token,
@@ -145,20 +135,20 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
             uint256 _principalAmount, 
             uint256 _profitAmount, 
             string calldata coin,
-            address fundFactory,
             string calldata orderID) public onlyAgent(_token){
 
                 require(ITREXFactory(masterFactory).tokenDeployedByMe(_token),"Asset not allowed");
                 require(_token != address(0),"Zero Address not allowed");
                 require(_burnAmount > 0 && _principalAmount > 0, "Amount should be greater than 0");
                 require(stablecoin[coin] != address(0), "Unsupported stablecoin");
+                require(!redemptionStatus[orderID], "Duplicate Redemption Order");
 
                 if(_profitAmount == 0){
                     TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, _userAddress, _principalAmount);
                     IToken(_token).burn(_userAddress, _burnAmount);
 
                     emit RedemptionAndBurn(_token, _userAddress, _burnAmount, _principalAmount, _profitAmount, coin, _principalAmount, 0, orderID);
-                } else{
+                } else {
                     uint16 redemptionFee = IFundFactory(fundFactory).getRedemptionFee(_token);
                     uint256 adminFeeAmount = (_profitAmount * redemptionFee) / FEE_DENOMINATOR;
                     uint256 netAmount = _principalAmount - adminFeeAmount;
@@ -167,13 +157,15 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                     TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, IFundFactory(fundFactory).getAdminWallet(), adminFeeAmount);
                     IToken(_token).burn(_userAddress, _burnAmount);
 
+                    redemptionStatus[orderID] = true;
+
                     emit RedemptionAndBurn(_token, _userAddress, _burnAmount, _principalAmount, _profitAmount, coin, netAmount, adminFeeAmount, orderID);
                 }
     }
 
-    function batchSettlement(string[] calldata orderIDs,address fundFactory) external {
+    function batchSettlement(string[] calldata orderIDs) external {
         for (uint256 i = 0; i < orderIDs.length; i++) {
-            settlement(orderIDs[i], fundFactory);
+            settlement(orderIDs[i]);
         }
     }
 
@@ -183,7 +175,6 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
             uint256[] calldata _principalAmount, 
             uint256[] calldata _profitAmount, 
             string calldata coin,
-            address fundFactory,
             string[] calldata orderID
             ) external {
                 require(_userAddress.length == _burnAmount.length && 
@@ -191,7 +182,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                     _principalAmount.length == _profitAmount.length &&
                     _profitAmount.length == orderID.length,"Array length mismatch");
                 for (uint16 i = 0; i < orderID.length; i++) {
-                    redemptionAndBurn(_token, _userAddress[i], _burnAmount[i], _principalAmount[i], _profitAmount[i], coin,fundFactory, orderID[i]);
+                    redemptionAndBurn(_token, _userAddress[i], _burnAmount[i], _principalAmount[i], _profitAmount[i], coin, orderID[i]);
         }
     }
 
@@ -207,6 +198,29 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
     function setMasterFactory(address _masterFactory) external onlyOwner{
         require(_masterFactory != address(0), "Invalid Zero Address");
         masterFactory = _masterFactory;
+        emit MasterFactoryUpdated(masterFactory);
+    }
+
+    function setFundFactory(address _fundFactory) external onlyOwner{
+        require(_fundFactory != address(0), "Invalid Zero Address");
+        fundFactory = _fundFactory;
+        emit FundFactoryUpdated(_fundFactory);
+    }
+
+    function setNAV(address _token, uint256 _latestNAV, string memory actionID) external onlyAgent(_token){
+        require(_token != address(0), "Invalid Zero Address");
+        address fund = IFundFactory(fundFactory).getFund(_token);
+        IFund(fund).setNAV(_latestNAV, actionID);
+
+        emit NAVUpdated(_token, fund, _latestNAV, actionID);
+    }
+
+    function setValuation(address _token, uint _latestValuation, string memory actionID) external onlyAgent(_token){
+        require(_token != address(0), "Invalid Zero Address");
+        address fund = IFundFactory(fundFactory).getFund(_token);
+        IEquityConfig(fund).setValuation(_latestValuation, actionID);
+
+        emit ValuationUpdated(_token, fund, _latestValuation, actionID);
     }
 
     function batchMintTokens(address _token, address[] calldata _toList, uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgent(_token){
