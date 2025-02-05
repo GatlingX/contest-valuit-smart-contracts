@@ -65,7 +65,7 @@ Wrapper__factory, } from "../typechain";
  import { sync } from "glob"; 
  import { onchainId, token } from "../typechain/contracts";
 
-describe(" Tokenization Testing ", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
+describe(" Country Restrict Module Testing ", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
 
 //Implementation
 let claimTopicsRegistryImplementation: ClaimTopicsRegistry;
@@ -270,11 +270,11 @@ beforeEach(" ", async () => {
     // await escrow.connect(owner).init([usdc.address, usdt.address], 10);
 
     escrow=await new EscrowController__factory(owner).attach(proxy.address);
-    await escrow.connect(owner).init([usdc.address, usdt.address],fundFactory.address);
+    // await escrow.connect(owner).init([usdc.address, usdt.address],fundFactory.address);
 });
 
 
-describe('CountryRestrictModule', function () {
+describe('CountryRestrictModule Contract testing', function () {
     describe('batchRestrictCountries', function () {
         it('should allow a batch of countries for the compliance contract', async function () {
             // Initialize the modular compliance contract

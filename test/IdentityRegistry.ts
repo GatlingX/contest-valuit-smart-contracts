@@ -17,7 +17,7 @@ import {
  
 } from "../typechain";
 
-describe("IdentityRegistry", function () {
+describe("Identity Registry Testing", function () {
   let owner: SignerWithAddress;
   let agent: SignerWithAddress;
   let user1: SignerWithAddress;

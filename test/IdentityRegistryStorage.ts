@@ -16,7 +16,7 @@ import {
   TrustedIssuersRegistry__factory
 } from "../typechain";
 
-describe("IdentityRegistryStorage Contract Testing", function () {
+describe("Identity Registry Storage Contract Testing", function () {
   let owner: SignerWithAddress;
   let agent: SignerWithAddress;
   let randomUser: SignerWithAddress;
