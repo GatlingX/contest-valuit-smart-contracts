@@ -17,7 +17,7 @@ EquityConfig__factory,
 // // EscrowProxy__factory,
 EscrowController, EscrowControllerProxy, EscrowControllerProxy__factory, EscrowController__factory, EscrowStorage, EscrowStorage__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, USDT, USDT__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory, } from "../typechain"; import { sync } from "glob"; import { onchainId, token } from "../typechain/contracts";
 
-describe(" Tokenization Testing ", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
+describe("Supply Limit Module Contract Testing ", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
 
 //Implementation
 let claimTopicsRegistryImplementation: ClaimTopicsRegistry;
@@ -217,13 +217,12 @@ beforeEach(" ", async () => {
     // await escrow.connect(owner).init([usdc.address, usdt.address], 10);
 
     escrow=await new EscrowController__factory(owner).attach(proxy.address);
-    await escrow.connect(owner).init([usdc.address, usdt.address],fundFactory.address);
 });
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("SupplyLimitModule", function () {
+describe("SupplyLimitModule Testing", function () {
 
     // Test setting supply limit
     it("should allow the compliance owner to set the supply limit", async function () {

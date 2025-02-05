@@ -20,7 +20,7 @@ import {
   Token__factory
 } from "../typechain";
 
-describe("TrustedIssuersRegistry Contract Testing", function () {
+describe("Trusted Issuers Registry Contract Testing", function () {
   let owner: SignerWithAddress;
   let agent: SignerWithAddress;
   let randomUser: SignerWithAddress;

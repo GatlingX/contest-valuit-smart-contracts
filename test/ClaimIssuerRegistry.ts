@@ -10,7 +10,7 @@ import {
   IIdentity
 } from "../typechain"; 
 
-describe("ClaimIssuer Contract Testing", function () {
+describe("ClaimIssuer Registry Contract Testing", function () {
   let owner: SignerWithAddress;
   let manager: SignerWithAddress;
   let otherAccount: SignerWithAddress;

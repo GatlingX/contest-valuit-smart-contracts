@@ -56,7 +56,7 @@ import {
   Wrapper__factory,
 } from "../typechain";
 
-describe(" Tokenization Testing ", function () {
+describe("Tokenization Contract Testing ", function () {
   let signer: SignerWithAddress;
   let signers: SignerWithAddress[];
   let owner: SignerWithAddress;

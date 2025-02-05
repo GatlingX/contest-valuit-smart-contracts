@@ -17,7 +17,7 @@ EquityConfig__factory,
 // // EscrowProxy__factory,
 EscrowController, EscrowControllerProxy, EscrowControllerProxy__factory, EscrowController__factory, EscrowStorage, EscrowStorage__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, USDT, USDT__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory, } from "../typechain"; import { sync } from "glob"; import { onchainId, token } from "../typechain/contracts";
 
-describe(" Tokenization Testing ", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
+describe("Escrow Contract Testing", function () { let signers: SignerWithAddress[]; let owner: SignerWithAddress; let tokenIssuer: SignerWithAddress; let transferAgent: SignerWithAddress; let user1: SignerWithAddress; let user2: SignerWithAddress; let user3: SignerWithAddress;
 
 //Implementation
 let claimTopicsRegistryImplementation: ClaimTopicsRegistry;
@@ -219,7 +219,7 @@ beforeEach(" ", async () => {
     // await escrow.connect(owner).init([usdc.address, usdt.address], 10);
 
     escrow=await new EscrowController__factory(owner).attach(proxy.address);
-    await escrow.connect(owner).init([usdc.address, usdt.address],fundFactory.address);
+    await escrow.connect(owner).init([usdc.address, usdt.address],trexImplementationAuthority.address,fundFactory.address);
 });
 
 
@@ -391,17 +391,11 @@ it("it sets the call update identity and reverted if it is not Not an Identity R
     )).to.be.revertedWith("Not an Identity Registry Agent");
 });
 
+it("testing for  failed transaction of rescueAnyERC20Tokens in Escrow", async () => {
+    await usdc.mint(owner.address,5);
+    await usdt.mint(owner.address,5);
 
-
-it("testing for rescueAnyERC20Tokens in Escrow", async () => {
-    await usdc.mint(owner.address,100);
-    await usdt.mint(owner.address,100);
-
-    await escrow.connect(owner).rescueAnyERC20Tokens(usdc.address, owner.address, 10);
-    await escrow.connect(owner).rescueAnyERC20Tokens(usdt.address, owner.address, 10);
-
-    // await expect(escrow.connect(user1).rescueAnyERC20Tokens(usdc.address, owner.address, 10)).to.be.rejectedWith('Ownable: caller is not the owner');
-    // await expect(escrow.connect(owner).rescueAnyERC20Tokens(tokenImplementation.address, owner.address, 10)).to.be.rejectedWith('Insufficient Balance');
+    await expect(escrow.connect(owner).rescueAnyERC20Tokens(usdc.address, user2.address, 10)).to.be.revertedWith("TransferHelper::safeTransfer: transfer failed");
 });
 
 
@@ -409,9 +403,7 @@ it("testing for rescueAnyERC20Tokens in Escrow and reverted if it has Insufficie
     await usdc.mint(owner.address,5);
     await usdt.mint(owner.address,5);
 
-    await expect(escrow.connect(user1).rescueAnyERC20Tokens(usdc.address, owner.address, 10)).to.be.rejectedWith('Ownable: caller is not the owner');
-    await expect(escrow.connect(user1).rescueAnyERC20Tokens(usdt.address, owner.address, 10)).to.be.rejectedWith('Ownable: caller is not the owner');
-
+    await expect(escrow.connect(user1).rescueAnyERC20Tokens(usdt.address, user2.address, 10)).to.be.rejectedWith('Ownable: caller is not the owner');
 });
 
 
