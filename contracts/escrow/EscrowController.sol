@@ -147,6 +147,8 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                     TransferHelper.safeTransferFrom(stablecoin[coin], msg.sender, _userAddress, _principalAmount);
                     IToken(_token).burn(_userAddress, _burnAmount);
 
+                    redemptionStatus[orderID] = true;
+
                     emit RedemptionAndBurn(_token, _userAddress, _burnAmount, _principalAmount, _profitAmount, coin, _principalAmount, 0, orderID);
                 } else {
                     uint16 redemptionFee = IFundFactory(fundFactory).getRedemptionFee(_token);

@@ -60,7 +60,7 @@ async function main() {
 
     // console.log(fundAttached);
 
-    await fundAttached.init("0xC20C2BE7462D9D710b336641d15a4917F3b0Bfa0",{gasLimit:3567532});
+    await fundAttached.init("0x63CA3CD0e2E4306cB9b74758A6f329c65cd9669d",{gasLimit:3567532});
 
     console.log("Fund Factory Initialized");
     await sleep(time);

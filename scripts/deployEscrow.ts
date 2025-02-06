@@ -33,22 +33,22 @@ async function main() {
     console.log("EscrowController : ", escrow.address);
     await sleep(time);
 
-    // const escrowProxy = await ESCROWPROXY.deploy();
-    // await escrowProxy.deployed();
-    // console.log("EscrowControllerProxy: ", escrowProxy.address);
-    // await sleep(time);
+    const escrowProxy = await ESCROWPROXY.deploy();
+    await escrowProxy.deployed();
+    console.log("EscrowControllerProxy: ", escrowProxy.address);
+    await sleep(time);
 
-    // //Upgrade Proxy
-    // await escrowProxy.upgradeTo(escrow.address);
-    // console.log("EscrowController Proxy Upgraded");
-    // await sleep(time);
+    //Upgrade Proxy
+    await escrowProxy.upgradeTo(escrow.address);
+    console.log("EscrowController Proxy Upgraded");
+    await sleep(time);
 
-    // //Attach and Initialize Escrow
-    // const escrowAttached = await ESCROW.attach(escrowProxy.address);
+    //Attach and Initialize Escrow
+    const escrowAttached = await ESCROW.attach(escrowProxy.address);
 
-    // await escrowAttached.init(["0xb5E71F070aC9BAC38A569EFAffE399206F19bEbd","0xd0DBC0E08A2ba1DaC1B1FbE55fe588dFd35ddc4D"], "0xC20C2BE7462D9D710b336641d15a4917F3b0Bfa0",{gasLimit:3567532});
-    // console.log("EscrowController Proxy Initialized");
-    // await sleep(time);
+    await escrowAttached.init(["0x836559dEcaA375EdfDa232090934Ea326468A7A6","0xFaD778bb6F185C024477E9FB9beAdc8a042fd01C"], "0x63CA3CD0e2E4306cB9b74758A6f329c65cd9669d","0xAC1a10a087Abd76075F0C61677242823C175954b",{gasLimit:3567532});
+    console.log("EscrowController Proxy Initialized");
+    await sleep(time);
 
 }
 main()
