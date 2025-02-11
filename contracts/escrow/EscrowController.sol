@@ -166,7 +166,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
     }
 
     function batchSettlement(string[] calldata orderIDs) external {
-        for (uint256 i = 0; i < orderIDs.length; i++) {
+        for (uint i = 0; i < orderIDs.length; i++) {
             settlement(orderIDs[i]);
         }
     }
@@ -183,7 +183,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
                     _burnAmount.length == _principalAmount.length &&
                     _principalAmount.length == _profitAmount.length &&
                     _profitAmount.length == orderID.length,"Array length mismatch");
-                for (uint16 i = 0; i < orderID.length; i++) {
+                for (uint i = 0; i < orderID.length; i++) {
                     redemptionAndBurn(_token, _userAddress[i], _burnAmount[i], _principalAmount[i], _profitAmount[i], coin, orderID[i]);
         }
     }
@@ -258,7 +258,7 @@ contract EscrowController is OwnableUpgradeable, EscrowStorage, IEscrowControlle
     }
 
     function batchForceTransferTokens(address _token, address[] calldata _userAddresses, address[] calldata _toAddresses,uint256[] calldata _amounts, string[] calldata orderIDs) external onlyAgentOrTA(_token){
-        require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length, "Array length mismatch");
+        require(_userAddresses.length == _amounts.length && _amounts.length == orderIDs.length && orderIDs.length == _toAddresses.length, "Array length mismatch");
         for(uint i = 0; i < _userAddresses.length; i++){
             IToken(_token).forcedTransfer(_userAddresses[i], _toAddresses[i], _amounts[i]);
             emit ForceTransferred(_userAddresses[i], _toAddresses[i], _amounts[i], orderIDs[i], _token);

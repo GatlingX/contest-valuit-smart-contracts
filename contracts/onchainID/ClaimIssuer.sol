@@ -84,32 +84,12 @@ contract ClaimIssuer is IClaimIssuer, Identity {
     /**
      *  @dev See {IClaimIssuer-getRecoveredAddress}.
      */
-    function getRecoveredAddress(bytes memory sig, bytes32 dataHash)
-        public override
-        pure
-        returns (address addr)
+   function getRecoveredAddress(bytes memory sig, bytes32 dataHash)
+    public override
+    pure
+    returns (address addr)
     {
-        bytes32 ra;
-        bytes32 sa;
-        uint8 va;
-
-        // Check the signature length
-        if (sig.length != 65) {
-            return address(0);
-        }
-
-        // Divide the signature in r, s and v variables
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            ra := mload(add(sig, 32))
-            sa := mload(add(sig, 64))
-            va := byte(0, mload(add(sig, 96)))
-        }
-
-        if (va < 27) {
-            va += 27;
-        }
-
         return ECDSA.recover(dataHash, sig);
     }
+
 }
