@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import "@nomicfoundation/hardhat-chai-matchers"
 import { 
   IdentityRegistryStorage, 
   IdentityRegistryStorage__factory,
@@ -243,6 +244,30 @@ describe("Identity Registry Storage Contract Testing", function () {
       expect(linkedRegistries).to.include(newIdentityRegistry.address);
     });
 
+    it("should bind identity registry successfully when no registries are bound", async function () {
+      const newIdentityRegistry = await new IdentityRegistry__factory(owner).deploy();
+      
+      const beforeCount = await identityRegistryStorage.linkedIdentityRegistries();
+      
+      await identityRegistryStorage.bindIdentityRegistry(newIdentityRegistry.address);
+      
+      const afterCount = await identityRegistryStorage.linkedIdentityRegistries();
+      expect(afterCount.length).to.equal(beforeCount.length + 1);
+    });
+     
+    it("should bind multiple identity registries successfully", async function () {
+      const registry1 = await new IdentityRegistry__factory(owner).deploy();
+      const registry2 = await new IdentityRegistry__factory(owner).deploy();
+      
+      await identityRegistryStorage.bindIdentityRegistry(registry1.address);
+      await identityRegistryStorage.bindIdentityRegistry(registry2.address);
+      
+      const registries = await identityRegistryStorage.linkedIdentityRegistries();
+      expect(registries).to.include(registry1.address);
+      expect(registries).to.include(registry2.address);
+    });
+       
+
     it("should revert if binding zero address", async function () {
       await expect(
         identityRegistryStorage.bindIdentityRegistry(ethers.constants.AddressZero)
@@ -292,6 +317,33 @@ describe("Identity Registry Storage Contract Testing", function () {
       expect(linkedRegistries).to.not.include(newIdentityRegistry.address);
     });
 
+    it("should unbind the first registry in the array", async function () {
+      const registry1 = await new IdentityRegistry__factory(owner).deploy();
+      const registry2 = await new IdentityRegistry__factory(owner).deploy();
+      
+      await identityRegistryStorage.bindIdentityRegistry(registry1.address);
+      await identityRegistryStorage.bindIdentityRegistry(registry2.address);
+      
+      await identityRegistryStorage.unbindIdentityRegistry(registry1.address);
+      
+      const registries = await identityRegistryStorage.linkedIdentityRegistries();
+      expect(registries).to.not.include(registry1.address);
+      expect(registries).to.include(registry2.address);
+    });
+
+    it("should unbind the last registry in the array", async function () {
+      const registry1 = await new IdentityRegistry__factory(owner).deploy();
+      const registry2 = await new IdentityRegistry__factory(owner).deploy();
+      
+      await identityRegistryStorage.bindIdentityRegistry(registry1.address);
+      await identityRegistryStorage.bindIdentityRegistry(registry2.address);
+      
+      await identityRegistryStorage.unbindIdentityRegistry(registry2.address);
+      
+      const registries = await identityRegistryStorage.linkedIdentityRegistries();
+      expect(registries).to.include(registry1.address);
+      expect(registries).to.not.include(registry2.address);
+    });
     it("should revert if unbinding when no registries are bound", async function () { 
         await expect(
           identityRegistryStorage.unbindIdentityRegistry(randomUser.address)
@@ -303,5 +355,22 @@ describe("Identity Registry Storage Contract Testing", function () {
         identityRegistryStorage.unbindIdentityRegistry(ethers.constants.AddressZero)
       ).to.be.revertedWith("invalid argument - zero address");
     });
+
+    it("should revert if non-agent tries to add identity", async function () {
+      await expect(
+        identityRegistryStorage.connect(randomUser).addIdentityToStorage(user1.address, user1Identity.address, 250)
+      ).to.be.revertedWith("AgentRole: caller does not have the Agent role");
+    });
+
+    it("should revert if trying to remove an identity that was already removed", async function () {
+      const country = 250;
+      await identityRegistryStorage.addIdentityToStorage(user1.address, user1Identity.address, country);
+      await identityRegistryStorage.removeIdentityFromStorage(user1.address);
+      await expect(
+        identityRegistryStorage.removeIdentityFromStorage(user1.address)
+      ).to.be.revertedWith("address not stored yet");
+    });  
+
   });
+
 });
