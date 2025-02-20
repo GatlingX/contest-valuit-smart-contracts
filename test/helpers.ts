@@ -202,28 +202,136 @@ describe(" Helpers function Testing ", function () {
 
   });
 
-  it("USDC Helper", async () => {
-    await usdcToken.mint(owner.address, 10000);
-    let balance = await usdcToken.balanceOf(owner.address);
-    expect(balance).to.be.equal(10000);
-
-    await usdcToken.burn(owner.address, 1000);
-    let BalanceAfterBurn = await usdcToken.balanceOf(owner.address);
-    expect(BalanceAfterBurn).to.be.equal(9000);
-
-    const TokenDecimals = await usdcToken.decimals();
-    expect(TokenDecimals).to.be.equal(6);
-});
-
-  it("USDT Helper", async () => {
-    await usdtToken.mint(owner.address, 10000);
-    let balance = await usdtToken.balanceOf(owner.address);
-    expect(balance).to.be.equal(10000);
-
-    await usdtToken.burn(owner.address, 1000);
-    let BalanceAfterBurn = await usdtToken.balanceOf(owner.address);
-    expect(BalanceAfterBurn).to.be.equal(9000);
-    const TokenDecimals = await usdtToken.decimals();
-    expect(TokenDecimals).to.be.equal(6);
+  describe("USDC Token Functions", function () {
+  
+    it("should mint USDC correctly", async () => {
+      // Mint 10,000 USDC to the owner's address
+      await usdcToken.mint(owner.address, 10000);
+      let balance = await usdcToken.balanceOf(owner.address);
+      expect(balance).to.be.equal(10000);
+    });
+  
+    it("should burn USDC correctly", async () => {
+      await usdcToken.mint(owner.address, 10000);
+      // Burn 1,000 USDC from the owner's address
+      await usdcToken.burn(owner.address, 1000);
+      let balanceAfterBurn = await usdcToken.balanceOf(owner.address);
+      expect(balanceAfterBurn).to.be.equal(9000);
+    });
+  
+    it("should check decimals of USDC token", async () => {
+      // Checking the decimals for USDC token
+      const tokenDecimals = await usdcToken.decimals();
+      expect(tokenDecimals).to.be.equal(6);
+    });
+  
+    it("should approve an allowance for USDC", async () => {
+      // Approving 500 USDC allowance for user1
+      await usdcToken.approve(user1.address, 500);
+      let allowance = await usdcToken.allowance(owner.address, user1.address);
+      expect(allowance).to.be.equal(500);
+    });
+  
+    it("should transfer USDC correctly", async () => {
+      await usdcToken.mint(owner.address, 10000);
+      // Transfer 500 USDC from the owner to user1
+      await usdcToken.transfer(user1.address, 500);
+      let ownerBalance = await usdcToken.balanceOf(owner.address);
+      let user1Balance = await usdcToken.balanceOf(user1.address);
+  
+      expect(ownerBalance).to.be.equal(9500);  // After burning and transferring
+      expect(user1Balance).to.be.equal(500);
+    });
+  
+    it("should transferFrom correctly with allowance", async () => {
+      await usdcToken.mint(owner.address, 10000);
+      // Allow user1 to transfer 200 USDC on behalf of owner
+      await usdcToken.approve(user1.address, 200);
+      
+      // User1 transfers 200 USDC from owner to user2
+      await usdcToken.connect(user1).transferFrom(owner.address, user2.address, 200);
+  
+      let ownerBalance = await usdcToken.balanceOf(owner.address);
+      let user2Balance = await usdcToken.balanceOf(user2.address);
+  
+      expect(ownerBalance).to.be.equal(9800);  // After the transfer
+      expect(user2Balance).to.be.equal(200);
+    });
+  
+    it("should return totalSupply correctly", async () => {
+      await usdcToken.mint(owner.address, 10000);
+      // Check the total supply of USDC
+      const totalSupply = await usdcToken.totalSupply();
+      expect(totalSupply).to.be.equal(10000);  // Assuming initial supply is 10,000
+    });
+    
   });
+  
+  describe("USDT Token Functions", function () {
+  
+    it("should mint USDT correctly", async () => {
+      // Mint 10,000 USDT to the owner's address
+      await usdtToken.mint(owner.address, 10000);
+      let balance = await usdtToken.balanceOf(owner.address);
+      expect(balance).to.be.equal(10000);
+    });
+  
+    it("should burn USDT correctly", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Burn 1,000 USDT from the owner's address
+      await usdtToken.burn(owner.address, 1000);
+      let balanceAfterBurn = await usdtToken.balanceOf(owner.address);
+      expect(balanceAfterBurn).to.be.equal(9000);
+    });
+  
+    it("should check decimals of USDT token", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Checking the decimals for USDT token
+      const tokenDecimals = await usdtToken.decimals();
+      expect(tokenDecimals).to.be.equal(6);
+    });
+  
+    it("should approve an allowance for USDT", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Approving 500 USDT allowance for user1
+      await usdtToken.approve(user1.address, 500);
+      let allowance = await usdtToken.allowance(owner.address, user1.address);
+      expect(allowance).to.be.equal(500);
+    });
+  
+    it("should transfer USDT correctly", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Transfer 500 USDT from the owner to user1
+      await usdtToken.transfer(user1.address, 500);
+      let ownerBalance = await usdtToken.balanceOf(owner.address);
+      let user1Balance = await usdtToken.balanceOf(user1.address);
+  
+      expect(ownerBalance).to.be.equal(9500);  // After burning and transferring
+      expect(user1Balance).to.be.equal(500);
+    });
+  
+    it("should transferFrom correctly with allowance", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Allow user1 to transfer 200 USDT on behalf of owner
+      await usdtToken.approve(user1.address, 200);
+      
+      // User1 transfers 200 USDT from owner to user2
+      await usdtToken.connect(user1).transferFrom(owner.address, user2.address, 200);
+  
+      let ownerBalance = await usdtToken.balanceOf(owner.address);
+      let user2Balance = await usdtToken.balanceOf(user2.address);
+  
+      expect(ownerBalance).to.be.equal(9800);  // After the transfer
+      expect(user2Balance).to.be.equal(200);
+    });
+  
+    it("should return totalSupply correctly for USDT", async () => {
+      await usdtToken.mint(owner.address, 10000);
+      // Check the total supply of USDT
+      const totalSupply = await usdtToken.totalSupply();
+      expect(totalSupply).to.be.equal(10000);  // Assuming initial supply is 10,000
+    });
+  
+  });
+  
 });

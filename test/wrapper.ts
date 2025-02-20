@@ -230,62 +230,6 @@ it("should revert when wrapping is disabled in compliance", async function () {
       .to.be.revertedWith("Invalid wrapper");
   });
 
-  it("should revert when non-owner tries to set onchain ID", async function () {
-    const newOnchainID = user1.address;
-    await expect(wrapper.connect(user1).setOnchainID(newOnchainID))
-      .to.be.reverted;
-  });
-
-
-  
-  
-
-
-    it("should revert when initializing with zero address for _erc20Impl", async function () {
-      await expect(wrapper.init(ethers.constants.AddressZero, fundFactory.address))
-        .to.be.revertedWith("INVALID! Zero Address");
-    });
-
-
-    it("should revert when initializing with zero address for _fundFactory", async function () {
-      await expect(wrapper.init(verc20.address, ethers.constants.AddressZero))
-        .to.be.revertedWith("INVALID! Zero Address");
-    });
-
-
-    it("should revert if the address passed is zero", async function () {
-      await expect(wrapper.setFundFactory(ethers.constants.AddressZero))
-      .to.be.reverted;
-    });
-
-  
-    it("should revert when non-owner attempts to set EscrowController", async function () {
-      const newEscrowController = ethers.constants.AddressZero;
-      await expect(wrapper.connect(user1).setEscrowController(newEscrowController))
-        .to.be.reverted;
-    });
-
-
-    it("should revert if the address passed is zero", async function () {
-      await expect(wrapper.setEscrowController(ethers.constants.AddressZero))
-        .to.be.reverted;
-    });
-
-
-    it("should revert when non-owner attempts to set StableCoin", async function () {
-      const stableCoin = ethers.constants.AddressZero;
-      await expect(wrapper.connect(user1).setStableCoin("USDC"))
-        .to.be.reverted;
-    });
-    
-
-    it("should revert if the stable coin is invalid", async function () {
-      const invalidStableCoin = "INVALID";
-      await expect(wrapper.setStableCoin(invalidStableCoin))
-        .to.be.reverted;
-    });
-
-
     it("Create Wrap Token and to be reverted with Wrapping disabled", async () => {
 
       let tokenDetails={
@@ -1007,5 +951,56 @@ it("should revert when wrapping is disabled in compliance", async function () {
 
             await expect(wrapper.connect(user1).createWrapToken(ethers.constants.AddressZero, 91)).to.be.reverted;
     })
+
+    it("should revert when non-owner tries to set onchain ID", async function () {
+      const newOnchainID = user1.address;
+      await expect(wrapper.connect(user1).setOnchainID(newOnchainID))
+        .to.be.reverted;
+    });
+  
+      it("should revert when initializing with zero address for _erc20Impl", async function () {
+        await expect(wrapper.init(ethers.constants.AddressZero, fundFactory.address))
+          .to.be.revertedWith("INVALID! Zero Address");
+      });
+  
+  
+      it("should revert when initializing with zero address for _fundFactory", async function () {
+        await expect(wrapper.init(verc20.address, ethers.constants.AddressZero))
+          .to.be.revertedWith("INVALID! Zero Address");
+      });
+  
+  
+      it("should revert if the address passed is zero", async function () {
+        await expect(wrapper.setFundFactory(ethers.constants.AddressZero))
+        .to.be.reverted;
+      });
+  
+    
+      it("should revert when non-owner attempts to set EscrowController", async function () {
+        const newEscrowController = ethers.constants.AddressZero;
+        await expect(wrapper.connect(user1).setEscrowController(newEscrowController))
+          .to.be.reverted;
+      });
+  
+  
+      it("should revert if the address passed is zero", async function () {
+        await expect(wrapper.setEscrowController(ethers.constants.AddressZero))
+          .to.be.reverted;
+      });
+  
+  
+      it("should revert when non-owner attempts to set StableCoin", async function () {
+        const stableCoin = ethers.constants.AddressZero;
+        await expect(wrapper.connect(user1).setStableCoin("USDC"))
+          .to.be.reverted;
+      });
+      
+  
+      it("should revert if the stable coin is invalid", async function () {
+        const invalidStableCoin = "INVALID";
+        await expect(wrapper.setStableCoin(invalidStableCoin))
+          .to.be.reverted;
+      });
+  
 
   });
