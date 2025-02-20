@@ -2500,7 +2500,7 @@ describe("Tokenization Contract Testing ", function () {
     });
   });
 
-  describe.only("Constructor", function() {
+  describe("Constructor", function() {
     it("should revert if the implementation address is zero", async function () {
       const ImplementationAuthorityFactory = await ethers.getContractFactory("ImplementationAuthority");
       await expect(
