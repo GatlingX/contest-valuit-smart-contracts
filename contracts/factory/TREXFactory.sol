@@ -191,6 +191,13 @@ contract TREXFactory is ITREXFactory, Ownable {
         emit IdFactorySet(idFactory_);
     }
 
+    /**
+     * @dev Sets the address of the wrapper contract.
+     * Can only be called by the contract owner.
+     * @param wrapper_ The address of the new wrapper contract.
+     * Requirements:
+     * - `wrapper_` must not be the zero address.
+     */
     function setWrapper(address wrapper_) public onlyOwner {
         require(wrapper_ != address(0), "invalid argument - zero address");
         wrapper = wrapper_;

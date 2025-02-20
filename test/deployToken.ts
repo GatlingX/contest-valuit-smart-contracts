@@ -471,7 +471,7 @@ it("Deploy Token", async () => {
 
 
 
-it.only("Error if it is not the agent caller", async () => {
+it("Error if it is not the agent caller", async () => {
     let tokenDetails={
       owner:owner.address,
       name : "My Test Token",

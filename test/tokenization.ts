@@ -2509,7 +2509,7 @@ describe("Tokenization Contract Testing ", function () {
     });
   });
 
-  describe.only("updateImplementation", function () {
+  describe("updateImplementation", function () {
     it("should update the implementation address", async function () {
       await identityImplementationAuthority.updateImplementation(owner.address);
       const currentImplementation = await identityImplementationAuthority.getImplementation();

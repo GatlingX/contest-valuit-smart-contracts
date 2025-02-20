@@ -22,40 +22,78 @@ import "contracts/wrapper/WrapperStorage.sol";
 
 contract Wrapper is WrapperStorage,Initializable, IWrapper{
 
+    /**
+     * @dev Initializes the contract with the VERC20 implementation and Fund Factory addresses.
+     * Can only be called once due to the `initializer` modifier.
+     * @param _erc20Impl The address of the VERC20 implementation contract.
+     * @param _fundFactory The address of the Fund Factory contract.
+     */
     function init(address _erc20Impl, address _fundFactory) external initializer{
         require(_erc20Impl != address(0) && _fundFactory != address(0),"INVALID! Zero Address");
         implERC20 = _erc20Impl;
         fundFactory = _fundFactory;
     }
 
+    /**
+     * @dev Ensures that only the owner (retrieved from the factory contract) can execute the function.
+     */
     modifier onlyOwner() {
         require(getFactoryOwner() == msg.sender, "Only Owner can call");
         _;
     }
 
+    /**
+     * @dev Updates the on-chain identity address of the wrapper.
+     * Can only be called by the contract owner.
+     * @param _onChainID The new on-chain identity address.
+     */
     function setOnchainID(address _onChainID) external onlyOwner{
         wrapperOnchainID = _onChainID;
         emit OnChainIDUpdated(_onChainID);
     }
 
+    /**
+     * @dev Updates the Fund Factory contract address.
+     * Can only be called by the contract owner.
+     * @param fundFactory_ The new Fund Factory contract address.
+     */
     function setFundFactory(address fundFactory_) external onlyOwner{
         require(fundFactory_ != address(0),"INVALID! Zero Address");
         fundFactory = fundFactory_;
         emit FundFactoryUpdated(fundFactory_);
     }
 
+    /**
+     * @dev Sets the address of the escrow controller.
+     * Can only be called by the contract owner.
+     * @param escrowController_ The address of the new escrow controller.
+     */
     function setEscrowController(address escrowController_) external onlyOwner{
         require(escrowController_ != address(0),"INVALID! Zero Address");
         escrowController = escrowController_;
         emit EscrowControllerUpdated(escrowController_);
     }
 
+    /**
+     * @dev Sets the stablecoin used for transactions.
+     * Ensures that the stablecoin is valid by checking with the escrow controller.
+     * Can only be called by the contract owner.
+     * @param _stablecoin The identifier of the stablecoin.
+     */
     function setStableCoin(string calldata _stablecoin) external onlyOwner{
         require(IEscrowController(escrowController).getStableCoin(_stablecoin) != address(0), "Invalid Stable Coin!");
         stableCoin = IEscrowController(escrowController).getStableCoin(_stablecoin);
         emit StableCoinUpdated(stableCoin, _stablecoin);
     }
 
+    /**
+     * @dev Creates a wrapped token for an ERC3643-compliant asset.
+     * Ensures that the token is not already wrapped and that the sender has the appropriate permissions.
+     * The wrapper contract is registered in the identity registry.
+     * Emits a `WrapTokenCreated` event upon success.
+     * @param _erc3643 The address of the ERC3643 token to wrap.
+     * @param _countryCode The country code for identity registration.
+     */
     function createWrapToken(address _erc3643, uint16 _countryCode) external {
         require(_erc3643 != address(0),"INVALID! Zero Address");
         require(!isWrapped[_erc3643], "Token already wrapped");
@@ -92,6 +130,13 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
         emit WrapTokenCreated(_erc3643,_proxy);
     }
 
+    /**
+     * @dev Converts ERC3643 tokens into wrapped ERC20 tokens.
+     * Ensures the token has been wrapped and that the wrapping process is enabled.
+     * A tax fee is deducted before minting the wrapped tokens.
+     * @param _erc3643 The address of the ERC3643 token.
+     * @param _amount The amount of tokens to wrap.
+     */
     function toERC20(address _erc3643, uint256 _amount) external {
         require(isWrapped[_erc3643] && getERC20[_erc3643] != address(0), "Wrap Token not created");
         require(IModularCompliance(IToken(_erc3643).compliance()).isWrapperSet(), "Wrapping disabled");
@@ -118,6 +163,12 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
             emit TokenLocked(_erc3643,getERC20[_erc3643], _amount, taxAmount, block.timestamp);
     }
 
+    /**
+     * @dev Converts wrapped ERC20 tokens back into ERC3643 tokens.
+     * Ensures that the ERC3643 token exists before proceeding.
+     * @param _erc20 The address of the wrapped ERC20 token.
+     * @param _amount The amount of tokens to unwrap.
+     */
     function toERC3643(address _erc20, uint256 _amount) external {
         require(getERC3643[_erc20] != address(0), "ERC3643 Token doesn't exist");
 
@@ -130,6 +181,17 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
             emit TokenUnlocked(getERC3643[_erc20], _erc20, _amount, block.timestamp);
     }
 
+    /**
+     * @dev Calculates and deducts the tax amount for a wrapping transaction.
+     * The tax is based on the token's Net Asset Value (NAV) and a predefined wrap fee.
+     * @param _erc3643 The address of the ERC3643 token.
+     * @param _amount The amount of tokens being wrapped.
+     * @param erc3643Decimals The decimals of the ERC3643 token.
+     * @param stableCoinDecimals The decimals of the stablecoin.
+     * @param payer The address that is paying the tax.
+     * @param adminWallet The address of the admin wallet receiving the tax.
+     * @return The tax amount deducted.
+     */
     function _takeTax(
         address _erc3643,
         uint256 _amount,
@@ -173,7 +235,10 @@ contract Wrapper is WrapperStorage,Initializable, IWrapper{
         }
     }
 
-    // Helper function to retrieve the factory owner
+    /**
+     * @dev Retrieves the owner of the master factory.
+     * @return The address of the factory owner.
+     */
     function getFactoryOwner() internal view returns (address) {
         return IFactory(IFundFactory(fundFactory).getMasterFactory()).owner();
     }

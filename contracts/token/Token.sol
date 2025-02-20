@@ -358,6 +358,11 @@ contract Token is IToken, AgentRoleUpgradeable, TokenStorage {
         return _TOKEN_VERSION;
     }
 
+    /**
+     * @dev Returns the total number of tokens that are currently frozen.
+     * Frozen tokens are restricted from being transferred or used.
+     * @return The total amount of frozen tokens.
+     */
     function totalFrozenTokens() external view returns (uint256){
         return _totalFrozen;
     }

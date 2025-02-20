@@ -397,8 +397,19 @@ interface IToken is IERC20 {
      */
     function getFrozenTokens(address _userAddress) external view returns (uint256);
 
-
+    /**
+     * @dev Returns the total supply of tokens in existence.
+     * @return The total number of tokens.
+     */
     function totalSupply() external view override returns (uint256);
 
+    /**
+     * @dev Returns the remaining number of tokens that `spender` is allowed to spend 
+     * on behalf of `owner` through {transferFrom}.
+     * This value changes when {approve} or {transferFrom} is called.
+     * @param owner The address which owns the tokens.
+     * @param spender The address which will spend the tokens.
+     * @return The amount of tokens that `spender` is still allowed to spend.
+     */
     function allowance(address owner, address spender) external view returns (uint256);
 }
