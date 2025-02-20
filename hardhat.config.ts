@@ -4,6 +4,7 @@ import { HardhatUserConfig } from 'hardhat/config';
 import '@openzeppelin/hardhat-upgrades';
 import 'solidity-coverage';
 import '@nomiclabs/hardhat-solhint';
+import "@nomicfoundation/hardhat-chai-matchers";
 // import '@primitivefi/hardhat-dodoc';
 import "hardhat-contract-sizer";
 import dotenv from "dotenv";

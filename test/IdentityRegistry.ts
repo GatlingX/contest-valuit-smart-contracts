@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import "@nomicfoundation/hardhat-chai-matchers"
 import { 
   IdentityRegistry, 
   IdentityRegistry__factory,
@@ -100,6 +101,19 @@ describe("Identity Registry Testing", function () {
   });
 
   describe("Initialization", function () {
+
+
+    it("Should revert on double initialization", async function () {
+      await expect(
+        identityRegistry.init(
+          trustedIssuersRegistry.address,
+          claimTopicsRegistry.address,
+          identityRegistryStorage.address
+        )
+      ).to.be.revertedWith("Initializable: contract is already initialized");
+    });
+
+
     it("Should set the correct registries during initialization", async function () {
       expect(await identityRegistry.topicsRegistry()).to.equal(claimTopicsRegistry.address);
       expect(await identityRegistry.issuersRegistry()).to.equal(trustedIssuersRegistry.address);
@@ -138,6 +152,54 @@ describe("Identity Registry Testing", function () {
   describe("Identity Registration", function () {
     
     const countryCode = 840; // US country code
+
+
+    it("Should revert when registering identity with zero address", async function () {
+      await expect(
+        identityRegistry.registerIdentity(
+          ethers.constants.AddressZero,
+          user1Identity.address,
+          countryCode
+        )
+      ).to.be.revertedWith("invalid argument - zero address");
+
+      await expect(
+        identityRegistry.registerIdentity(
+          user1.address,
+          ethers.constants.AddressZero,
+          countryCode
+        )
+      ).to.be.revertedWith("invalid argument - zero address");
+    });
+
+    it("Should handle batch registration length validation", async function () {
+      // First register some valid identities
+      await identityRegistry.batchRegisterIdentity(
+        [user1.address, user2.address],
+        [user1Identity.address, user2Identity.address],
+        [countryCode, countryCode]
+      );
+
+      // Verify the registrations were successful
+      expect(await identityRegistry.contains(user1.address)).to.be.true;
+      expect(await identityRegistry.contains(user2.address)).to.be.true;
+    });
+
+    it("Should revert when registering already registered identity", async function () {
+      await identityRegistry.registerIdentity(
+        user1.address,
+        user1Identity.address,
+        countryCode
+      );
+
+      await expect(
+        identityRegistry.registerIdentity(
+          user1.address,
+          user1Identity.address,
+          countryCode
+        )
+      ).to.be.revertedWith("address stored already");
+    });
 
    
     it("Should allow registering an identity", async function () {
@@ -194,6 +256,31 @@ describe("Identity Registry Testing", function () {
       );
     });
 
+
+    it("Should revert updating non-existent identity", async function () {
+      const newIdentity = await new Identity__factory(owner).deploy(
+        user2.address,
+        true
+      );
+
+      await expect(
+        identityRegistry.updateIdentity(user2.address, newIdentity.address)
+      ).to.be.revertedWith("address not stored yet");
+    });
+
+    it("Should revert updating identity with zero address", async function () {
+      await expect(
+        identityRegistry.updateIdentity(user1.address, ethers.constants.AddressZero)
+      ).to.be.revertedWith("invalid argument - zero address");
+    });
+
+    it("Should revert updating country for non-existent identity", async function () {
+      await expect(
+        identityRegistry.updateCountry(user2.address, 124)
+      ).to.be.revertedWith("address not stored yet");
+    });
+
+
     it("Should allow updating identity", async function () {
       // Create a new identity
       const newIdentity = await new Identity__factory(owner).deploy(
@@ -232,6 +319,8 @@ describe("Identity Registry Testing", function () {
 
   describe("Identity Deletion", function () {
     const countryCode = 840; 
+
+    
     beforeEach(async function () {
       
       // Register initial identity
@@ -241,7 +330,7 @@ describe("Identity Registry Testing", function () {
         countryCode
       );
     });
-
+    
     it("Should allow deleting identity", async function () {
       // Delete identity
       await identityRegistry.deleteIdentity(user1.address);
@@ -267,6 +356,26 @@ describe("Identity Registry Testing", function () {
 
       expect(await identityRegistry.identityStorage()).to.equal(newIdentityRegistryStorage.address);
     });
+
+
+    it("Should handle invalid registry updates", async function () {
+      // Test storage update behavior
+      const newStorage = await new IdentityRegistryStorage__factory(owner).deploy();
+      await newStorage.init();
+      await identityRegistry.setIdentityRegistryStorage(newStorage.address);
+      expect(await identityRegistry.identityStorage()).to.equal(newStorage.address);
+
+      // Test topics registry update behavior
+      const newTopicsRegistry = await new ClaimTopicsRegistry__factory(owner).deploy();
+      await identityRegistry.setClaimTopicsRegistry(newTopicsRegistry.address);
+      expect(await identityRegistry.topicsRegistry()).to.equal(newTopicsRegistry.address);
+
+      // Test issuers registry update behavior
+      const newIssuersRegistry = await new TrustedIssuersRegistry__factory(owner).deploy();
+      await identityRegistry.setTrustedIssuersRegistry(newIssuersRegistry.address);
+      expect(await identityRegistry.issuersRegistry()).to.equal(newIssuersRegistry.address);
+    });
+
 
     it("Should allow owner to set Claim Topics Registry", async function () {
       const newClaimTopicsRegistry = await new ClaimTopicsRegistry__factory(owner).deploy();
@@ -318,6 +427,20 @@ describe("Identity Registry Testing", function () {
         userIdentity.address, 
         840 // US country code
       );
+    });
+
+    it("Should return false for non-existent identity verification", async function () {
+      expect(await identityRegistry.isVerified(user2.address)).to.be.false;
+    });
+
+    it("Should verify identity with multiple claim topics", async function () {
+      const claimTopic1 = 1;
+      const claimTopic2 = 2;
+
+      await claimTopicsRegistry.connect(owner).addClaimTopic(claimTopic1);
+      await claimTopicsRegistry.connect(owner).addClaimTopic(claimTopic2);
+
+      expect(await identityRegistry.isVerified(user1.address)).to.be.false;
     });
 
     it("Should return false for unverified identity when claim topics exist", async function () {

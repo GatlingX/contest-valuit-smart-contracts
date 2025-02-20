@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import "@nomicfoundation/hardhat-chai-matchers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { ClaimTopicsRegistry, ClaimTopicsRegistry__factory, CountryAllowModule, CountryAllowModule__factory, EquityConfig, EquityConfig__factory, FactoryProxy, FactoryProxy__factory, Fund, Fund__factory, FundFactory, FundFactory__factory, HoldTimeModule, HoldTimeModule__factory, Identity, Identity__factory, IdentityRegistry, IdentityRegistry__factory, IdentityRegistryStorage, IdentityRegistryStorage__factory, IdFactory, IdFactory__factory, ImplementationAuthority, ImplementationAuthority__factory, MaxBalanceModule, MaxBalanceModule__factory, ModularCompliance, ModularCompliance__factory, SupplyLimitModule, SupplyLimitModule__factory, Token, Token__factory, TREXFactory, TREXFactory__factory, TREXImplementationAuthority, TREXImplementationAuthority__factory, TrustedIssuersRegistry, TrustedIssuersRegistry__factory, USDC, USDC__factory, VERC20, VERC20__factory, Wrapper, Wrapper__factory, WrapperProxy, WrapperProxy__factory } from "../typechain";
@@ -143,132 +144,101 @@ describe("Wrapper Contract Testing", function () {
 
     });
 
-    // it.only("Create Wrap Token and ", async () => {
-    //   let tokenDetails = {
-    //       owner: owner.address,
-    //       name: "My Test Token",
-    //       symbol: "MTK",
-    //       decimals: 18,
-    //       irs: ethers.constants.AddressZero, // Address of the Identity Registry Storage
-    //       ONCHAINID: ethers.constants.AddressZero,  // Some default on-chain ID address
-    //       wrap: true,
-    //       irAgents: [user1.address,wrapperProxy.address],
-    //       tokenAgents: [user1.address],  // Agents for token management
-    //       transferAgents: [],  // Agents with transfer permissions
-    //       complianceModules: [
-    //           countryAllowCompliance.address,
-    //           supplyLimitCompliance.address,
-    //           maxBalanceCompliance.address,
-    //           holdTimeCompliance.address,
-    //       ],
-    //       complianceSettings: [
-    //           "0x771c5281000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000005b",
-    //           "0x361fab2500000000000000000000000000000000000000000000000000000000000007d0",
-    //           "0x9d51d9b700000000000000000000000000000000000000000000000000000000000000c8",
-    //           "0xf9455301000000000000000000000000000000000000000000000000000000006cd5fbcc",
-    //       ],
-    //   };
+    
+  it("should revert when trying to unwrap non-existent ERC20 token", async function () {
+    await expect(wrapper.connect(user1).toERC3643(ethers.constants.AddressZero, 100))
+      .to.be.revertedWith("ERC3643 Token doesn't exist");
+  });
+     
+it("should revert when wrapping is disabled in compliance", async function () {
+    let tokenDetails = {
+      owner: owner.address,
+      name: "Test Token",
+      symbol: "TST",
+      decimals: 18,
+      irs: ethers.constants.AddressZero,
+      ONCHAINID: ethers.constants.AddressZero,
+      wrap: false, // Explicitly disable wrapping
+      irAgents: [user1.address],
+      tokenAgents: [user1.address],
+      transferAgents: [],
+      complianceModules: [],
+      complianceSettings: [],
+    };
   
-    //   let claimDetails = {
-    //       claimTopics: [],
-    //       issuers: [],
-    //       issuerClaims: [],
-    //   };
+    let claimDetails = {
+      claimTopics: [],
+      issuers: [],
+      issuerClaims: [],
+    };
   
-    //   await identityFactory.addTokenFactory(trexFactory.address);
+    await identityFactory.addTokenFactory(trexFactory.address);
+    const tx = await trexFactory.connect(owner).deployTREXSuite(
+      "no_wrap_salt",
+      tokenDetails,
+      claimDetails
+    );
   
-    //   // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    //   const tx = await trexFactory.connect(owner).deployTREXSuite(
-    //       "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-    //       tokenDetails,
-    //       claimDetails
-    //   );
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    const tokenAddress = event?.args?._token;
   
-    //   // Wait for the transaction to be mined and capture the receipt
-    //   const receipt = await tx.wait();
-  
-    //   // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    //   const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    //   let AddressOfToken;
-  
-    //   if (event) {
-    //       let _token: any = event.args?._token;
-    //       AddressOfToken = _token;
-    //   }
-  
-    //   let token = event?.args;
-    //   let tokenAttached;
-    //   let firstAddress;
-  
-    //   if (Array.isArray(token) && token.length > 0) {
-    //       firstAddress = token[0]; // Directly accessing the first element
-    //       tokenAttached = await tokenImplementation.attach(firstAddress);
-    //   }
-  
-    //   let fundProxyAttached = await fundFactory.attach(fundProxy.address);
-    //   await fundProxyAttached.init(trexFactory.address);
-    //   await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
-    //   // Call createFund to deploy the fund
-    //   const txn = await fundProxyAttached.createFund(
-    //       AddressOfToken,
-    //       "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000", 
-    //       10, 
-    //       "Hello"
-    //   );
-  
-    //   const receiptFund = await txn.wait();
-    //   const event1 = receiptFund.events?.find(event => event.event === "FundCreated");
-  
-    //   let fundContract = event1?.args;
-  
-    //   let fundAddress;
-    //   let fundAttached;
-  
-    //   if (Array.isArray(fundContract) && fundContract.length > 0) {
-    //       fundAddress = fundContract[0];  // Directly accessing the first element
-    //       fundAttached = await fund.attach(fundAddress);
-    //   }
+    await expect(wrapper.connect(user1).createWrapToken(tokenAddress, 91))
+      .to.be.revertedWith("Wrapping disabled");
+  });
 
-    //   await expect(identityFactory.isAgent(user1.address)).to.equal(false);
-    //   await expect(identityFactory.isAgent(owner.address)).to.equal(false);
 
-    //   await identityFactory.addAgent(owner.address);
-    //   await identityFactory.addAgent(user1.address);
-
-    //   await expect(identityFactory.isAgent(user1.address)).to.equal(true);
-    //   await expect(identityFactory.isAgent(owner.address)).to.equal(true);
-
-    //   // Identities
-    //   await identityFactory.createIdentity(user2.address, user2.address);
-    //   let user2ID = await identityFactory.getIdentity(user2.address);
+  it("should revert when trying to wrap with invalid wrapper address", async function () {
+    let tokenDetails = {
+      owner: owner.address,
+      name: "Test Token",
+      symbol: "TST",
+      decimals: 18,
+      irs: ethers.constants.AddressZero,
+      ONCHAINID: ethers.constants.AddressZero,
+      wrap: true,
+      irAgents: [user1.address],
+      tokenAgents: [user1.address],
+      transferAgents: [],
+      complianceModules: [],
+      complianceSettings: [],
+    };
   
-    //   let identityRegistryAddress = await tokenAttached?.identityRegistry();
-    //   let identityRegisteryAttached = identityRegistryImplementation.attach(String(identityRegistryAddress));
-    //   await identityRegisteryAttached.connect(user1).registerIdentity(user2.address, String(user2ID), 91);
-    //   await tokenAttached?.connect(user2).increaseAllowance(wrapper.address, 10);
+    let claimDetails = {
+      claimTopics: [],
+      issuers: [],
+      issuerClaims: [],
+    };
   
-    //   await ethers.provider.send("evm_increaseTime", [1939776128]);
+    await identityFactory.addTokenFactory(trexFactory.address);
+    const tx = await trexFactory.connect(owner).deployTREXSuite(
+      "wrapper_test_salt",
+      tokenDetails,
+      claimDetails
+    );
   
-    //   // Ensure setImpl is being called by the correct address (proxy admin or authorized account)
-    //   const txnn = await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-    //   const receipts = await txnn.wait();
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    const tokenAddress = event?.args?._token;
   
-    //   // Assert the event to check if the proxy implementation was updated
-    //   const eventUpdate = receipts.events?.find(event => event.event === "ImplementationsUpdated");
-    //   // expect(eventUpdate).to.not.be.undefined;
-    //   // expect(eventUpdate?.args?.[0]).to.equal(implFund.address);  // Check the new implementation address      
+    // Set a different wrapper address in the compliance
+    const tokenContract = await tokenImplementation.attach(tokenAddress);
+    const compliance = await modularComplianceImplementation.attach(await tokenContract.compliance());
+   
+  
+    await expect(wrapper.connect(user1).createWrapToken(tokenAddress, 91))
+      .to.be.revertedWith("Invalid wrapper");
+  });
 
-    //   let wrapperAttached = await wrapper.attach(wrapperProxy.address);
-    //   await identityFactory.createIdentity(wrapper.address, wrapper.address);
-    //   let wrapperID = await identityFactory.getIdentity(wrapper.address);
-    //   // await wrapperAttached.setOnchainID(wrapperID);
+  it("should revert when non-owner tries to set onchain ID", async function () {
+    const newOnchainID = user1.address;
+    await expect(wrapper.connect(user1).setOnchainID(newOnchainID))
+      .to.be.reverted;
+  });
 
-      
-    //   // await wrapperAttached.init(verc20Implementation.address, fundFactory.address);
-    //   await expect(wrapperAttached.connect(user1).createWrapToken(AddressOfToken, 91)).to.be.revertedWith('Roles: account already has role');
 
-    // });
+  
+  
 
 
     it("should revert when initializing with zero address for _erc20Impl", async function () {

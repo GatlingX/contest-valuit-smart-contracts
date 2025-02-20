@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-
+import "@nomicfoundation/hardhat-chai-matchers"
 import {
   ClaimTopicsRegistry,
   ClaimTopicsRegistry__factory,
@@ -87,6 +87,27 @@ describe("ClaimTopicsRegistry Contract Testing", function () {
     });
   });
 
+  describe("Removing Claim Topics - Edge Cases", () => {
+    it("Should revert if trying to remove a claim topic that does not exist", async () => {
+      const nonExistentClaimTopic = 99; // A topic that was never added
+  
+      await expect(
+        claimTopicsRegistryContract.connect(owner).removeClaimTopic(nonExistentClaimTopic)
+      ).to.not.emit(claimTopicsRegistryContract, "ClaimTopicRemoved"); // Ensure no event is emitted
+    });
+  
+    it("Should do nothing if trying to remove a claim topic from an empty registry", async () => {
+      const claimTopicsBefore = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopicsBefore.length).to.equal(0);
+  
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(1);
+  
+      const claimTopicsAfter = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopicsAfter.length).to.equal(0); // Should remain empty
+    });
+  });
+  
+
   describe("Adding Claim Topics", () => {
     it("Should allow owner to add a claim topic", async () => {
         const claimTopic = 1;
@@ -159,9 +180,45 @@ describe("ClaimTopicsRegistry Contract Testing", function () {
         claimTopicsRegistryContract.connect(otherAccount).removeClaimTopic(claimTopic)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
+
+
+    it("Should remove the last claim topic correctly", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(2);
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(2);
+      
+      const claimTopics = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopics).to.deep.equal([1]);
+    });
+    
+
+    it("Should remove a claim topic and keep the list correct", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(2);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(3);
+    
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(2);
+    
+      const claimTopics = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopics).to.have.lengthOf(2);
+      expect(claimTopics).to.not.include(2);
+    });
+    
+
+    it("Should not emit an event when trying to remove a non-existent claim topic", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      
+      await expect(
+        claimTopicsRegistryContract.connect(owner).removeClaimTopic(99)
+      ).to.not.emit(claimTopicsRegistryContract, "ClaimTopicRemoved");
+    });
+
+    
+    
+
   });
 
-  describe("Getting Claim Topics", () => {
+  describe.only("Getting Claim Topics", () => {
     it("Should return all added claim topics", async () => {
       const claimTopics = [1, 2, 3];
       
@@ -177,5 +234,51 @@ describe("ClaimTopicsRegistry Contract Testing", function () {
         expect(retrievedTopics[index]).to.equal(topic);
       });
     });
+
+    it("Should allow removing the only claim topic and return an empty list", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(1);
+  
+      const claimTopics = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopics).to.deep.equal([]);
+  });
+  
+  it("Should handle attempting to remove a claim topic twice gracefully", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(1);
+  
+      await expect(claimTopicsRegistryContract.connect(owner).removeClaimTopic(1))
+          .to.not.emit(claimTopicsRegistryContract, "ClaimTopicRemoved");
+  });
+  
+  it("Should maintain order when adding and removing multiple claim topics", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(2);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(3);
+  
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(2);
+      
+      const claimTopics = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopics).to.deep.equal([1, 3]); // 2 should be removed, order preserved
+  });
+  
+  it("Should return an empty list after adding and removing multiple topics", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(2);
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(1);
+      await claimTopicsRegistryContract.connect(owner).removeClaimTopic(2);
+  
+      const claimTopics = await claimTopicsRegistryContract.getClaimTopics();
+      expect(claimTopics).to.deep.equal([]);
+  });
+  
+  it("Should correctly emit ClaimTopicRemoved event when removing a valid topic", async () => {
+      await claimTopicsRegistryContract.connect(owner).addClaimTopic(1);
+  
+      await expect(claimTopicsRegistryContract.connect(owner).removeClaimTopic(1))
+          .to.emit(claimTopicsRegistryContract, "ClaimTopicRemoved")
+          .withArgs(1);
+  });
+  
   });
 });

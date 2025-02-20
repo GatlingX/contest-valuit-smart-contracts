@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
-
+import "@nomicfoundation/hardhat-chai-matchers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
   AgentRole,
@@ -304,7 +304,7 @@ describe("Tokenization Contract Testing ", function () {
     await modularComplianceImplementation.callModuleFunction(
         await holdTimeCompliance.interface.encodeFunctionData(
           "setHoldTime",
-          [1739675128]
+          [Math.floor(Date.now() / 1000) + 50 * 24 * 60 * 60]
         ),
         holdTimeCompliance.address
       );
@@ -331,7 +331,7 @@ describe("Tokenization Contract Testing ", function () {
       wrapper.address
     );
   });
-  
+ 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
   });
@@ -396,9 +396,9 @@ describe("Tokenization Contract Testing ", function () {
 
   // Call createFund to deploy the fund
   const txn = await fundProxyAttached.createFund(
-      AddressOfToken, 
-      "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000", 
-      10, 
+      AddressOfToken,
+      "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000076466353466726600000000000000000000000000000000000000000000000000",
+      10,
       "Hello"
   );
   });
@@ -483,7 +483,7 @@ describe("Tokenization Contract Testing ", function () {
     await tokenAttached?.connect(user1).batchBurn([user1.address], [50]);
     expect(await tokenAttached?.balanceOf(user1.address)).to.be.equal(100);
   });
-  
+ 
   describe("Registries", () => {
     describe("ClaimTopicRegsitry", () => {
       it("init", async () => {
@@ -940,9 +940,127 @@ describe("Tokenization Contract Testing ", function () {
       });
     });
   });
+  
 
   describe("Roles", () => {
     describe("AgentRole", () => {
+
+      it("should emit correct event when adding agent", async () => {
+        await expect(agentContract.addAgent(user2.address))
+          .to.emit(agentContract, "AgentAdded")
+          .withArgs(user2.address);
+      });
+  
+      it("should emit correct event when removing agent", async () => {
+        // First add an agent
+        await agentContract.addAgent(user2.address);
+        // Then remove and check event
+        await expect(agentContract.removeAgent(user2.address))
+          .to.emit(agentContract, "AgentRemoved")
+          .withArgs(user2.address);
+      });
+  
+      it("should emit correct event when adding TA", async () => {
+        await expect(agentContract.addTA(user2.address))
+          .to.emit(agentContract, "taAdded")
+          .withArgs(user2.address);
+      });
+  
+      it("should emit correct event when removing TA", async () => {
+        // First add a TA
+        await agentContract.addTA(user2.address);
+        // Then remove and check event
+        await expect(agentContract.removeTA(user2.address))
+          .to.emit(agentContract, "taRemoved")
+          .withArgs(user2.address);
+      });
+      
+
+
+ 
+      it("should handle adding and removing agent multiple times", async () => {
+        // Add agent
+        await agentContract.addAgent(user2.address);
+        expect(await agentContract.isAgent(user2.address)).to.be.true;
+        
+        // Remove agent
+        await agentContract.removeAgent(user2.address);
+        expect(await agentContract.isAgent(user2.address)).to.be.false;
+        
+        // Add again
+        await agentContract.addAgent(user2.address);
+        expect(await agentContract.isAgent(user2.address)).to.be.true;
+      });
+  
+      it("should handle adding and removing TA multiple times", async () => {
+        // Add TA
+        await agentContract.addTA(user2.address);
+        expect(await agentContract.isTA(user2.address)).to.be.true;
+        
+        // Remove TA
+        await agentContract.removeTA(user2.address);
+        expect(await agentContract.isTA(user2.address)).to.be.false;
+        
+        // Add again
+        await agentContract.addTA(user2.address);
+        expect(await agentContract.isTA(user2.address)).to.be.true;
+      });
+
+        it("should revert when adding agent with zero address", async () => {
+          await expect(
+            agentContract.addAgent(ethers.constants.AddressZero)
+          ).to.be.revertedWith("invalid argument - zero address");
+        });
+    
+        it("should revert when removing agent with zero address", async () => {
+          await expect(
+            agentContract.removeAgent(ethers.constants.AddressZero)
+          ).to.be.revertedWith("invalid argument - zero address");
+        });
+    
+        it("should revert when adding TA with zero address", async () => {
+          await expect(
+            agentContract.addTA(ethers.constants.AddressZero)
+          ).to.be.revertedWith("invalid argument - zero address");
+        });
+    
+        it("should revert when removing TA with zero address", async () => {
+          await expect(
+            agentContract.removeTA(ethers.constants.AddressZero)
+          ).to.be.revertedWith("invalid argument - zero address");
+        });
+     
+
+        it("should revert when non-owner tries to add agent", async () => {
+          await expect(
+            agentContract.connect(user2).addAgent(user3.address)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    
+        it("should revert when non-owner tries to remove agent", async () => {
+          // First add an agent using owner
+          await agentContract.addAgent(user3.address);
+          // Then try to remove using non-owner
+          await expect(
+            agentContract.connect(user2).removeAgent(user3.address)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    
+        it("should revert when non-owner tries to add TA", async () => {
+          await expect(
+            agentContract.connect(user2).addTA(user3.address)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    
+        it("should revert when non-owner tries to remove TA", async () => {
+          // First add a TA using owner
+          await agentContract.addTA(user3.address);
+          // Then try to remove using non-owner
+          await expect(
+            agentContract.connect(user2).removeTA(user3.address)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
       it("addAgent", async () => {
         await agentContract.addAgent(user2.address);
         expect(await agentContract.isAgent(user2.address)).to.be.true;
@@ -1226,6 +1344,73 @@ describe("Tokenization Contract Testing ", function () {
 
   describe("Token", () => {
     describe("Token.sol", () => {
+
+      it("should revert when setting empty name", async () => {
+        await expect(tokenImplementation.setName(""))
+          .to.be.revertedWith("invalid argument - empty string");
+      });
+
+      
+
+
+      it("should revert transfer when contract is paused", async () => {
+        await tokenImplementation.pause();
+        await expect(
+          tokenImplementation.transfer(user2.address, 100)
+        ).to.be.revertedWith("Pausable: paused");
+      });
+
+      it("should revert transfer when sender is frozen", async () => {
+        await tokenImplementation.setAddressFrozen(user1.address, true);
+        await expect(
+          tokenImplementation.connect(user1).transfer(user2.address, 100)
+        ).to.be.revertedWith("wallet is frozen");
+      });
+
+      it("should revert transfer when receiver is frozen", async () => {
+        await tokenImplementation.setAddressFrozen(user2.address, true);
+        await expect(
+          tokenImplementation.connect(user1).transfer(user2.address, 100)
+        ).to.be.revertedWith("wallet is frozen");
+      });
+
+
+      it("should revert batchTransfer with mismatched array lengths", async () => {
+        await expect(
+          tokenImplementation.batchTransfer([user2.address], [10, 20])
+        ).to.be.revertedWith("Mismatched array lengths");
+      });
+
+      it("should revert batchMint with mismatched array lengths", async () => {
+        await expect(
+          tokenImplementation.batchMint([user1.address, user2.address], [100])
+        ).to.be.revertedWith("Mismatched array lengths");
+      });
+
+      it("should revert batchBurn with mismatched array lengths", async () => {
+        await expect(
+          tokenImplementation.batchBurn([user1.address], [10, 20])
+        ).to.be.revertedWith("Mismatched array lengths");
+      });
+
+      it("should revert recovery when lost wallet has no tokens", async () => {
+        await expect(
+          tokenImplementation.recoveryAddress(user2.address, user3.address, user1.address)
+        ).to.be.revertedWith("no tokens to recover");
+      });
+
+      it("should revert when setting empty name", async () => {
+        await expect(tokenImplementation.setName(""))
+          .to.be.revertedWith("invalid argument - empty string");
+      });
+
+      it("should revert when setting empty symbol", async () => {
+        await expect(tokenImplementation.setSymbol(""))
+          .to.be.revertedWith("invalid argument - empty string");
+      });
+
+
+
       it("approve", async () => {
         await tokenImplementation.approve(user2.address, 1000);
       });
@@ -1296,31 +1481,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1329,15 +1514,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         let user1Identity = await identityFactory.getIdentity(user1.address);
 
@@ -1371,31 +1556,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1404,16 +1589,16 @@ describe("Tokenization Contract Testing ", function () {
           firstAddress = token[0]; // Directly accessing the first element
           tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
 
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         let user1Identity = await identityFactory.getIdentity(user1.address);
         let ownerIdentity = await identityFactory.getIdentity(owner.address);
@@ -1456,31 +1641,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1489,15 +1674,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1543,31 +1728,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1576,15 +1761,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1612,7 +1797,7 @@ describe("Tokenization Contract Testing ", function () {
         await tokenAttached?.connect(user1).batchMint([user1.address,user2.address], [100,100]);
         await tokenAttached?.connect(user1).batchTransfer([user2.address, user3.address], [10, 10]);
 
-        
+       
         await tokenAttached?.connect(user1).approve(user2.address, 10000);
         await tokenAttached?.connect(user2).transferFrom(user1.address, user3.address, 10);
       });
@@ -1634,31 +1819,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1667,15 +1852,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1721,31 +1906,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],  // Empty for now
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1754,15 +1939,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1810,31 +1995,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1843,15 +2028,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
@@ -1898,31 +2083,31 @@ describe("Tokenization Contract Testing ", function () {
           ],
           complianceSettings : [],
         }
-      
+     
         let claimDetails = {
           claimTopics: [],
           issuers: [],
           issuerClaims:[],
         };
-      
+     
         await identityFactory.addTokenFactory(trexFactory.address);
-      
+     
         // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
         const tx=await trexFactory.connect(owner).deployTREXSuite(
           "test_salt",  // Unique salt to ensure CREATE2 uniqueness
           tokenDetails,
           claimDetails
         );
-      
+     
         const receipt = await tx.wait();
         const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
         let AddressOfToken;
-      
+     
         if (event) {
             let _token = event.args?._token;
             AddressOfToken = _token;
         }
-      
+     
         // Attach to the deployed token contract
         let token = event?.args;
         let tokenAttached;
@@ -1931,15 +2116,15 @@ describe("Tokenization Contract Testing ", function () {
             firstAddress = token[0]; // Directly accessing the first element
             tokenAttached = await tokenImplementation.attach(firstAddress);
         }
-      
+     
         expect(await tokenAttached?.name()).to.equal("My Test Token");
         expect(await tokenAttached?.symbol()).to.equal("MTK");
-      
+     
         // Set up the fundProxy contract
         let fundProxyAttached = await fundFactory.attach(fundProxy.address);
         await fundProxyAttached.init(trexFactory.address);
         await fundProxyAttached.setImpl(implFund.address, implEquityConfig.address);
-  
+ 
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityFactory.createIdentity(user2.address, user2.address);
 
