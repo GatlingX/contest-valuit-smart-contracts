@@ -4,6 +4,12 @@ pragma solidity 0.8.17;
 
 contract MCStorage {
 
+    /**
+     * @dev Emitted when the wrapper contract status is updated.
+     * 
+     * @param Wrapper The address of the wrapper contract.
+     * @param _status The new status of the wrapper (true if set, false if removed).
+     */
     event WrapperUpdated(
         address Wrapper,
         bool _status
@@ -18,8 +24,10 @@ contract MCStorage {
     /// Mapping of module binding status
     mapping(address => bool) internal _moduleBound;
 
+    /// Boolean flag indicating whether a wrapper contract has been set.
     bool public wrapperSet;
 
+    /// Address of the wrapper contract.
     address public wrapper;
 
     /**

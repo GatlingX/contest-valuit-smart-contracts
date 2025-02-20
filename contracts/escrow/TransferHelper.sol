@@ -1,8 +1,21 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.17;
-// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
+
+/**
+ * @title TransferHelper
+ * @dev Library for safely handling ERC20 token interactions and ETH transfers,
+ *      ensuring proper execution and error handling.
+ */
 library TransferHelper {
+
+    /**
+     * @dev Safely approves the given spender to spend the specified amount of tokens.
+     *      Ensures the call does not fail and that the return data (if any) is valid.
+     * @param token The address of the ERC20 token.
+     * @param to The address to approve as a spender.
+     * @param value The amount of tokens to approve.
+     */
     function safeApprove(
         address token,
         address to,
@@ -16,6 +29,13 @@ library TransferHelper {
         );
     }
 
+    /**
+     * @dev Safely transfers the specified amount of tokens to the given recipient.
+     *      Ensures the call does not fail and that the return data (if any) is valid.
+     * @param token The address of the ERC20 token.
+     * @param to The recipient address.
+     * @param value The amount of tokens to transfer.
+     */
     function safeTransfer(
         address token,
         address to,
@@ -29,6 +49,14 @@ library TransferHelper {
         );
     }
 
+    /**
+     * @dev Safely transfers the specified amount of tokens from one address to another.
+     *      Ensures the call does not fail and that the return data (if any) is valid.
+     * @param token The address of the ERC20 token.
+     * @param from The address from which tokens are transferred.
+     * @param to The recipient address.
+     * @param value The amount of tokens to transfer.
+     */
     function safeTransferFrom(
         address token,
         address from,
@@ -44,6 +72,12 @@ library TransferHelper {
         );
     }
 
+     /**
+     * @dev Safely transfers ETH to the specified recipient.
+     *      Ensures that the call does not fail.
+     * @param to The recipient address.
+     * @param value The amount of ETH to transfer.
+     */
     function safeTransferETH(address to, uint256 value) internal {
         (bool success, ) = to.call{value: value}(new bytes(0));
         require(success, 'TransferHelper::safeTransferETH: ETH transfer failed');

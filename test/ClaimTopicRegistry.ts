@@ -218,7 +218,7 @@ describe("ClaimTopicsRegistry Contract Testing", function () {
 
   });
 
-  describe.only("Getting Claim Topics", () => {
+  describe("Getting Claim Topics", () => {
     it("Should return all added claim topics", async () => {
       const claimTopics = [1, 2, 3];
       

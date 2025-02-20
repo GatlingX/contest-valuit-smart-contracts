@@ -157,6 +157,9 @@ contract TREXFactory is ITREXFactory, Ownable {
         return tokenDeployed[_salt];
     }
 
+    /**
+     *  @dev See {ITREXFactory-tokenDeployedByMe}.
+     */
     function tokenDeployedByMe(address _token)external override view returns(bool) {
         return deployedByMe[_token];
     }

@@ -136,7 +136,11 @@ interface ITREXFactory {
      */
     function getToken(string calldata _salt) external view returns(address);
 
-
+    /**
+     * @dev Checks if a given token was deployed by the factory.
+     * @param _token The address of the token contract to check.
+     * @return A boolean indicating whether the token was deployed by the factory.
+     */
     function tokenDeployedByMe(address _token)external view returns(bool);
 
     

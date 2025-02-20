@@ -22,6 +22,10 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
         _;
     }
 
+    /**
+     * @dev Initializes the contract by setting up the owner.
+     *      Uses OpenZeppelin's `OwnableUpgradeable` initializer.
+     */
     function init() external initializer {
         __Ownable_init();
     }
@@ -159,6 +163,9 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
 
     }
 
+    /**
+     *  @dev See {IModularCompliance-setWrapper}.
+     */
     function setWrapper(address _wrapper, bool _enabled) external onlyOwner{
         require(_wrapper != address(0),"Zero Address");
         wrapper = _wrapper;
@@ -166,10 +173,16 @@ contract ModularCompliance is IModularCompliance, OwnableUpgradeable, MCStorage 
         emit WrapperUpdated(_wrapper, _enabled);
     }
 
+    /**
+     *  @dev See {IModularCompliance-getWrapper}.
+     */
     function getWrapper() external view override returns (address){
         return wrapper;
     }
 
+    /**
+     *  @dev See {IModularCompliance-isWrapperSet}.
+     */
     function isWrapperSet() external view override returns (bool){
         return wrapperSet;
     }

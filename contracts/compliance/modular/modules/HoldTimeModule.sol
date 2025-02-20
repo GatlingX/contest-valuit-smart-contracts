@@ -27,6 +27,18 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
         __AbstractModule_init();
     }
 
+    /**
+     * @dev Sets the hold time for the caller, ensuring it is in the future and can only be set once.
+     * 
+     * Requirements:
+     * - `holdTime_` must be greater than the current block timestamp.
+     * - The caller must not have set a hold time before.
+     * - Function can only be called by a contract with the `onlyComplianceCall` modifier.
+     * 
+     * Emits a {HoldTimeUpdated} event upon successful execution.
+     * 
+     * @param holdTime_ The future timestamp until which the caller's hold period remains active.
+    */
     function setHoldTime(uint256 holdTime_) external onlyComplianceCall {
         require(holdTime_ > block.timestamp, "Hold Time cannot be less than current timestamp"); 
         require(!isHoldTimeSet[msg.sender], "Reset of Hold Time not allowed");
@@ -99,6 +111,12 @@ contract HoldTimeModule is AbstractModuleUpgradeable {
         return false;
     }
 
+    /**
+     * @dev Checks if a hold time has been set for the given compliance address.
+     *
+     * @param _compilance The address to check if a hold time has been set.
+     * @return bool Returns `true` if a hold time has been set for the given address, otherwise `false`.
+     */
     function isHoldtimeSet(address _compilance) external view returns(bool) {
         return isHoldTimeSet[_compilance];
     }

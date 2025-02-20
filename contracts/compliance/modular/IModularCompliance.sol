@@ -132,6 +132,12 @@ interface IModularCompliance {
      */
     function destroyed(address _from, uint256 _amount) external;
 
+    /**
+     * @dev Sets or updates the wrapper contract.
+     * 
+     * @param _wrapper Address of the wrapper contract.
+     * @param _enabled Boolean indicating if the wrapper is enabled.
+     */
     function setWrapper(address _wrapper, bool _enabled) external;
 
     /**
@@ -170,7 +176,15 @@ interface IModularCompliance {
      */
     function isModuleBound(address _module) external view returns (bool);
 
+    /**
+     * @dev Returns the address of the wrapper contract.
+     * @return Address of the wrapper contract.
+     */
     function getWrapper() external view returns (address);
 
+    /**
+     * @dev Checks if the wrapper contract is set and enabled.
+     * @return Boolean indicating whether the wrapper is set (`true`) or not (`false`).
+     */
     function isWrapperSet() external view returns (bool);
 }
