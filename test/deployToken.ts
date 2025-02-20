@@ -469,4 +469,67 @@ it("Deploy Token", async () => {
 });
 
 
+
+
+it.only("Error if it is not the agent caller", async () => {
+    let tokenDetails={
+      owner:owner.address,
+      name : "My Test Token",
+      symbol: "MTK",
+      decimals: 18,
+      irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+      ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+      wrap : false,
+      irAgents: [user1.address],
+      tokenAgents: [user1.address],  // Agents for token management
+      transferAgents : [],  // Agents with transfer permissions
+      complianceModules : [
+        countryAllowCompliance.address,
+        holdTimeCompliance.address,
+        supplyLimitCompliance.address,
+        maxBalanceCompliance.address
+
+      ],
+      complianceSettings : [],  // Empty for now
+    }
+
+    let claimDetails = {
+      claimTopics: [],
+      issuers: [],
+      issuerClaims:[],
+    };
+
+    await identityFactory.addTokenFactory(trexFactory.address);
+
+    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+    const tx=await trexFactory.connect(owner).deployTREXSuite(
+      "test_salt",  // Unique salt to ensure CREATE2 uniqueness
+      tokenDetails,
+      claimDetails
+    );
+
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    let AddressOfToken;
+
+    if (event) {
+        let _token = event.args?._token;
+        AddressOfToken = _token;
+    }
+
+    // Attach to the deployed token contract
+    let token = event?.args;
+    let tokenAttached;
+    let firstAddress;
+    if (Array.isArray(token) && token.length > 0) {
+        firstAddress = token[0]; // Directly accessing the first element
+        tokenAttached = await tokenImplementation.attach(firstAddress);
+    }
+
+    expect(await tokenAttached?.name()).to.equal("My Test Token");
+    expect(await tokenAttached?.symbol()).to.equal("MTK");
+
+    await expect(tokenAttached?.mint(owner.address,100)).to.be.revertedWith('AgentRole: caller does not have the Agent role');
+});
+
 });

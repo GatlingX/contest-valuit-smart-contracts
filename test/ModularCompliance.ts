@@ -579,4 +579,52 @@ beforeEach(" ", async () => {
     });
   });
 
+  it("should allow token to transfer between addresses", async function () {
+    await modularComplianceImplementation.init();
+    await modularComplianceImplementation.bindToken(owner.address);
+    await modularComplianceImplementation.transferred(user1.address, user2.address, 100);
+  });
+
+  it("should revert when transferring to zero address", async function () {
+    await modularComplianceImplementation.init();
+    await modularComplianceImplementation.bindToken(owner.address);
+    await expect(
+      modularComplianceImplementation.transferred(user1.address, ethers.constants.AddressZero, 100)
+    ).to.be.revertedWith("invalid argument - zero address");
+  });
+
+  it("should revert when transferring from zero address", async function () {
+    await modularComplianceImplementation.init();
+    await modularComplianceImplementation.bindToken(owner.address);
+    await expect(
+      modularComplianceImplementation.transferred(ethers.constants.AddressZero, user1.address, 100)
+    ).to.be.revertedWith("invalid argument - zero address");
+  });
+
+  it("should revert when transfer value is zero", async function () {
+    await modularComplianceImplementation.init();
+    await modularComplianceImplementation.bindToken(owner.address);
+    await expect(
+      modularComplianceImplementation.transferred(user1.address, user2.address, 0)
+    ).to.be.revertedWith("invalid argument - no value transfer");
+  });
+
+  it("should revert when called by non-token address", async function () {
+    await modularComplianceImplementation.init();
+    await modularComplianceImplementation.bindToken(owner.address);
+    await expect(
+      modularComplianceImplementation.connect(user1).transferred(user1.address, user2.address, 100)
+    ).to.be.revertedWith("error : this address is not a token bound to the compliance contract");
+  });
+
+
+
+  it("should revert when calling unbound module", async function () {
+    await modularComplianceImplementation.init();
+    const callData = countryAllowCompliance.interface.encodeFunctionData("renounceOwnership");
+    
+    await expect(
+      modularComplianceImplementation.callModuleFunction(callData, countryAllowCompliance.address)
+    ).to.be.revertedWith("call only on bound module");
+  });
 });

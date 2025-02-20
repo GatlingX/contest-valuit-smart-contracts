@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
+import { Event, Signer } from "ethers";
 import "@nomicfoundation/hardhat-chai-matchers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
@@ -66,6 +67,7 @@ describe("Tokenization Contract Testing ", function () {
   let sponsor: SignerWithAddress;
   let user2: SignerWithAddress;
   let user3: SignerWithAddress;
+  let iaFactory: SignerWithAddress;
   let user4: SignerWithAddress;
 
   // const trustSigningKey = ethers.Wallet.createRandom();
@@ -103,12 +105,14 @@ describe("Tokenization Contract Testing ", function () {
   let agentContract: AgentRole;
   let agentUpgradeable: AgentRoleUpgradeable;
   let snapshotId: any;
+  let token: Token;
 
   //stable Coins
   let usdc: USDC;
 
   beforeEach(" ", async () => {
     signers = await ethers.getSigners();
+   
     owner = signers[0];
     tokenIssuer = signers[1];
     transferAgent = signers[2];
@@ -116,6 +120,8 @@ describe("Tokenization Contract Testing ", function () {
     user2 = signers[5];
     user3 = signers[6];
     user4 = signers[7];
+    iaFactory = signers[8];
+
     snapshotId = await network.provider.send("evm_snapshot");
     // console.log("trust ", trust);
 
@@ -150,7 +156,7 @@ describe("Tokenization Contract Testing ", function () {
       await new TREXImplementationAuthority__factory(owner).deploy(
         true,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        iaFactory.address
       );
 
     // ONCHAIN IDENTITY
@@ -159,6 +165,7 @@ describe("Tokenization Contract Testing ", function () {
       true
     );
 
+    token = await new Token__factory(owner).deploy();
     identityImplementationAuthority =
       await new ImplementationAuthority__factory(owner).deploy(
         identityImplementation.address
@@ -940,7 +947,7 @@ describe("Tokenization Contract Testing ", function () {
       });
     });
   });
-  
+ 
 
   describe("Roles", () => {
     describe("AgentRole", () => {
@@ -950,7 +957,7 @@ describe("Tokenization Contract Testing ", function () {
           .to.emit(agentContract, "AgentAdded")
           .withArgs(user2.address);
       });
-  
+ 
       it("should emit correct event when removing agent", async () => {
         // First add an agent
         await agentContract.addAgent(user2.address);
@@ -959,13 +966,13 @@ describe("Tokenization Contract Testing ", function () {
           .to.emit(agentContract, "AgentRemoved")
           .withArgs(user2.address);
       });
-  
+ 
       it("should emit correct event when adding TA", async () => {
         await expect(agentContract.addTA(user2.address))
           .to.emit(agentContract, "taAdded")
           .withArgs(user2.address);
       });
-  
+ 
       it("should emit correct event when removing TA", async () => {
         // First add a TA
         await agentContract.addTA(user2.address);
@@ -974,7 +981,7 @@ describe("Tokenization Contract Testing ", function () {
           .to.emit(agentContract, "taRemoved")
           .withArgs(user2.address);
       });
-      
+     
 
 
  
@@ -982,25 +989,25 @@ describe("Tokenization Contract Testing ", function () {
         // Add agent
         await agentContract.addAgent(user2.address);
         expect(await agentContract.isAgent(user2.address)).to.be.true;
-        
+       
         // Remove agent
         await agentContract.removeAgent(user2.address);
         expect(await agentContract.isAgent(user2.address)).to.be.false;
-        
+       
         // Add again
         await agentContract.addAgent(user2.address);
         expect(await agentContract.isAgent(user2.address)).to.be.true;
       });
-  
+ 
       it("should handle adding and removing TA multiple times", async () => {
         // Add TA
         await agentContract.addTA(user2.address);
         expect(await agentContract.isTA(user2.address)).to.be.true;
-        
+       
         // Remove TA
         await agentContract.removeTA(user2.address);
         expect(await agentContract.isTA(user2.address)).to.be.false;
-        
+       
         // Add again
         await agentContract.addTA(user2.address);
         expect(await agentContract.isTA(user2.address)).to.be.true;
@@ -1011,19 +1018,19 @@ describe("Tokenization Contract Testing ", function () {
             agentContract.addAgent(ethers.constants.AddressZero)
           ).to.be.revertedWith("invalid argument - zero address");
         });
-    
+   
         it("should revert when removing agent with zero address", async () => {
           await expect(
             agentContract.removeAgent(ethers.constants.AddressZero)
           ).to.be.revertedWith("invalid argument - zero address");
         });
-    
+   
         it("should revert when adding TA with zero address", async () => {
           await expect(
             agentContract.addTA(ethers.constants.AddressZero)
           ).to.be.revertedWith("invalid argument - zero address");
         });
-    
+   
         it("should revert when removing TA with zero address", async () => {
           await expect(
             agentContract.removeTA(ethers.constants.AddressZero)
@@ -1036,7 +1043,7 @@ describe("Tokenization Contract Testing ", function () {
             agentContract.connect(user2).addAgent(user3.address)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
-    
+   
         it("should revert when non-owner tries to remove agent", async () => {
           // First add an agent using owner
           await agentContract.addAgent(user3.address);
@@ -1045,13 +1052,13 @@ describe("Tokenization Contract Testing ", function () {
             agentContract.connect(user2).removeAgent(user3.address)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
-    
+   
         it("should revert when non-owner tries to add TA", async () => {
           await expect(
             agentContract.connect(user2).addTA(user3.address)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
-    
+   
         it("should revert when non-owner tries to remove TA", async () => {
           // First add a TA using owner
           await agentContract.addTA(user3.address);
@@ -1120,49 +1127,223 @@ describe("Tokenization Contract Testing ", function () {
     //       });
     //     });
   });
-
-  describe("Factory", () => {
+    
+    describe("Factory", () => {
     describe("Idfactory", () => {
-      it("removeTokenFactory", async () => {
-        await identityFactory.addTokenFactory(trexFactory.address);
-        await identityFactory.removeTokenFactory(trexFactory.address);
-      });
-      it("createIdentity", async () => {
-        await identityFactory.createIdentity(user2.address, user2.address);
-      });
-      it("createTokenIdentity", async () => {
-        const salt = "200";
-        await identityFactory.createTokenIdentity(
-          tokenImplementation.address,
-          owner.address,
-          salt
-        );
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-      });
-      it("linkWallet", async () => {
-        await identityFactory.createIdentity(user2.address, user2.address);
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-        await identityFactory.connect(user2).linkWallet(user2Identity);
-      });
-      it("unlinkWallet", async () => {
-        await identityFactory.createIdentity(user2.address, user2.address);
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-        await identityFactory.connect(user2).linkWallet(user2Identity);
-        await identityFactory.connect(user2).unlinkWallet(user2Identity);
-      });
-      it("isSaltTaken", async () => {
-        const salt = "200";
-        await identityFactory.createIdentity(user2.address, salt);
-        await identityFactory.connect(owner).isSaltTaken(salt);
-      });
-      it("getWallets", async () => {
-        const salt = "200";
-        await identityFactory.createIdentity(user2.address, salt);
-        let user2Identity = await identityFactory.getIdentity(user2.address);
-        await identityFactory.connect(owner).getWallets(user2Identity);
-      });
-      it("getToken", async () => {
-        const salt = "200";
+
+            it("should add token factory", async () => {
+                const factoryAddress =trexImplementationAuthority.address;
+            
+                // Ensure that the factory is not added initially
+                const isFactoryAddedBefore = await identityFactory.isTokenFactory(factoryAddress);
+                expect(isFactoryAddedBefore).to.be.false;
+            
+                // Add the token factory
+                await identityFactory.addTokenFactory(factoryAddress);
+            
+                // Ensure that the factory is added successfully
+                const isFactoryAddedAfter = await identityFactory.isTokenFactory(factoryAddress);
+                expect(isFactoryAddedAfter).to.be.true;
+            });
+          
+          it("should revert when adding zero address as factory", async () => {
+            // Try adding zero address as token factory
+            await expect(identityFactory.addTokenFactory(ethers.constants.AddressZero))
+              .to.be.revertedWith("invalid argument - zero address");
+          });
+          
+          it("should revert when adding the same factory again", async () => {
+            const factoryAddress = trexFactory.address;
+          
+            // Add the token factory once
+            await identityFactory.addTokenFactory(factoryAddress);
+          
+            // Try adding the same factory again
+            await expect(identityFactory.addTokenFactory(factoryAddress))
+              .to.be.revertedWith("already a factory");
+          });
+
+
+          it("should remove token factory", async () => {
+            const factoryAddress = trexImplementationAuthority.address;
+          
+            // First, add the factory before testing removal
+            await identityFactory.addTokenFactory(factoryAddress);
+          
+            // Ensure the factory is added
+            const isFactoryAddedBefore = await identityFactory.isTokenFactory(factoryAddress);
+            expect(isFactoryAddedBefore).to.be.true;
+          
+            // Remove the token factory
+            await identityFactory.removeTokenFactory(factoryAddress);
+          
+            // Ensure the factory is removed
+            const isFactoryAddedAfter = await identityFactory.isTokenFactory(factoryAddress);
+            expect(isFactoryAddedAfter).to.be.false;
+          });
+          
+          it("should revert when removing zero address as factory", async () => {
+            // Try removing zero address as token factory
+            await expect(identityFactory.removeTokenFactory(ethers.constants.AddressZero))
+              .to.be.revertedWith("invalid argument - zero address");
+          });
+          
+          it("should revert when trying to remove a non-existing factory", async () => {
+            const nonExistingFactory = "0x0000000000000000000000000000000000000001"; // Random address
+          
+            // Try removing a non-existing factory
+            await expect(identityFactory.removeTokenFactory(nonExistingFactory))
+              .to.be.revertedWith("not a factory");
+          });
+          
+          describe("createIdentity", () => {
+            it("should create a new identity", async () => {
+              const salt = "200"; // Salt for uniqueness
+        
+              // Create identity for user2
+              await identityFactory.createIdentity(user2.address, salt);
+        
+              // Ensure identity has been created for user2
+              const user2Identity = await identityFactory.getIdentity(user2.address);
+              expect(user2Identity).to.not.be.null;
+              expect(user2Identity).to.not.equal(ethers.constants.AddressZero); // Identity should not be zero address
+        
+            });
+        
+            it("should revert when creating identity with existing salt", async () => {
+              const salt = "200"; // Salt used previously
+        
+              // Create identity for user2
+              await identityFactory.createIdentity(user2.address, salt);
+        
+              // Try creating identity again with the same salt (should fail)
+              await expect(identityFactory.createIdentity(user2.address, salt))
+                .to.be.revertedWith("salt already taken");
+            });
+          });
+        
+          // Test for createTokenIdentity
+          describe("createTokenIdentity", () => {
+            it("should create a token identity", async () => {
+              const salt = "300"; // Salt for uniqueness
+              const tokenAddress = tokenImplementation.address;
+        
+              // Create token identity
+              await identityFactory.createTokenIdentity(tokenAddress, owner.address, salt);
+        
+              // Fetch token identity for user2 (expected token address)
+              let tokenIdentity = await identityFactory.getIdentity(tokenAddress);
+              expect(tokenIdentity).to.not.be.null;
+              expect(tokenIdentity).to.not.equal(ethers.constants.AddressZero); // Identity should not be zero address
+            });
+        
+            it("should revert when creating token identity with existing salt", async () => {
+              const salt = "300"; // Salt used previously
+              const tokenAddress = tokenImplementation.address;
+        
+              // Create token identity
+              await identityFactory.createTokenIdentity(tokenAddress, owner.address, salt);
+        
+              // Try creating token identity again with the same salt (should fail)
+              await expect(identityFactory.createTokenIdentity(tokenAddress, owner.address, salt))
+                .to.be.revertedWith("salt already taken");
+            });
+        });
+
+
+        describe("IdFactory", () => {
+            // Test for linkWallet
+            describe("linkWallet", () => {
+              it("should link a wallet to the identity", async () => {
+                // Create identity for user2
+                const salt = "200";
+                await identityFactory.createIdentity(user2.address, salt);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+          
+                // Link wallet to identity
+                await identityFactory.connect(user2).linkWallet(user2Identity);
+          
+                // Fetch and verify that the wallet has been linked to the identity
+                const walletLinked = await identityFactory.getWallets(user2Identity);
+                expect(walletLinked).to.include(user2.address); // Expect user2's address to be in the linked wallets
+              });
+          
+              it("should revert when trying to link a wallet without identity", async () => {
+                const nonExistentIdentity = ethers.constants.AddressZero;
+                
+                // Try linking a wallet without an existing identity (should fail)
+                await expect(identityFactory.connect(user2).linkWallet(nonExistentIdentity))
+                  .to.be.revertedWith("invalid argument - zero address");
+              });
+            });
+          
+            // Test for unlinkWallet
+            describe("unlinkWallet", () => {
+              it("should unlink a wallet from the identity", async () => {
+                // Create identity for user2
+                await identityFactory.createIdentity(user2.address, user2.address);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+          
+                // Link wallet first
+                await identityFactory.connect(user2).linkWallet(user2Identity);
+          
+                // Unlink wallet from identity
+                await identityFactory.connect(user2).unlinkWallet(user2Identity);
+              });
+          
+              it("should revert when trying to unlink a wallet without being linked", async () => {
+                const salt = "200";
+                await identityFactory.createIdentity(user2.address, salt);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+          
+                // Try unlinking a wallet without being linked (should fail)
+                await expect(identityFactory.connect(user2).unlinkWallet(user2Identity))
+                  .to.be.revertedWith("only a linked wallet can unlink");
+              });
+            });
+          
+            // Test for isSaltTaken
+            describe("isSaltTaken", () => {
+              it("should return true if salt is taken", async () => {
+                const salt = "200";
+                
+                // Create identity for user2
+                await identityFactory.createIdentity(user2.address, salt);
+                
+                // Check if salt is taken
+                const saltTaken = await identityFactory.isSaltTaken(salt);
+                expect(saltTaken).to.be.false;
+              });
+          
+              it("should return false if salt is not taken", async () => {
+                const salt = "999"; // New salt that has not been used
+                
+                // Check if salt is taken
+                const saltTaken = await identityFactory.isSaltTaken(salt);
+                expect(saltTaken).to.be.false;
+              });
+            });
+          
+            // Test for getWallets
+            describe("getWallets", () => {
+              it("should return the list of linked wallets", async () => {
+                const salt = "200";
+                await identityFactory.createIdentity(user2.address, salt);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+          
+                // Link wallet to identity
+                await identityFactory.connect(user2).linkWallet(user2Identity);
+          
+                // Retrieve and verify the linked wallets
+                const wallets = await identityFactory.getWallets(user2Identity);
+                expect(wallets).to.include(user2.address); // Expect user2's address to be in the list of linked wallets
+              });
+            });
+          
+            // Test for getToken
+            describe("getToken", () => {
+              it("should return the token identity", async () => {
+                const salt = "200";
         await identityFactory.createTokenIdentity(
           tokenImplementation.address,
           owner.address,
@@ -1172,7 +1353,9 @@ describe("Tokenization Contract Testing ", function () {
           tokenImplementation.address
         );
         await identityFactory.connect(owner).getToken(tokenIdentity);
-      });
+              });
+            });
+          });
     });
   });
 
@@ -1201,6 +1384,15 @@ describe("Tokenization Contract Testing ", function () {
         };
         await otherTrexImplementationAuthority.fetchVersion(versionStruct);
       });
+
+
+     
+
+
+
+
+
+
 
       //   it("changeImplementationAuthority ", async () => {
       //     const newTrexImplementationAuthority = await ethers.deployContract(
@@ -1316,7 +1508,159 @@ describe("Tokenization Contract Testing ", function () {
           trexImplementationAuthority.useTREXVersion(versionStruct)
         ).to.be.revertedWith("version already in use");
       });
+
+
+
+
+      it("should correctly set initial state", async () => {
+        const newImplementation = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        expect(await newImplementation.isReferenceContract()).to.be.false;
+        expect(await newImplementation.getTREXFactory()).to.equal(trexFactory.address);
+      });
+
+
+      // it("should emit correct events during construction", async () => {
+      //   const tx = await new TREXImplementationAuthority__factory(owner).deploy(
+      //     true,
+      //     trexFactory.address,
+      //     iaFactory.address
+      //   );
+       
+      //   const receipt = await tx.deployTransaction.wait();
+       
+      //   expect(receipt.events?.some(e => e.event === "ImplementationAuthoritySet")).to.be.true;
+      //   expect(receipt.events?.some(e => e.event === "IAFactorySet")).to.be.true;
+      // });
+ 
+
+
+     
+
     });
+
+
+
+    describe("Version Management", () => {
+      let contracts: {
+        tokenImplementation: string;
+        ctrImplementation: string;
+        irImplementation: string;
+        irsImplementation: string;
+        tirImplementation: string;
+        mcImplementation: string;
+      };
+      let version: { major: number; minor: number; patch: number };
+ 
+      beforeEach(async () => {
+        contracts = {
+          tokenImplementation: tokenImplementation.address,
+          ctrImplementation: claimTopicsRegistryImplementation.address,
+          irImplementation: identityRegistryImplementation.address,
+          irsImplementation: identityRegistryStorageImplementation.address,
+          tirImplementation: trustedIssuersRegistryImplementation.address,
+          mcImplementation: modularComplianceImplementation.address,
+        };
+       
+        version = { major: 1, minor: 0, patch: 0 };
+      });
+ 
+      it("should fail to add version with zero addresses", async () => {
+        const invalidContracts = { ...contracts, tokenImplementation: ethers.constants.AddressZero };
+        await expect(trexImplementationAuthority.addTREXVersion(version, invalidContracts))
+          .to.be.revertedWith("invalid argument - zero address");
+      });
+ 
+      it("should fail to add version from non-reference contract", async () => {
+        const nonRefImpl = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        await expect(nonRefImpl.addTREXVersion(version, contracts))
+          .to.be.revertedWith("ONLY reference contract can add versions");
+      });
+ 
+      it("should successfully fetch version from reference contract", async () => {
+        await trexImplementationAuthority.addTREXVersion(version, contracts);
+       
+        const nonRefImpl = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        await expect(nonRefImpl.fetchVersion(version))
+          .to.emit(nonRefImpl, "TREXVersionFetched");
+      });
+ 
+      it("should fail to fetch already fetched version", async () => {
+        await trexImplementationAuthority.addTREXVersion(version, contracts);
+       
+        const nonRefImpl = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        await nonRefImpl.fetchVersion(version);
+        await expect(nonRefImpl.fetchVersion(version))
+          .to.be.revertedWith("version fetched already");
+      });
+    });
+
+    describe("Getters and Utility Functions", () => {
+      it("should correctly return all implementation addresses", async () => {
+        const version = { major: 1, minor: 0, patch: 0 };
+        const contracts = {
+          tokenImplementation: tokenImplementation.address,
+          ctrImplementation: claimTopicsRegistryImplementation.address,
+          irImplementation: identityRegistryImplementation.address,
+          irsImplementation: identityRegistryStorageImplementation.address,
+          tirImplementation: trustedIssuersRegistryImplementation.address,
+          mcImplementation: modularComplianceImplementation.address,
+        };
+       
+        await trexImplementationAuthority.addAndUseTREXVersion(version, contracts);
+       
+        expect(await trexImplementationAuthority.getTokenImplementation()).to.equal(contracts.tokenImplementation);
+        expect(await trexImplementationAuthority.getCTRImplementation()).to.equal(contracts.ctrImplementation);
+        expect(await trexImplementationAuthority.getIRImplementation()).to.equal(contracts.irImplementation);
+        expect(await trexImplementationAuthority.getIRSImplementation()).to.equal(contracts.irsImplementation);
+        expect(await trexImplementationAuthority.getTIRImplementation()).to.equal(contracts.tirImplementation);
+        expect(await trexImplementationAuthority.getMCImplementation()).to.equal(contracts.mcImplementation);
+      });
+    });
+
+    describe("Factory Management", () => {
+      it("should fail to set TREX factory from non-reference contract", async () => {
+        const nonRefImpl = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        await expect(nonRefImpl.setTREXFactory(trexFactory.address))
+          .to.be.revertedWith("only reference contract can call");
+      });
+ 
+      it("should fail to set IA factory from non-reference contract", async () => {
+        const nonRefImpl = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          iaFactory.address
+        );
+       
+        await expect(nonRefImpl.setIAFactory(iaFactory.address))
+          .to.be.revertedWith("only reference contract can call");
+      });
+    });
+ 
 
     describe("IAFactory", () => {
       it("constructor", async () => {
@@ -1350,7 +1694,7 @@ describe("Tokenization Contract Testing ", function () {
           .to.be.revertedWith("invalid argument - empty string");
       });
 
-      
+     
 
 
       it("should revert transfer when contract is paused", async () => {
@@ -2153,6 +2497,35 @@ describe("Tokenization Contract Testing ", function () {
         await tokenAttached?.connect(user1)
           .freezePartialTokens(user2.address, 1);
       });
+    });
+  });
+
+  describe.only("Constructor", function() {
+    it("should revert if the implementation address is zero", async function () {
+      const ImplementationAuthorityFactory = await ethers.getContractFactory("ImplementationAuthority");
+      await expect(
+        ImplementationAuthorityFactory.deploy(ethers.constants.AddressZero)
+      ).to.be.revertedWith("invalid argument - zero address");
+    });
+  });
+
+  describe.only("updateImplementation", function () {
+    it("should update the implementation address", async function () {
+      await identityImplementationAuthority.updateImplementation(owner.address);
+      const currentImplementation = await identityImplementationAuthority.getImplementation();
+      expect(currentImplementation).to.equal(owner.address);
+    });
+
+    it("should revert if the new implementation address is zero", async function () {
+      await expect(
+        identityImplementationAuthority.updateImplementation(ethers.constants.AddressZero)
+      ).to.be.revertedWith("invalid argument - zero address");
+    });
+
+    it("should only allow the owner to update the implementation", async function () {
+      await expect(
+        identityImplementationAuthority.connect(user1).updateImplementation(owner.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });

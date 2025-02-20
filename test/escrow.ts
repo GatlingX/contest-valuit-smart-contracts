@@ -3,15 +3,15 @@ import { ethers } from "hardhat";
 const { BigNumber } = require('ethers');
 import "@nomicfoundation/hardhat-chai-matchers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ClaimIssuer, 
-ClaimIssuer__factory, 
-ClaimTopicsRegistry, 
-ClaimTopicsRegistry__factory, 
-CountryAllowModule, 
-CountryAllowModule__factory, 
-EquityConfig, 
-EquityConfig__factory, 
-// Escrow, 
+import { ClaimIssuer,
+ClaimIssuer__factory,
+ClaimTopicsRegistry,
+ClaimTopicsRegistry__factory,
+CountryAllowModule,
+CountryAllowModule__factory,
+EquityConfig,
+EquityConfig__factory,
+// Escrow,
 // Escrow__factory,
 // // EscrowProxy,
 // // EscrowProxy__factory,
@@ -58,7 +58,7 @@ let wrapper: Wrapper;
 let verc20: VERC20;
 
 
-// Escrow contract 
+// Escrow contract
 let usdc: USDC;
 let usdt: USDT;
 // let escrow: Escrow;
@@ -164,7 +164,7 @@ beforeEach(" ", async () => {
     implEquityConfig = await new ImplementationAuthority__factory(owner).deploy(
         equityConfig.address
     );
-    
+   
     fundFactory = await new FundFactory__factory(owner).deploy();
     fundProxy = await new FactoryProxy__factory(owner).deploy();
 
@@ -242,6 +242,346 @@ it("it should correctly set the stable coin",async function(){
     expect(await escrow.getStableCoinName(stableCoinAddress)).to.equal("USDC");
 });
 
+it("should initialize with correct stablecoin addresses", async () => {
+    expect(await escrow.getStableCoin("usdc")).to.equal(usdc.address);
+    expect(await escrow.getStableCoin("usdt")).to.equal(usdt.address);
+  });
+
+
+  it("should not allow initialization twice", async () => {
+    await expect(
+      escrow.init([usdc.address, usdt.address], trexImplementationAuthority.address, fundFactory.address)
+    ).to.be.revertedWith("Initializable: contract is already initialized");
+  });
+
+  it("should only allow owner to set fund factory", async () => {
+    const newAddress = ethers.Wallet.createRandom().address;
+    await expect(escrow.connect(user1).setFundFactory(newAddress))
+      .to.be.revertedWith("Ownable: caller is not the owner");
+   
+    await expect(escrow.connect(owner).setFundFactory(ethers.constants.AddressZero))
+      .to.be.revertedWith("Invalid Zero Address");
+   
+    await expect(escrow.connect(owner).setFundFactory(newAddress))
+      .to.emit(escrow, "FundFactoryUpdated")
+      .withArgs(newAddress);
+  });
+  it("should only allow owner to set master factory", async () => {
+    const newAddress = ethers.Wallet.createRandom().address;
+    await expect(escrow.connect(user1).setMasterFactory(newAddress))
+      .to.be.revertedWith("Ownable: caller is not the owner");
+   
+    await expect(escrow.connect(owner).setMasterFactory(ethers.constants.AddressZero))
+      .to.be.revertedWith("Invalid Zero Address");
+   
+    await expect(escrow.connect(owner).setMasterFactory(newAddress))
+      .to.emit(escrow, "MasterFactoryUpdated")
+      .withArgs(newAddress);
+  });
+
+ 
+
+
+it("should reject deposit when investor is not whitelisted", async function() {
+    // Setup token and escrow as in your existing tests
+    // but don't whitelist the user
+    await expect(escrow.connect(user1).deposit(
+        verc20.address,
+        100,
+        10,
+        "order1",
+        "usdc"
+    )).to.be.reverted;
+});
+
+
+describe("Deposit Function", () => {
+    beforeEach(async () => {
+      // Mint some USDC to user1
+      await usdc.mint(user1.address, ethers.utils.parseUnits("1000", 18));
+      await usdc.connect(user1).approve(escrow.address, ethers.utils.parseUnits("1000", 18));
+     
+    });
+
+   
+
+    it("should reject deposit with zero amount", async () => {
+
+        let tokenDetails={
+            owner:owner.address,
+            name : "My Test Token",
+            symbol: "MTK",
+            decimals: 18,
+            irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+            ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+            wrap : false,
+            irAgents: [user1.address],
+            tokenAgents: [user1.address],  // Agents for token management
+            transferAgents : [],  // Agents with transfer permissions
+            complianceModules : [
+            ],
+            complianceSettings : [],  // Empty for now
+        }
+   
+        let claimDetails = {
+            claimTopics: [],
+            issuers: [],
+            issuerClaims:[],
+        };
+   
+        await identityFactory.addTokenFactory(trexFactory.address);
+   
+        // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+        const tx=await trexFactory.connect(owner).deployTREXSuite(
+            "test_salt",  // Unique salt to ensure CREATE2 uniqueness
+            tokenDetails,
+            claimDetails
+        );
+   
+        // Wait for the transaction to be mined and capture the receipt
+        const receipt = await tx.wait();
+   
+        // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        let AddressOfToken;
+   
+        if (event) {
+            let _token: any = event.args?._token;
+            AddressOfToken=_token;
+   
+            let _ir: any = event.args?._ir;
+            let _irs: any = event.args?._irs;
+            let _tir: any = event.args?._tir;
+            let _ctr: any = event.args?._ctr;
+            let _mc: any = event.args?._mc;
+            let _salt: any = event.args?._salt;
+        }
+   
+        let token = event?.args;
+        let tokenAttached;
+        let firstAddress;
+   
+        if (Array.isArray(token) && token.length > 0) {
+            firstAddress = token[0]; // Directly accessing the first element
+            tokenAttached = await tokenImplementation.attach(firstAddress);
+        }
+   
+        expect(await tokenAttached?.name()).to.equal("My Test Token");
+        expect(await tokenAttached?.symbol()).to.equal("MTK");
+   
+        const ownerAddress = await identityRegistryImplementation.owner();
+       
+   
+        // for granting the role of the agent
+        await identityFactory.addAgent(user1.address);
+        await identityFactory.addAgent(owner.address);
+       
+        // check if the user1.address is an agent or not
+        const checkAgent=await identityFactory.isAgent(user1.address);
+        expect(checkAgent).to.equal(true);
+   
+        const checkAgentOwner=await identityFactory.isAgent(owner.address);
+        expect(checkAgentOwner).to.equal(true);
+   
+        // initialize the modular compliance
+        await modularComplianceImplementation.connect(user1).init();
+        const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
+        expect(ownerAddressModularCompliance).to.equal(user1.address);
+   
+        // Create identity for user1
+        const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
+   
+        // Ensure user1 has a valid identity
+        const user1IdentityGet = await identityFactory.getIdentity(user1.address);
+       
+        // Verify if the identity registry is properly linked to the token
+        const identityRegistryAddress = await tokenAttached?.identityRegistry();
+       
+        const identityRegistryAttached = identityRegistryImplementation.attach(
+            String(identityRegistryAddress)
+        );
+   
+        await  identityRegistryAttached
+        .connect(user1)
+        .registerIdentity(user1.address, user1IdentityGet, 123);
+   
+        const isRegistered = await identityRegistryAttached.contains(user1.address);
+        expect(isRegistered).to.equal(true);
+   
+        const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
+        expect(userIsVerified).to.be.true;
+   
+        const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
+        expect(checkTokenAttachAgent).to.equal(true);
+   
+        // attach the token
+        const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
+   
+        await tokenAttached?.connect(user1).mint(user1.address,100);
+        const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
+   
+       
+      await expect(
+        escrow.connect(user1).deposit(
+          AddressOfToken,
+          0,
+          10,
+          "order1",
+          "usdc"
+        )
+      ).to.be.revertedWith("Amount should be greater than 0");
+    });
+
+   
+
+   
+
+    it("should reject duplicate order IDs", async () => {
+      // Setup a valid initial deposit
+
+      let tokenDetails={
+        owner:owner.address,
+        name : "My Test Token",
+        symbol: "MTK",
+        decimals: 18,
+        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
+        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
+        wrap : false,
+        irAgents: [user1.address],
+        tokenAgents: [user1.address],  // Agents for token management
+        transferAgents : [],  // Agents with transfer permissions
+        complianceModules : [
+        ],
+        complianceSettings : [],  // Empty for now
+    }
+
+    let claimDetails = {
+        claimTopics: [],
+        issuers: [],
+        issuerClaims:[],
+    };
+
+    await identityFactory.addTokenFactory(trexFactory.address);
+
+    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
+    const tx=await trexFactory.connect(owner).deployTREXSuite(
+        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
+        tokenDetails,
+        claimDetails
+    );
+
+    // Wait for the transaction to be mined and capture the receipt
+    const receipt = await tx.wait();
+
+    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
+    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+    let AddressOfToken;
+
+    if (event) {
+        let _token: any = event.args?._token;
+        AddressOfToken=_token;
+
+        let _ir: any = event.args?._ir;
+        let _irs: any = event.args?._irs;
+        let _tir: any = event.args?._tir;
+        let _ctr: any = event.args?._ctr;
+        let _mc: any = event.args?._mc;
+        let _salt: any = event.args?._salt;
+    }
+
+    let token = event?.args;
+    let tokenAttached;
+    let firstAddress;
+
+    if (Array.isArray(token) && token.length > 0) {
+        firstAddress = token[0]; // Directly accessing the first element
+        tokenAttached = await tokenImplementation.attach(firstAddress);
+    }
+
+    expect(await tokenAttached?.name()).to.equal("My Test Token");
+    expect(await tokenAttached?.symbol()).to.equal("MTK");
+
+    const ownerAddress = await identityRegistryImplementation.owner();
+   
+
+    // for granting the role of the agent
+    await identityFactory.addAgent(user1.address);
+    await identityFactory.addAgent(owner.address);
+   
+    // check if the user1.address is an agent or not
+    const checkAgent=await identityFactory.isAgent(user1.address);
+    expect(checkAgent).to.equal(true);
+
+    const checkAgentOwner=await identityFactory.isAgent(owner.address);
+    expect(checkAgentOwner).to.equal(true);
+
+    // initialize the modular compliance
+    await modularComplianceImplementation.connect(user1).init();
+    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
+    expect(ownerAddressModularCompliance).to.equal(user1.address);
+
+    // Create identity for user1
+    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
+
+    // Ensure user1 has a valid identity
+    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
+   
+    // Verify if the identity registry is properly linked to the token
+    const identityRegistryAddress = await tokenAttached?.identityRegistry();
+   
+    const identityRegistryAttached = identityRegistryImplementation.attach(
+        String(identityRegistryAddress)
+    );
+
+    await  identityRegistryAttached
+    .connect(user1)
+    .registerIdentity(user1.address, user1IdentityGet, 123);
+
+    const isRegistered = await identityRegistryAttached.contains(user1.address);
+    expect(isRegistered).to.equal(true);
+
+    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
+    expect(userIsVerified).to.be.true;
+
+    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
+    expect(checkTokenAttachAgent).to.equal(true);
+
+    // attach the token
+    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
+
+    await tokenAttached?.connect(user1).mint(user1.address,100);
+    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
+
+   
+
+      // Try to create duplicate order
+      await expect(
+        escrow.connect(user1).deposit(
+          verc20.address,
+          100,
+          10,
+          "order1",
+          "usdc"
+        )
+      ).to.be.reverted;
+    });
+
+    it("should reject deposit for non-TREX token", async () => {
+      const randomAddress = ethers.Wallet.createRandom().address;
+      await expect(
+        escrow.connect(user1).deposit(
+          randomAddress,
+          100,
+          10,
+          "order1",
+          "usdc"
+        )
+      ).to.be.reverted;
+    });
+  });
+
+
+
 
 it("should return the correct stablecoin address for usdc", async function () {
     const usdcAddress = await escrow.getStableCoin("usdc");
@@ -266,6 +606,8 @@ it("should return the correct stablecoin name for USDT address", async function 
     const coinName = await escrow.getStableCoinName(usdt.address);
     expect(coinName).to.equal("usdt");
 });
+
+
 
 
 
@@ -333,12 +675,12 @@ it("it sets the call update identity and reverted if it is not Not an Identity R
     expect(await tokenAttached?.symbol()).to.equal("MTK");
 
     const ownerAddress = await identityRegistryImplementation.owner();
-    
+   
 
     // for granting the role of the agent
     await identityFactory.addAgent(user1.address);
     await identityFactory.addAgent(owner.address);
-    
+   
     // check if the user1.address is an agent or not
     const checkAgent=await identityFactory.isAgent(user1.address);
     expect(checkAgent).to.equal(true);
@@ -356,10 +698,10 @@ it("it sets the call update identity and reverted if it is not Not an Identity R
 
     // Ensure user1 has a valid identity
     const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
+   
     // Verify if the identity registry is properly linked to the token
     const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
+   
     const identityRegistryAttached = identityRegistryImplementation.attach(
         String(identityRegistryAddress)
     );
@@ -405,6 +747,7 @@ it("testing for rescueAnyERC20Tokens in Escrow and reverted if it has Insufficie
 
     await expect(escrow.connect(user1).rescueAnyERC20Tokens(usdt.address, user2.address, 10)).to.be.rejectedWith('Ownable: caller is not the owner');
 });
+
 
 
 it("create the order with the order-Id and i will deposit some amount in it",async function(){
@@ -471,7 +814,7 @@ it("create the order with the order-Id and i will deposit some amount in it",asy
         tokenAttached = await tokenImplementation.attach(firstAddress);
     }
 
-    
+   
 
     expect(await tokenAttached?.name()).to.equal("My Test Token");
     expect(await tokenAttached?.symbol()).to.equal("MTK");
@@ -1179,10 +1522,10 @@ it("testing for the batch freeze of the partial tokens", async () => {
     await tokenImplementation.connect(user1).addTA(escrow.address);
     await tokenAttached?.addTA(escrow.address);
     await tokenImplementation.connect(user1).addTA(user1.address);
-    
+   
     await tokenImplementation.connect(user1).addAgent(escrow.address);
     await tokenAttached?.addAgent(escrow.address);
-    
+   
     await escrow.connect(user1).batchFreezePartialTokens(AddressOfToken,userAddresses,amounts,orderIdConc);
 });
 
@@ -1308,11 +1651,11 @@ it("testing for the batch freeze of the partial tokens and shows error if it is 
 
     await tokenImplementation.connect(user1).addTA(escrow.address);
     await tokenImplementation.connect(user1).addTA(user1.address);
-    
+   
 
     await tokenImplementation.connect(user1).addAgent(escrow.address);
     const myTotalBalance=await tokenAttached?.balanceOf(user1.address);
-    
+   
     await expect(
         escrow.connect(user1).batchFreezePartialTokens(AddressOfToken, userAddresses, amounts, orderIdConc)
     ).to.be.revertedWith('AgentRole or TARole: caller does not have the Agent role or TARole');
@@ -1516,7 +1859,7 @@ it("testing for the batch unfreeze of the partial tokens and it shows error if t
         tokenAttached = await tokenImplementation.attach(firstAddress);
     }
 
-    
+   
 
     expect(await tokenAttached?.name()).to.equal("My Test Token");
     expect(await tokenAttached?.symbol()).to.equal("MTK");
@@ -1569,7 +1912,7 @@ it("testing for the batch unfreeze of the partial tokens and it shows error if t
         18,
         ethers.constants.AddressZero
     );
-                    
+                   
     // to check agent
     await tokenImplementation.connect(user1).addAgent(user1.address);
 
@@ -1578,23 +1921,23 @@ it("testing for the batch unfreeze of the partial tokens and it shows error if t
     const orderIdConc=["1","1"];
 
     await tokenImplementation.connect(user1).addTA(escrow.address);
-    
+   
     // await tokenAttached?.addTA(escrow.address);
     await tokenImplementation.connect(user1).addTA(user1.address);
-    
+   
 
     // await tokenAttached?.addAgent(user1.address);
     await tokenImplementation.connect(user1).addAgent(escrow.address);
-    
+   
 
     // await tokenAttached?.addAgent(escrow.address);
     const myTotalBalance=await tokenAttached?.balanceOf(user1.address);
-    
+   
 
     await expect(
         escrow.connect(user1).batchFreezePartialTokens(AddressOfToken, userAddresses, amounts, orderIdConc)
     ).to.be.revertedWith('AgentRole or TARole: caller does not have the Agent role or TARole');
-}); 
+});
 
 
 it("testing for the batch set address frozen of the tokens", async () => {
@@ -1661,7 +2004,7 @@ it("testing for the batch set address frozen of the tokens", async () => {
         tokenAttached = await tokenImplementation.attach(firstAddress);
     }
 
-    
+   
 
     expect(await tokenAttached?.name()).to.equal("My Test Token");
     expect(await tokenAttached?.symbol()).to.equal("MTK");
@@ -1726,7 +2069,7 @@ it("testing for the batch set address frozen of the tokens", async () => {
 
     await tokenImplementation.connect(user1).addAgent(escrow.address);
     await tokenAttached?.addAgent(escrow.address);
-    
+   
     // const myTotalBalance=await tokenAttached?.balanceOf(user1.address);
     await escrow.connect(user1).batchSetAddressFrozen(AddressOfToken,userAddresses,isFreeze,orderIdConc);
 });
@@ -1796,7 +2139,7 @@ it("testing for the batch set address frozen of the tokens and it throws error i
         tokenAttached = await tokenImplementation.attach(firstAddress);
     }
 
-    
+   
 
     expect(await tokenAttached?.name()).to.equal("My Test Token");
     expect(await tokenAttached?.symbol()).to.equal("MTK");
@@ -1844,8 +2187,8 @@ it("testing for the batch set address frozen of the tokens and it throws error i
     const isFreeze=[false, true];
     const orderIdConc=["1","2"];
     const myTotalBalance=await tokenAttached?.balanceOf(user1.address);
-    
-    
+   
+   
     await expect(
         escrow.connect(user1).batchSetAddressFrozen(AddressOfToken,userAddresses,isFreeze,orderIdConc)
     ).to.be.revertedWith('AgentRole: caller does not have the Agent role');
@@ -1901,9 +2244,9 @@ it("testing for the just minting of the tokens", async () => {
         let _ctr: any = event.args?._ctr;
         let _mc: any = event.args?._mc;
         let _salt: any = event.args?._salt;
-    
+   
        
-        
+       
     }
 
     let token = event?.args;
@@ -1915,18 +2258,18 @@ it("testing for the just minting of the tokens", async () => {
         tokenAttached = await tokenImplementation.attach(firstAddress);
     }
 
-    
+   
 
     expect(await tokenAttached?.name()).to.equal("My Test Token");
     expect(await tokenAttached?.symbol()).to.equal("MTK");
 
     const ownerAddress = await identityRegistryImplementation.owner();
-    
+   
 
     // for granting the role of the agent
     await identityFactory.addAgent(user1.address);
     await identityFactory.addAgent(owner.address);
-    
+   
     // check if the user1.address is an agent or not
     const checkAgent=await identityFactory.isAgent(user1.address);
             expect(checkAgent).to.equal(true);
@@ -1947,10 +2290,10 @@ it("testing for the just minting of the tokens", async () => {
 
     // Ensure user1 has a valid identity
     const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
+   
     // Verify if the identity registry is properly linked to the token
     const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
+   
     const identityRegistryAttached = identityRegistryImplementation.attach(
         String(identityRegistryAddress)
     );
@@ -2025,9 +2368,9 @@ it("it sets the call update country and reverted if it is not Not an Identity Re
         let _ctr: any = event.args?._ctr;
         let _mc: any = event.args?._mc;
         let _salt: any = event.args?._salt;
-    
+   
        
-        
+       
     }
 
     let token = event?.args;
@@ -2043,12 +2386,12 @@ it("it sets the call update country and reverted if it is not Not an Identity Re
     expect(await tokenAttached?.symbol()).to.equal("MTK");
 
     const ownerAddress = await identityRegistryImplementation.owner();
-    
+   
 
     // for granting the role of the agent
     await identityFactory.addAgent(user1.address);
     await identityFactory.addAgent(owner.address);
-    
+   
     // check if the user1.address is an agent or not
     const checkAgent=await identityFactory.isAgent(user1.address);
     expect(checkAgent).to.equal(true);
@@ -2066,10 +2409,10 @@ it("it sets the call update country and reverted if it is not Not an Identity Re
 
     // Ensure user1 has a valid identity
     const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
+   
     // Verify if the identity registry is properly linked to the token
     const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
+   
     const identityRegistryAttached = identityRegistryImplementation.attach(
         String(identityRegistryAddress)
     );
@@ -2098,910 +2441,6 @@ it("it sets the call update country and reverted if it is not Not an Identity Re
         91,
         AddressOfToken,
         "1"
-    )).to.be.revertedWith("Not an Identity Registry Agent");
-});
-
-
-it("Implementing the functionality of batch minting of the token", async()=>{
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-            expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-            expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-            expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-            
-    const userLists=[user1.address,user1.address,user1.address];
-    const eachAmounts=[100,200,300];
-    const orderIds=["1","1","1"];
-
-    // initialize the token implementation
-    await tokenImplementation.connect(user1).init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-    );
-
-    await tokenImplementation.connect(user1).addTA(escrow.address);
-    
-    await tokenAttached?.addTA(escrow.address);
-    
-    await tokenImplementation.connect(user1).addTA(user1.address)
-    
-    await tokenImplementation.connect(user1).addAgent(escrow.address)
-    
-
-    await tokenAttached?.addAgent(escrow.address);
-    
-
-    await escrow.connect(user1).batchMintTokens(
-        AddressOfToken,
-        userLists,
-        eachAmounts,
-        orderIds
-    )
-});
-
-
-it("Implementing the functionality of batch minting of the token and if the author is not verified", async()=>{
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-            expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-            expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-            expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-            
-    const userLists=[owner.address,user1.address,user1.address];
-    const eachAmounts=[100,200,300];
-    const orderIds=["1","1","1"];
-
-    // initialize the token implementation
-    await tokenImplementation.connect(user1).init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-    );
-
-    await tokenImplementation.connect(user1).addTA(escrow.address);
-    
-    await tokenAttached?.addTA(escrow.address);
-    
-    await tokenImplementation.connect(user1).addTA(user1.address)
-    
-    await tokenImplementation.connect(user1).addAgent(escrow.address)
-    
-
-    await tokenAttached?.addAgent(escrow.address);
-    
-
-    await expect(
-        escrow.connect(user1).batchMintTokens(
-            AddressOfToken,
-            userLists,
-            eachAmounts,
-            orderIds
-        )
-    ).to.be.revertedWith('Identity is not verified.');
-});
-
-
-it("Implementing the functionality of batch burning of the token", async()=>{
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-            expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-            expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-            expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-            
-    const userLists=[user1.address,user1.address,user1.address];
-    const eachAmounts=[100,200,300];
-    const orderIds=["1","1","1"];
-
-    // initialize the token implementation
-    await tokenImplementation.connect(user1).init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-    );
-
-    await tokenImplementation.connect(user1).addTA(escrow.address);
-    
-    await tokenAttached?.addTA(escrow.address);
-    
-    await tokenImplementation.connect(user1).addTA(user1.address)
-
-    await tokenImplementation.connect(user1).addAgent(escrow.address)
-    
-
-    await tokenAttached?.addAgent(escrow.address);
-    
-
-    await escrow.connect(user1).batchMintTokens(
-        AddressOfToken,
-        userLists,
-        eachAmounts,
-        orderIds
-    )
-
-    await escrow.connect(user1).batchBurnTokens(
-        AddressOfToken,
-        userLists,
-        eachAmounts,
-        orderIds
-    );
-
-});
-
-
-it("Implementing the functionality of batch burning of the token and throws error if cannot burn more than tokens", async()=>{
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-    expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-    expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-    expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-            
-    const userLists=[user1.address,user1.address,user1.address];
-    const eachAmounts=[100,200,300];
-    const orderIds=["1","1","1"];
-
-    // initialize the token implementation
-    await tokenImplementation.connect(user1).init(
-        identityRegistryImplementation.address,
-        modularComplianceImplementation.address,
-        "My Test Token",
-        "MTK",
-        18,
-        ethers.constants.AddressZero,
-    );
-
-    await tokenImplementation.connect(user1).addTA(escrow.address);
-    
-    await tokenAttached?.addTA(escrow.address);
-    
-    await tokenImplementation.connect(user1).addTA(user1.address)
-    
-    await tokenImplementation.connect(user1).addAgent(escrow.address)
-    await tokenAttached?.addAgent(escrow.address);
-    
-
-    await(
-        escrow.connect(user1).batchMintTokens(
-            AddressOfToken,
-            userLists,
-            eachAmounts,
-            orderIds
-        )
-    )
-
-
-    const eachAmounts2=[200,500,400];
-    await expect(
-        escrow.connect(user1).batchBurnTokens(
-            AddressOfToken,
-            userLists,
-            eachAmounts2,
-            orderIds
-        )
-    ).to.be.revertedWith('cannot burn more than balance');
-
-});
-
-
-it("it set the master factory",async function(){
-    const myAddress= ethers.constants.AddressZero;
-    await expect(escrow.setMasterFactory(myAddress)).to.be.revertedWith("Invalid Zero Address");
-});
-
-
-it("it set the master factory",async function(){
-    const myAddress= user1.address;
-    await escrow.setMasterFactory(myAddress);
-});
-
-
-it("it sets the call delete identity and reverted if it is not Not an Identity Registry Agent",async function(){
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-    expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-    expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-    expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-    await expect(escrow.callDeleteIdentity(
-        user1.address,
-        AddressOfToken,
-        "1"
-    )).to.be.revertedWith("Not an Identity Registry Agent");
-});
-
-
-it("it sets the batch register identity and reverted if it is not Not an Identity Registry Agent",async function(){
-    let tokenDetails={
-        owner:owner.address,
-        name : "My Test Token",
-        symbol: "MTK",
-        decimals: 18,
-        irs : ethers.constants.AddressZero, // Address of the Identity Registry Storage
-        ONCHAINID : ethers.constants.AddressZero,  // Some default on-chain ID address
-        wrap : false,
-        irAgents: [user1.address],
-        tokenAgents: [user1.address],  // Agents for token management
-        transferAgents : [],  // Agents with transfer permissions
-        complianceModules : [
-        ],
-        complianceSettings : [],  // Empty for now
-    }
-
-    let claimDetails = {
-        claimTopics: [],
-        issuers: [],
-        issuerClaims:[],
-    };
-
-    await identityFactory.addTokenFactory(trexFactory.address);
-
-    // Ensure that the `TREXFactory` contract is deployed by the correct owner and call deployTREXSuite
-    const tx=await trexFactory.connect(owner).deployTREXSuite(
-        "test_salt",  // Unique salt to ensure CREATE2 uniqueness
-        tokenDetails,
-        claimDetails
-    );
-
-    // Wait for the transaction to be mined and capture the receipt
-    const receipt = await tx.wait();
-
-    // Now, look for the emitted event "TREXSuiteDeployed" in the receipt logs
-    const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
-    let AddressOfToken;
-
-    if (event) {
-        let _token: any = event.args?._token;
-        AddressOfToken=_token;
-
-        let _ir: any = event.args?._ir;
-        let _irs: any = event.args?._irs;
-        let _tir: any = event.args?._tir;
-        let _ctr: any = event.args?._ctr;
-        let _mc: any = event.args?._mc;
-        let _salt: any = event.args?._salt;
-    
-       
-        
-    }
-
-    let token = event?.args;
-    let tokenAttached;
-    let firstAddress;
-
-    if (Array.isArray(token) && token.length > 0) {
-        firstAddress = token[0]; // Directly accessing the first element
-        tokenAttached = await tokenImplementation.attach(firstAddress);
-    }
-
-    expect(await tokenAttached?.name()).to.equal("My Test Token");
-    expect(await tokenAttached?.symbol()).to.equal("MTK");
-
-    const ownerAddress = await identityRegistryImplementation.owner();
-    
-
-    // for granting the role of the agent
-    await identityFactory.addAgent(user1.address);
-    await identityFactory.addAgent(owner.address);
-    
-    // check if the user1.address is an agent or not
-    const checkAgent=await identityFactory.isAgent(user1.address);
-    expect(checkAgent).to.equal(true);
-
-    const checkAgentOwner=await identityFactory.isAgent(owner.address);
-    expect(checkAgentOwner).to.equal(true);
-
-    // initialize the modular compliance
-    await modularComplianceImplementation.connect(user1).init();
-    const ownerAddressModularCompliance = await modularComplianceImplementation.owner();
-    expect(ownerAddressModularCompliance).to.equal(user1.address);
-
-    // Create identity for user1
-    const user1Identity = await identityFactory.connect(user1).createIdentity(user1.address,"test_salt");
-
-    // Ensure user1 has a valid identity
-    const user1IdentityGet = await identityFactory.getIdentity(user1.address);
-    
-    // Verify if the identity registry is properly linked to the token
-    const identityRegistryAddress = await tokenAttached?.identityRegistry();
-    
-    const identityRegistryAttached = identityRegistryImplementation.attach(
-        String(identityRegistryAddress)
-    );
-
-    await  identityRegistryAttached
-    .connect(user1)
-    .registerIdentity(user1.address, user1IdentityGet, 123);
-
-    const isRegistered = await identityRegistryAttached.contains(user1.address);
-    expect(isRegistered).to.equal(true);
-
-    const userIsVerified = await identityRegistryAttached.connect(user1).isVerified(user1.address);
-    expect(userIsVerified).to.be.true;
-
-    const checkTokenAttachAgent=await identityFactory.isAgent(user1.address);
-    expect(checkTokenAttachAgent).to.equal(true);
-
-    // attach the token
-    const modularComplianceAttachToken=await modularComplianceImplementation.attach(AddressOfToken);
-
-    await tokenAttached?.connect(user1).mint(user1.address,100);
-    const theBalanceUser1=await tokenAttached?.connect(user1).balanceOf(user1.address);
-
-    await expect(escrow.batchRegisterIdentity(
-        [owner.address,user1.address],
-        [ethers.constants.AddressZero,ethers.constants.AddressZero],
-        [32,42],
-        ["1","1"],
-        AddressOfToken,
     )).to.be.revertedWith("Not an Identity Registry Agent");
 });
 
