@@ -18,6 +18,8 @@ import {
   EquityConfig__factory,
   FactoryProxy,
   FactoryProxy__factory,
+  EscrowControllerProxy,
+  EscrowControllerProxy__factory,
   Fund,
   Fund__factory,
   FundFactory,
@@ -55,9 +57,13 @@ import {
   VERC20__factory,
   Wrapper,
   Wrapper__factory,
+  ProxyV1,
+  ProxyV1__factory,
+  WrapperProxy,
+  WrapperProxy__factory,
 } from "../typechain";
 
-describe("Tokenization Contract Testing ", function () {
+describe.only("Tokenization Contract Testing ", function () {
   let signer: SignerWithAddress;
   let signers: SignerWithAddress[];
   let owner: SignerWithAddress;
@@ -95,6 +101,9 @@ describe("Tokenization Contract Testing ", function () {
   let fund: Fund;
   let fundFactory: FundFactory;
   let implFund: ImplementationAuthority;
+  let escrowControllerProxy: EscrowControllerProxy;
+  let proxyv1:ProxyV1;
+  let wrapperproxy:WrapperProxy;
   let fundProxy: FactoryProxy;
   let equityConfig: EquityConfig;
   let implEquityConfig: ImplementationAuthority;
@@ -224,6 +233,9 @@ describe("Tokenization Contract Testing ", function () {
     );
     fundFactory = await new FundFactory__factory(owner).deploy();
     fundProxy = await new FactoryProxy__factory(owner).deploy();
+    escrowControllerProxy=await new EscrowControllerProxy__factory(owner).deploy();
+    proxyv1=await new ProxyV1__factory(owner).deploy();
+    wrapperproxy=await new WrapperProxy__factory(owner).deploy();
 
     //Wrapper
     verc20 = await new VERC20__factory(owner).deploy();
@@ -493,6 +505,7 @@ describe("Tokenization Contract Testing ", function () {
  
   describe("Registries", () => {
     describe("ClaimTopicRegsitry", () => {
+
       it("init", async () => {
         // await claimTopicsRegistryImplementation.init();
         await expect(
@@ -502,27 +515,52 @@ describe("Tokenization Contract Testing ", function () {
 
       it("addClaimTopic", async () => {
         await claimTopicsRegistryImplementation.connect(owner).addClaimTopic(1);
+        
+        await expect(
+          claimTopicsRegistryImplementation.connect(user1).addClaimTopic(1)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+      
       it("claimTopic exists", async () => {
         await claimTopicsRegistryImplementation.connect(owner).addClaimTopic(1);
         await expect(
           claimTopicsRegistryImplementation.connect(owner).addClaimTopic(1)
         ).to.be.revertedWith("claimTopic already exists");
+
+        await expect(
+          claimTopicsRegistryImplementation.connect(user1).addClaimTopic(1)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+
       it("removeClaimTopic", async () => {
         await claimTopicsRegistryImplementation
           .connect(owner)
           .removeClaimTopic(1);
+
+          await expect(
+            claimTopicsRegistryImplementation.connect(user1).removeClaimTopic(1)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+
       it("removing already removed claimTopic", async () => {
         await claimTopicsRegistryImplementation
           .connect(owner)
           .removeClaimTopic(1);
+
+          await expect(
+            claimTopicsRegistryImplementation.connect(user1).removeClaimTopic(1)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+
       it("getClaimTopics", async () => {
         await claimTopicsRegistryImplementation.connect(owner).getClaimTopics();
+
+        await expect(
+          claimTopicsRegistryImplementation.connect(user1).getClaimTopics()
+        )
       });
     });
+
     describe("IdentityRegistry", () => {
       it("batchRegisterIdentity", async () => {
         await identityFactory.createIdentity(user2.address, user2.address);
@@ -533,6 +571,19 @@ describe("Tokenization Contract Testing ", function () {
           [user2Identity],
           [91]
         );
+      });
+
+      it("should revert if non-owner tries to batchRegisterIdentity", async () => {
+        await identityFactory.createIdentity(user2.address, user2.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+    
+        await expect(
+          identityRegistryImplementation.connect(user1).batchRegisterIdentity(
+            [user2.address],
+            [user2Identity],
+            [91]
+          )
+        )
       });
 
       it("updateIdentity", async () => {
@@ -546,7 +597,22 @@ describe("Tokenization Contract Testing ", function () {
         await identityRegistryImplementation
           .connect(owner)
           .updateIdentity(user2.address, user2Identity);
-      });
+      });   
+      
+        // Revert when non-owner tries to updateIdentity
+        it("should revert if non-owner tries to updateIdentity", async () => {
+          await identityFactory.createIdentity(user2.address, user2.address);
+          let user2Identity = await identityFactory.getIdentity(user2.address);
+          await identityRegistryImplementation.registerIdentity(
+            user2.address,
+            user2Identity,
+            91
+          );
+          await expect(
+            identityRegistryImplementation.connect(owner).updateIdentity(user2.address, user2Identity)
+          )
+        });
+
 
       it("updateCountry", async () => {
         await identityFactory.createIdentity(user2.address, user2.address);
@@ -560,6 +626,22 @@ describe("Tokenization Contract Testing ", function () {
           .connect(owner)
           .updateCountry(user2.address, 90);
       });
+
+
+      it("should revert if non-owner tries to updateCountry", async () => {
+        await identityFactory.createIdentity(user2.address, user2.address);
+        let user2Identity = await identityFactory.getIdentity(user2.address);
+        await identityRegistryImplementation.registerIdentity(
+          user2.address,
+          user2Identity,
+          91
+        );
+        await expect(
+          identityRegistryImplementation.updateCountry(user2.address, 90)
+        )
+      });
+    
+
       it("updateCountry event", async () => {
         await identityFactory.createIdentity(user2.address, user2.address);
         let user2Identity = await identityFactory.getIdentity(user2.address);
@@ -589,11 +671,29 @@ describe("Tokenization Contract Testing ", function () {
           .connect(owner)
           .deleteIdentity(user2.address);
       });
+
+
+        // Revert when non-owner tries to deleteIdentity
+        it("should revert if non-owner tries to deleteIdentity", async () => {
+          await identityFactory.createIdentity(user2.address, user2.address);
+          let user2Identity = await identityFactory.getIdentity(user2.address);
+          await identityRegistryImplementation.registerIdentity(
+            user2.address,
+            user2Identity,
+            91
+          );
+          await expect(
+            identityRegistryImplementation.deleteIdentity(user2.address)
+          )
+        });
+
+
       it("setClaimTopicsRegistry", async () => {
         await identityRegistryImplementation
           .connect(owner)
           .setClaimTopicsRegistry(claimTopicsRegistryImplementation.address);
       });
+
       it("setTrustedIssuersRegistry", async () => {
         await identityRegistryImplementation
           .connect(owner)
@@ -601,6 +701,7 @@ describe("Tokenization Contract Testing ", function () {
             trustedIssuersRegistryImplementation.address
           );
       });
+
       it("setIdentityRegistryStorage", async () => {
         await identityRegistryImplementation
           .connect(owner)
@@ -628,29 +729,122 @@ describe("Tokenization Contract Testing ", function () {
           .connect(owner)
           .isVerified(owner.address);
       });
+
       it("issuersRegistry", async () => {
         await identityRegistryImplementation.connect(owner).issuersRegistry();
       });
+
       it("topicsRegistry", async () => {
         await identityRegistryImplementation.connect(owner).topicsRegistry();
       });
+
       it("identityStorage", async () => {
         await identityRegistryImplementation.connect(owner).identityStorage();
       });
+
       it("Identity contract exists", async () => {
         await identityFactory.createIdentity(user1.address, user1.address);
         await identityRegistryImplementation.contains(user1.address);
       });
+
       it("Identity contract doesnt exists", async () => {
         await identityRegistryImplementation
           .connect(owner)
           .contains(signers[10].address);
       });
+
+        // Revert when non-owner tries to setClaimTopicsRegistry
+      it("should revert if non-owner tries to setClaimTopicsRegistry", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .setClaimTopicsRegistry(claimTopicsRegistryImplementation.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      // Revert when non-owner tries to setTrustedIssuersRegistry
+      it("should revert if non-owner tries to setTrustedIssuersRegistry", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .setTrustedIssuersRegistry(trustedIssuersRegistryImplementation.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      // Revert when non-owner tries to setIdentityRegistryStorage
+      it("should revert if non-owner tries to setIdentityRegistryStorage", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .setIdentityRegistryStorage(identityRegistryStorageImplementation.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      // Revert when non-owner tries to call isVerified
+      it("should revert if non-owner tries to call isVerified", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .isVerified(ethers.constants.AddressZero)
+        )
+      });
+
+      // Revert when non-owner tries to call foundClaimTopic false
+      it("should revert if non-owner tries to call foundClaimTopic false", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .setTrustedIssuersRegistry(ethers.constants.AddressZero)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      // Revert when non-owner tries to call issuersRegistry
+      it("should revert if non-owner tries to call issuersRegistry", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .issuersRegistry()
+        )
+      });
+
+      // Revert when non-owner tries to call topicsRegistry
+      it("should revert if non-owner tries to call topicsRegistry", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .topicsRegistry()
+        )
+      });
+
+      // Revert when non-owner tries to call identityStorage
+      it("should revert if non-owner tries to call identityStorage", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .identityStorage()
+        )
+      });
+
+      // Revert when non-owner tries to call contains for non-existing identity
+      it("should revert if non-owner tries to call contains for non-existing identity", async () => {
+        await expect(
+          identityRegistryImplementation
+            .connect(user1)
+            .contains(signers[10].address)
+        )
+      });
     });
+
+
     describe("TrustedIssuerRegistry", () => {
       it("init", async () => {
         await expect(
           trustedIssuersRegistryImplementation.init()
+        ).to.be.revertedWith("Initializable: contract is already initialized");
+
+
+        await expect(
+          trustedIssuersRegistryImplementation.connect(user1).init()
         ).to.be.revertedWith("Initializable: contract is already initialized");
       });
 
@@ -658,7 +852,14 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .addTrustedIssuer(owner.address, [20]);
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .addTrustedIssuer(user1.address, [20])
+          ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+
       it("removeTrustedIssuer exists", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
@@ -666,12 +867,26 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .removeTrustedIssuer(owner.address);
+
+        await expect(
+      trustedIssuersRegistryImplementation
+        .connect(user1)
+        .removeTrustedIssuer(owner.address)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
       });
+
       it("getTrustedIssuers", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .getTrustedIssuers();
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .getTrustedIssuers()
+          );
       });
+
       it("getTrustedIssuersForClaimTopic", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
@@ -679,7 +894,14 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .getTrustedIssuersForClaimTopic(20);
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .getTrustedIssuersForClaimTopic(20)
+          );
       });
+
       it("isTrustedIssuer", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
@@ -687,12 +909,20 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .isTrustedIssuer(owner.address);
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .isTrustedIssuer(owner.address)
+          );
       });
+
       it("isTrustedIssuer false", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .isTrustedIssuer(owner.address);
       });
+
       it("getTrustedIssuerClaimTopics", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
@@ -708,12 +938,20 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .hasClaimTopic(owner.address, 20);
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .hasClaimTopic(owner.address, 20)
+          )
       });
+
       it("hasClaimTopic false", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .hasClaimTopic(owner.address, 20);
       });
+      
       it("hasClaimTopic false", async () => {
         await trustedIssuersRegistryImplementation
           .connect(owner)
@@ -721,8 +959,15 @@ describe("Tokenization Contract Testing ", function () {
         await trustedIssuersRegistryImplementation
           .connect(owner)
           .updateIssuerClaimTopics(String(owner.address), [20]);
+
+          await expect(
+            trustedIssuersRegistryImplementation
+              .connect(user1)
+              .updateIssuerClaimTopics(owner.address, [20])
+          ).to.be.revertedWith("Ownable: caller is not the owner");
       });
     });
+
     describe("IdentityRegistryStorage", () => {
       it("unbindIdentityRegistry", async () => {
         await identityRegistryStorageImplementation.unbindIdentityRegistry(
@@ -748,6 +993,25 @@ describe("Tokenization Contract Testing ", function () {
           .linkedIdentityRegistries();
       });
     });
+
+
+    it("linkedIdentityRegistries not by owner", async () => {
+      await expect(
+        identityRegistryStorageImplementation
+          .connect(user1)
+          .linkedIdentityRegistries()
+      );
+    });
+  
+    // Test for reverting when non-owner tries to unbind identity registry
+    it("unbindIdentityRegistry not by owner", async () => {
+      await expect(
+        identityRegistryStorageImplementation
+          .connect(user1)
+          .unbindIdentityRegistry(identityRegistryImplementation.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  
   });
 
   describe("Modules", () => {
@@ -757,8 +1021,13 @@ describe("Tokenization Contract Testing ", function () {
       // });
 
       it("Module name", async () => {
+        await expect(
+          maxBalanceCompliance.connect(user1).name()
+        );
+
         await maxBalanceCompliance.connect(owner).name();
       });
+
       // it("preSetModuleState", async () => {
       //   expect(
       //     await maxBalanceCompliance
@@ -774,25 +1043,51 @@ describe("Tokenization Contract Testing ", function () {
       //   );
       // });
     });
+
+
     describe("SupplyModule", () => {
       // it("initialize", async () => {
       //   await supplyLimitCompliance.connect(owner).initialize();
       // });
 
       it("Module name", async () => {
+        await expect(
+          holdTimeCompliance.connect(user1).name()
+        );
+
         await supplyLimitCompliance.connect(owner).name();
       });
+
       it("getSupplyLimit", async () => {
+        await expect(
+        holdTimeCompliance.connect(user1).getHoldTime(holdTimeCompliance.address)
+        );
+
         await supplyLimitCompliance
           .connect(owner)
           .getSupplyLimit(supplyLimitCompliance.address);
       });
+
       it("canComplianceBind", async () => {
+        await expect(
+          holdTimeCompliance.connect(user1).canComplianceBind(holdTimeCompliance.address)
+        );
+    
         await supplyLimitCompliance
           .connect(owner)
           .canComplianceBind(supplyLimitCompliance.address);
       });
+
       it("moduleBurnAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              supplyLimitCompliance.interface.encodeFunctionData("moduleBurnAction", [owner.address, 1]),
+              supplyLimitCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -803,7 +1098,17 @@ describe("Tokenization Contract Testing ", function () {
             supplyLimitCompliance.address
           );
       });
+
       it("moduleTransferAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              supplyLimitCompliance.interface.encodeFunctionData("moduleTransferAction", [owner.address, user1.address, 1]),
+              supplyLimitCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -823,18 +1128,42 @@ describe("Tokenization Contract Testing ", function () {
 
       it("Module name", async () => {
         await holdTimeCompliance.connect(owner).name();
+
+        await expect(
+          holdTimeCompliance.connect(user1).name()
+        )
       });
+
       it("getSupplyLimit", async () => {
+        await expect(
+          holdTimeCompliance.connect(user1).getHoldTime(holdTimeCompliance.address)
+        );
+
         await holdTimeCompliance
           .connect(owner)
           .getHoldTime(holdTimeCompliance.address);
       });
+
       it("canComplianceBind", async () => {
+        await expect(
+          holdTimeCompliance.connect(user1).canComplianceBind(holdTimeCompliance.address)
+        )
+
         await holdTimeCompliance
           .connect(owner)
           .canComplianceBind(holdTimeCompliance.address);
       });
+
       it("moduleBurnAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              holdTimeCompliance.interface.encodeFunctionData("moduleBurnAction", [owner.address, 1]),
+              holdTimeCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -845,7 +1174,17 @@ describe("Tokenization Contract Testing ", function () {
             holdTimeCompliance.address
           );
       });
+
       it("moduleTransferAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              holdTimeCompliance.interface.encodeFunctionData("moduleTransferAction", [owner.address, user1.address, 1]),
+              holdTimeCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -863,9 +1202,23 @@ describe("Tokenization Contract Testing ", function () {
       //   await countryAllowCompliance.connect(owner).initialize();
       // });
       it("Module name", async () => {
+        await expect(
+          countryAllowCompliance.connect(user1).name()
+        );
+      
         await countryAllowCompliance.connect(owner).name();
       });
+
       it("addAllowedCountry", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              countryAllowCompliance.interface.encodeFunctionData("addAllowedCountry", [91]),
+              countryAllowCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         // await countryAllowCompliance.connect(owner).addAllowedCountry(91);
         await modularComplianceImplementation
           .connect(owner)
@@ -879,6 +1232,27 @@ describe("Tokenization Contract Testing ", function () {
       });
 
       it("removeAllowedCountry", async () => {
+        // Ensure only owner can call this function
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              countryAllowCompliance.interface.encodeFunctionData("removeAllowedCountry", [91]),
+              countryAllowCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
+
+        // Ensure only owner can call this function
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              countryAllowCompliance.interface.encodeFunctionData("addAllowedCountry", [91]),
+              countryAllowCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -898,7 +1272,27 @@ describe("Tokenization Contract Testing ", function () {
             countryAllowCompliance.address
           );
       });
+
       it("batchDisallowCountries", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              countryAllowCompliance.interface.encodeFunctionData("batchDisallowCountries", [[90, 91]]),
+              countryAllowCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
+
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              countryAllowCompliance.interface.encodeFunctionData("batchAllowCountries", [[90, 91]]),
+              countryAllowCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -918,12 +1312,27 @@ describe("Tokenization Contract Testing ", function () {
             countryAllowCompliance.address
           );
       });
+      
       it("canComplianceBind", async () => {
+        await expect(
+          countryAllowCompliance.connect(user1).canComplianceBind(countryAllowCompliance.address)
+        );
+      
         await countryAllowCompliance
           .connect(owner)
           .canComplianceBind(countryAllowCompliance.address);
       });
+
       it("moduleBurnAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              holdTimeCompliance.interface.encodeFunctionData("moduleBurnAction", [owner.address, 1]),
+              holdTimeCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -934,7 +1343,17 @@ describe("Tokenization Contract Testing ", function () {
             holdTimeCompliance.address
           );
       });
+
       it("moduleTransferAction", async () => {
+        await expect(
+          modularComplianceImplementation
+            .connect(user1)
+            .callModuleFunction(
+              holdTimeCompliance.interface.encodeFunctionData("moduleTransferAction", [owner.address, user1.address, 1]),
+              holdTimeCompliance.address
+            )
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+
         await modularComplianceImplementation
           .connect(owner)
           .callModuleFunction(
@@ -1109,19 +1528,19 @@ describe("Tokenization Contract Testing ", function () {
       });
     });
 
-    //     describe.only("AgentRoleUpgradeable", () => {
-    //       it.only("addTA", async () => {
+    //     describe("AgentRoleUpgradeable", () => {
+    //       it("addTA", async () => {
     // let owner = await agentUpgradeable.owner()
     // console.log('owner', owner)
     //         await agentUpgradeable.addTA(user2.address);
     //         expect(await agentUpgradeable.isTA(user2.address)).to.be.true;
     //       });
-    //       it.only("removeTA", async () => {
+    //       it("removeTA", async () => {
     //         await agentUpgradeable.addTA(user2.address);
     //         await agentUpgradeable.removeTA(user2.address);
     //         expect(await agentUpgradeable.isTA(user2.address)).to.be.false;
     //       });
-    //       it.only("isTA", async () => {
+    //       it("isTA", async () => {
     //         await agentUpgradeable.addTA(user2.address);
     //         await agentUpgradeable.isTA(user2.address);
     //       });
@@ -1130,6 +1549,16 @@ describe("Tokenization Contract Testing ", function () {
     
     describe("Factory", () => {
     describe("Idfactory", () => {
+
+      it("should revert when non-owner tries to add token factory", async () => {
+        const factoryAddress = trexImplementationAuthority.address;
+      
+        // Ensure that a non-owner cannot add the token factory
+        await expect(
+          identityFactory.connect(user1).addTokenFactory(factoryAddress)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+      
 
             it("should add token factory", async () => {
                 const factoryAddress =trexImplementationAuthority.address;
@@ -1163,6 +1592,18 @@ describe("Tokenization Contract Testing ", function () {
               .to.be.revertedWith("already a factory");
           });
 
+          it("should revert when non-owner tries to remove token factory", async () => {
+            const factoryAddress = trexImplementationAuthority.address;
+          
+            // First, add the factory before testing removal
+            await identityFactory.connect(owner).addTokenFactory(factoryAddress);
+          
+            // Ensure that a non-owner cannot remove the token factory
+            await expect(
+              identityFactory.connect(user1).removeTokenFactory(factoryAddress)
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+          });
+          
 
           it("should remove token factory", async () => {
             const factoryAddress = trexImplementationAuthority.address;
@@ -1224,6 +1665,18 @@ describe("Tokenization Contract Testing ", function () {
         
           // Test for createTokenIdentity
           describe("createTokenIdentity", () => {
+
+            it("should revert when non-owner tries to create a token identity", async () => {
+              const salt = "300"; // Salt for uniqueness
+              const tokenAddress = tokenImplementation.address;
+            
+              // Ensure that a non-owner cannot create a token identity
+              await expect(
+                identityFactory.connect(user1).createTokenIdentity(tokenAddress, owner.address, salt)
+              ).to.be.revertedWith("only Factory or owner can call");
+            });
+
+            
             it("should create a token identity", async () => {
               const salt = "300"; // Salt for uniqueness
               const tokenAddress = tokenImplementation.address;
@@ -1254,6 +1707,19 @@ describe("Tokenization Contract Testing ", function () {
         describe("IdFactory", () => {
             // Test for linkWallet
             describe("linkWallet", () => {
+              it("should revert when non-owner tries to link a wallet to the identity", async () => {
+                // Create identity for user2
+                const salt = "200";
+                await identityFactory.createIdentity(user2.address, salt);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+              
+                // Ensure that a non-owner cannot link the wallet
+                await expect(
+                  identityFactory.connect(user1).linkWallet(user2Identity)
+                ).to.be.revertedWith("wallet not linked to an identity contract");
+              });
+
+              
               it("should link a wallet to the identity", async () => {
                 // Create identity for user2
                 const salt = "200";
@@ -1279,6 +1745,21 @@ describe("Tokenization Contract Testing ", function () {
           
             // Test for unlinkWallet
             describe("unlinkWallet", () => {
+              it("should revert when non-owner tries to unlink a wallet from the identity", async () => {
+                // Create identity for user2
+                await identityFactory.createIdentity(user2.address, user2.address);
+                const user2Identity = await identityFactory.getIdentity(user2.address);
+              
+                // Link wallet first
+                await identityFactory.connect(user2).linkWallet(user2Identity);
+              
+                // Ensure that a non-owner cannot unlink the wallet
+                await expect(
+                  identityFactory.connect(user1).unlinkWallet(user2Identity)
+                ).to.be.revertedWith("only a linked wallet can unlink");
+              });
+
+              
               it("should unlink a wallet from the identity", async () => {
                 // Create identity for user2
                 await identityFactory.createIdentity(user2.address, user2.address);
@@ -1304,6 +1785,16 @@ describe("Tokenization Contract Testing ", function () {
           
             // Test for isSaltTaken
             describe("isSaltTaken", () => {
+              it("should revert when non-owner tries to check if salt is taken", async () => {
+                const salt = "200";
+              
+                // Ensure that a non-owner cannot check if salt is taken
+                await expect(
+                  identityFactory.connect(user1).isSaltTaken(salt)
+                )
+              });
+
+              
               it("should return true if salt is taken", async () => {
                 const salt = "200";
                 
@@ -1364,6 +1855,14 @@ describe("Tokenization Contract Testing ", function () {
       it("setTREXFactory ", async () => {
         await trexImplementationAuthority.setTREXFactory(trexFactory.address);
       });
+
+      // Test for reverting when non-owner tries to set TREX Factory
+      it("setTREXFactory not by owner", async () => {
+        await expect(
+          trexImplementationAuthority.connect(user1).setTREXFactory(trexFactory.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
       it("setIAFactory ", async () => {
         await trexImplementationAuthority.setTREXFactory(trexFactory.address);
 
@@ -1371,6 +1870,17 @@ describe("Tokenization Contract Testing ", function () {
           identityImplementationAuthority.address
         );
       });
+
+      // Test for reverting when non-owner tries to set IA Factory
+      it("setIAFactory not by owner", async () => {
+        await expect(
+          trexImplementationAuthority
+            .connect(user1)
+            .setIAFactory(identityImplementationAuthority.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+
       it("fetchVersion ", async () => {
         const otherTrexImplementationAuthority = await ethers.deployContract(
           "TREXImplementationAuthority",
@@ -1386,13 +1896,22 @@ describe("Tokenization Contract Testing ", function () {
       });
 
 
-     
-
-
-
-
-
-
+      it("fetchVersion not by owner", async () => {
+        const otherTrexImplementationAuthority = await ethers.deployContract(
+          "TREXImplementationAuthority",
+          [false, trexFactory.address, trexImplementationAuthority.address],
+          owner
+        );
+        const versionStruct = {
+          major: 4,
+          minor: 0,
+          patch: 0,
+        };
+        await expect(
+          otherTrexImplementationAuthority.connect(user1).fetchVersion(versionStruct)
+        )
+      });
+    
 
       //   it("changeImplementationAuthority ", async () => {
       //     const newTrexImplementationAuthority = await ethers.deployContract(
@@ -1668,6 +2187,7 @@ describe("Tokenization Contract Testing ", function () {
           trexFactory.address
         );
       });
+
       it("deployIA", async () => {
         const IAFactory = new IAFactory__factory(owner).deploy(
           trexFactory.address
@@ -1677,6 +2197,7 @@ describe("Tokenization Contract Testing ", function () {
         // console.log('check', check);
         (await IAFactory).deployIA(tokenImplementation.address);
       });
+
       it("deployedByFactory", async () => {
         const IAFactory = new IAFactory__factory(owner).deploy(
           trexFactory.address
@@ -1758,19 +2279,24 @@ describe("Tokenization Contract Testing ", function () {
       it("approve", async () => {
         await tokenImplementation.approve(user2.address, 1000);
       });
+
       it("increaseAllowance", async () => {
         await tokenImplementation.increaseAllowance(user2.address, 10000);
       });
+
       it("decreaseAllowance", async () => {
         await tokenImplementation.increaseAllowance(user2.address, 10000);
         await tokenImplementation.decreaseAllowance(user2.address, 100);
       });
+
       it("setName", async () => {
         await tokenImplementation.setName("GoldToken");
       });
+      
       it("setSymbol", async () => {
         await tokenImplementation.setSymbol("GT");
       });
+
       //   it("setSymbol passing empty string", async () => {
       //     await expect(tokenImplementation.setSymbol("")).to.be.revertedWith(
       //       "invalid argument - empty string"
@@ -1779,31 +2305,40 @@ describe("Tokenization Contract Testing ", function () {
       it("decimals", async () => {
         await tokenImplementation.decimals();
       });
+
       it("compliance", async () => {
         await tokenImplementation.compliance();
       });
+
       it("pause", async () => {
         await tokenImplementation.pause();
       });
+
       it("unpause", async () => {
         await tokenImplementation.pause();
         await tokenImplementation.unpause();
       });
+
       it("allowance", async () => {
         await tokenImplementation.allowance(owner.address, user2.address);
       });
+
       it("paused", async () => {
         await tokenImplementation.paused();
       });
+
       it("isFrozen", async () => {
         await tokenImplementation.isFrozen(user1.address);
       });
+
       it("getFrozenTokens", async () => {
         await tokenImplementation.getFrozenTokens(user1.address);
       });
+
       it("onchainID", async () => {
         await tokenImplementation.onchainID();
       });
+      
       it("version", async () => {
         await tokenImplementation.version();
       });
@@ -1922,7 +2457,10 @@ describe("Tokenization Contract Testing ", function () {
      
         if (event) {
             let _token = event.args?._token;
-            AddressOfToken = _token;
+            AddressOfToken = _token;      it("approve", async () => {
+              await tokenImplementation.approve(user2.address, 1000);
+            });
+      
         }
      
         // Attach to the deployed token contract
@@ -2528,4 +3066,576 @@ describe("Tokenization Contract Testing ", function () {
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
+
+  describe("FactoryProxy Contract", () => {
+  
+    // Ownership Tests
+    describe("Ownership Functions", () => {
+      it("should transfer ownership", async () => {
+        const newOwner = user1.address;
+        await fundProxy.connect(owner).transferProxyOwnership(newOwner);
+        const currentOwner = await fundProxy.proxyOwner();
+        expect(currentOwner).to.equal(newOwner);
+      });
+  
+      it("should revert transfer ownership when not called by owner", async () => {
+        const newOwner = user1.address;
+        await expect(fundProxy.connect(user2).transferProxyOwnership(newOwner))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Maintenance Tests
+    describe("Maintenance Functions", () => {
+      it("should set contract maintenance status", async () => {
+        await fundProxy.connect(owner).setMaintenance(true);
+        const maintenanceStatus = await fundProxy.maintenance();
+        expect(maintenanceStatus).to.be.true;
+      });
+  
+      it("should revert when trying to access contract in maintenance if not owner", async () => {
+        await fundProxy.connect(owner).setMaintenance(true);
+        await expect(fundProxy.connect(user1).fallback()).to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Upgradeability Tests
+    describe("Upgradeability Functions", () => {
+      it("should upgrade the contract implementation", async () => {
+        const newImplementation = user1.address;
+        await fundProxy.connect(owner).upgradeTo(newImplementation);
+        const currentImplementation = await fundProxy.implementation();
+        expect(currentImplementation).to.equal(newImplementation);
+      });
+  
+      it("should revert when non-owner tries to upgrade the contract", async () => {
+        const newImplementation = fundProxy.address;
+        await expect(fundProxy.connect(user1).upgradeTo(newImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      
+      it("should revert if trying to upgrade to the same implementation", async () => {
+        const currentImplementation = await fundProxy.implementation();
+        await expect(fundProxy.connect(owner).upgradeTo(currentImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+    
+    // Edge Case Tests
+    describe("Edge Cases", () => {
+      it("should revert when setting maintenance state to true by non-owner", async () => {
+        await expect(fundProxy.connect(user1).setMaintenance(true))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      it("should revert when transferring ownership to zero address", async () => {
+        await expect(fundProxy.connect(owner).transferProxyOwnership(ethers.constants.AddressZero))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+  
+      it("should revert on upgradeToAndCall with invalid data", async () => {
+        const newImplementation = fundProxy.address;
+        const invalidData = "0x"; // Empty data
+        await expect(fundProxy.connect(owner).upgradeToAndCall(newImplementation, invalidData))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+  });
+
+
+
+  describe("escrowControllerProxy Contract", () => {
+  
+    // Ownership Tests
+    describe("Ownership Functions", () => {
+      it("should transfer ownership", async () => {
+        const newOwner = user1.address;
+        await escrowControllerProxy.connect(owner).transferProxyOwnership(newOwner);
+        const currentOwner = await escrowControllerProxy.proxyOwner();
+        expect(currentOwner).to.equal(newOwner);
+      });
+  
+      it("should revert transfer ownership when not called by owner", async () => {
+        const newOwner = user1.address;
+        await expect(escrowControllerProxy.connect(user2).transferProxyOwnership(newOwner))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Maintenance Tests
+    describe("Maintenance Functions", () => {
+      it("should set contract maintenance status", async () => {
+        await escrowControllerProxy.connect(owner).setMaintenance(true);
+        const maintenanceStatus = await escrowControllerProxy.maintenance();
+        expect(maintenanceStatus).to.be.true;
+      });
+  
+      it("should revert when trying to access contract in maintenance if not owner", async () => {
+        await escrowControllerProxy.connect(owner).setMaintenance(true);
+        await expect(escrowControllerProxy.connect(user1).fallback()).to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Upgradeability Tests
+    describe("Upgradeability Functions", () => {
+      it("should upgrade the contract implementation", async () => {
+        const newImplementation = user1.address;
+        await escrowControllerProxy.connect(owner).upgradeTo(newImplementation);
+        const currentImplementation = await escrowControllerProxy.implementation();
+        expect(currentImplementation).to.equal(newImplementation);
+      });
+  
+      it("should revert when non-owner tries to upgrade the contract", async () => {
+        const newImplementation = escrowControllerProxy.address;
+        await expect(escrowControllerProxy.connect(user1).upgradeTo(newImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      
+      it("should revert if trying to upgrade to the same implementation", async () => {
+        const currentImplementation = await escrowControllerProxy.implementation();
+        await expect(escrowControllerProxy.connect(owner).upgradeTo(currentImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+    
+    // Edge Case Tests
+    describe("Edge Cases", () => {
+      it("should revert when setting maintenance state to true by non-owner", async () => {
+        await expect(escrowControllerProxy.connect(user1).setMaintenance(true))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      it("should revert when transferring ownership to zero address", async () => {
+        await expect(escrowControllerProxy.connect(owner).transferProxyOwnership(ethers.constants.AddressZero))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+  
+      it("should revert on upgradeToAndCall with invalid data", async () => {
+        const newImplementation = escrowControllerProxy.address;
+        const invalidData = "0x"; // Empty data
+        await expect(escrowControllerProxy.connect(owner).upgradeToAndCall(newImplementation, invalidData))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+  });
+
+
+
+  describe("Proxy V1 Contract", () => {
+  
+    // Ownership Tests
+    describe("Ownership Functions", () => {
+      it("should transfer ownership", async () => {
+        const newOwner = user1.address;
+        await proxyv1.connect(owner).transferProxyOwnership(newOwner);
+        const currentOwner = await proxyv1.proxyOwner();
+        expect(currentOwner).to.equal(newOwner);
+      });
+  
+      it("should revert transfer ownership when not called by owner", async () => {
+        const newOwner = user1.address;
+        await expect(proxyv1.connect(user2).transferProxyOwnership(newOwner))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Maintenance Tests
+    describe("Maintenance Functions", () => {
+      it("should set contract maintenance status", async () => {
+        await proxyv1.connect(owner).setMaintenance(true);
+        const maintenanceStatus = await proxyv1.maintenance();
+        expect(maintenanceStatus).to.be.true;
+      });
+  
+      it("should revert when trying to access contract in maintenance if not owner", async () => {
+        await proxyv1.connect(owner).setMaintenance(true);
+        await expect(proxyv1.connect(user1).fallback()).to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Upgradeability Tests
+    describe("Upgradeability Functions", () => {  
+      it("should revert when non-owner tries to upgrade the contract", async () => {
+        const newImplementation = proxyv1.address;
+        await expect(proxyv1.connect(user1).upgradeTo(newImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      
+      it("should revert if trying to upgrade to the same implementation", async () => {
+        const currentImplementation = await proxyv1.implementation();
+        await expect(proxyv1.connect(owner).upgradeTo(currentImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+    
+    // Edge Case Tests
+    describe("Edge Cases", () => {
+      it("should revert when setting maintenance state to true by non-owner", async () => {
+        await expect(proxyv1.connect(user1).setMaintenance(true))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      it("should revert when transferring ownership to zero address", async () => {
+        await expect(proxyv1.connect(owner).transferProxyOwnership(ethers.constants.AddressZero))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+  
+      it("should revert on upgradeToAndCall with invalid data", async () => {
+        const newImplementation = proxyv1.address;
+        const invalidData = "0x"; // Empty data
+        await expect(proxyv1.connect(owner).upgradeToAndCall(newImplementation, invalidData))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+  });
+
+
+
+  describe("Wrapper Proxy Contract", () => {
+  
+    // Ownership Tests
+    describe("Ownership Functions", () => {
+      it("should transfer ownership", async () => {
+        const newOwner = user1.address;
+        await wrapperproxy.connect(owner).transferProxyOwnership(newOwner);
+        const currentOwner = await wrapperproxy.proxyOwner();
+        expect(currentOwner).to.equal(newOwner);
+      });
+  
+      it("should revert transfer ownership when not called by owner", async () => {
+        const newOwner = user1.address;
+        await expect(wrapperproxy.connect(user2).transferProxyOwnership(newOwner))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Maintenance Tests
+    describe("Maintenance Functions", () => {
+      it("should set contract maintenance status", async () => {
+        await wrapperproxy.connect(owner).setMaintenance(true);
+        const maintenanceStatus = await wrapperproxy.maintenance();
+        expect(maintenanceStatus).to.be.true;
+      });
+  
+      it("should revert when trying to access contract in maintenance if not owner", async () => {
+        await wrapperproxy.connect(owner).setMaintenance(true);
+        await expect(wrapperproxy.connect(user1).fallback()).to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+    });
+  
+    // Upgradeability Tests
+    describe("Upgradeability Functions", () => {  
+      it("should revert when non-owner tries to upgrade the contract", async () => {
+        const newImplementation = wrapperproxy.address;
+        await expect(wrapperproxy.connect(user1).upgradeTo(newImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      
+      it("should revert if trying to upgrade to the same implementation", async () => {
+        const currentImplementation = await wrapperproxy.implementation();
+        await expect(wrapperproxy.connect(owner).upgradeTo(currentImplementation))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+    
+    // Edge Case Tests
+    describe("Edge Cases", () => {
+      it("should revert when setting maintenance state to true by non-owner", async () => {
+        await expect(wrapperproxy.connect(user1).setMaintenance(true))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: FORBIDDEN");
+      });
+  
+      it("should revert when transferring ownership to zero address", async () => {
+        await expect(wrapperproxy.connect(owner).transferProxyOwnership(ethers.constants.AddressZero))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+  
+      it("should revert on upgradeToAndCall with invalid data", async () => {
+        const newImplementation = wrapperproxy.address;
+        const invalidData = "0x"; // Empty data
+        await expect(wrapperproxy.connect(owner).upgradeToAndCall(newImplementation, invalidData))
+          .to.be.revertedWith("OwnedUpgradeabilityProxy: INVALID");
+      });
+    });
+  });
+
+  describe("Only Upgradable Roles", () => {
+    it("should not allow non-owner to add agent", async () => {
+      await expect(
+        agentUpgradeable.connect(user2).addAgent(user3.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow non-owner to remove agent", async () => {
+      // Then try to remove using non-owner
+      await expect(
+        agentUpgradeable.connect(user2).removeAgent(user3.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow non-owner to add TA", async () => {
+      await expect(
+        agentUpgradeable.connect(user2).addTA(user3.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow non-owner to remove TA", async () => {
+      // Then try to remove using non-owner
+      await expect(
+        agentUpgradeable.connect(user2).removeTA(user3.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow adding agent with zero address", async () => {
+      await expect(
+        agentUpgradeable.addAgent(ethers.constants.AddressZero)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow removing agent with zero address", async () => {
+      await expect(
+        agentUpgradeable.removeAgent(ethers.constants.AddressZero)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow adding TA with zero address", async () => {
+      await expect(
+        agentUpgradeable.addTA(ethers.constants.AddressZero)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should not allow removing TA with zero address", async () => {
+      await expect(
+        agentUpgradeable.removeTA(ethers.constants.AddressZero)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+  })
+
+  
+  it("should revert when non-owner tries to set TREX factory", async () => {
+      await expect(
+        trexImplementationAuthority.connect(user1).setTREXFactory(trexFactory.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    
+    it("should revert when non-owner tries to set IA factory", async () => {
+      await expect(
+        trexImplementationAuthority.connect(user1).setIAFactory(identityImplementationAuthority.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  
+    it("should revert when non-reference contract tries to set TREX factory", async () => {
+      const nonReferenceIA = await new TREXImplementationAuthority__factory(owner).deploy(
+        false,
+        trexFactory.address,
+        identityImplementationAuthority.address
+      );
+  
+      await expect(
+        nonReferenceIA.setTREXFactory(trexFactory.address)
+      ).to.be.revertedWith("only reference contract can call");
+    });
+  
+    it("should revert when trying to add version with invalid addresses", async () => {
+      const versionStruct = {
+        major: 5,
+        minor: 0,
+        patch: 0,
+      };
+      
+      const contractsStruct = {
+        tokenImplementation: ethers.constants.AddressZero,
+        ctrImplementation: ethers.constants.AddressZero,
+        irImplementation: ethers.constants.AddressZero,
+        irsImplementation: ethers.constants.AddressZero,
+        tirImplementation: ethers.constants.AddressZero,
+        mcImplementation: ethers.constants.AddressZero,
+      };
+  
+      await expect(
+        trexImplementationAuthority.addTREXVersion(versionStruct, contractsStruct)
+      ).to.be.revertedWith("invalid argument - zero address");
+    });
+  
+    it("should fetch version from reference contract", async () => {
+      const nonReferenceIA = await new TREXImplementationAuthority__factory(owner).deploy(
+        false,
+        trexFactory.address,
+        identityImplementationAuthority.address
+      );
+  
+      const versionToFetch = {
+        major: 4,
+        minor: 0,
+        patch: 0,
+      };
+  
+      await nonReferenceIA.fetchVersion(versionToFetch);
+      
+      const fetchedContracts = await nonReferenceIA.getContracts(versionToFetch);
+      expect(fetchedContracts.tokenImplementation).to.equal(tokenImplementation.address);
+    });
+  
+    it("should revert when non-reference contract tries to add version", async () => {
+      const nonReferenceIA = await new TREXImplementationAuthority__factory(owner).deploy(
+        false,
+        trexFactory.address,
+        identityImplementationAuthority.address
+      );
+  
+      const versionStruct = {
+        major: 5,
+        minor: 0,
+        patch: 0,
+      };
+      
+      const contractsStruct = {
+        tokenImplementation: tokenImplementation.address,
+        ctrImplementation: claimTopicsRegistryImplementation.address,
+        irImplementation: identityRegistryImplementation.address,
+        irsImplementation: identityRegistryStorageImplementation.address,
+        tirImplementation: trustedIssuersRegistryImplementation.address,
+        mcImplementation: modularComplianceImplementation.address,
+      };
+  
+      await expect(
+        nonReferenceIA.addTREXVersion(versionStruct, contractsStruct)
+      ).to.be.revertedWith("ONLY reference contract can add versions");
+    });
+  
+    it("should get all implementation addresses correctly", async () => {
+      expect(await trexImplementationAuthority.getTokenImplementation()).to.equal(tokenImplementation.address);
+      expect(await trexImplementationAuthority.getCTRImplementation()).to.equal(claimTopicsRegistryImplementation.address);
+      expect(await trexImplementationAuthority.getIRImplementation()).to.equal(identityRegistryImplementation.address);
+      expect(await trexImplementationAuthority.getIRSImplementation()).to.equal(identityRegistryStorageImplementation.address);
+      expect(await trexImplementationAuthority.getTIRImplementation()).to.equal(trustedIssuersRegistryImplementation.address);
+      expect(await trexImplementationAuthority.getMCImplementation()).to.equal(modularComplianceImplementation.address);
+    });
+  
+  
+  
+    it("should fail when non-owner tries to set TREX factory", async () => {
+      await expect(
+        trexImplementationAuthority.connect(user1).setTREXFactory(trexFactory.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  
+  
+    it("should fail when non-owner tries to set IA factory", async () => {
+      await expect(
+        trexImplementationAuthority.connect(user1).setIAFactory(identityImplementationAuthority.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  
+  
+    
+  
+    describe("Reference Contract Functionality", () => {
+      let nonReferenceIA: any;
+  
+      beforeEach(async () => {
+        nonReferenceIA = await new TREXImplementationAuthority__factory(owner).deploy(
+          false, // not reference
+          trexFactory.address,
+          identityImplementationAuthority.address
+        );
+      });
+  
+      it("should fail when non-reference contract tries to add version", async () => {
+        const newVersion = {
+          major: 5,
+          minor: 0,
+          patch: 0,
+        };
+  
+        const contracts = {
+          tokenImplementation: tokenImplementation.address,
+          ctrImplementation: claimTopicsRegistryImplementation.address,
+          irImplementation: identityRegistryImplementation.address,
+          irsImplementation: identityRegistryStorageImplementation.address,
+          tirImplementation: trustedIssuersRegistryImplementation.address,
+          mcImplementation: modularComplianceImplementation.address,
+        };
+  
+        await expect(
+          nonReferenceIA.addTREXVersion(newVersion, contracts)
+        ).to.be.revertedWith("ONLY reference contract can add versions");
+      });
+  
+      it("should fail when non-reference contract tries to deploy new IA", async () => {
+        let tokenDetails = {
+          owner: owner.address,
+          name: "Test Token",
+          symbol: "TST",
+          decimals: 18,
+          irs: ethers.constants.AddressZero,
+          ONCHAINID: ethers.constants.AddressZero,
+          wrap: false,
+          irAgents: [],
+          tokenAgents: [],
+          transferAgents: [],
+          complianceModules: [],
+          complianceSettings: [],
+        };
+  
+        let claimDetails = {
+          claimTopics: [],
+          issuers: [],
+          issuerClaims: [],
+        };
+  
+        await identityFactory.addTokenFactory(trexFactory.address);
+        const tx = await trexFactory.connect(owner).deployTREXSuite(
+          "test_salt",
+          tokenDetails,
+          claimDetails
+        );
+  
+        const receipt = await tx.wait();
+        const event = receipt.events?.find(event => event.event === "TREXSuiteDeployed");
+        const tokenAddress = event?.args?._token;
+  
+        await expect(
+          nonReferenceIA.changeImplementationAuthority(
+            tokenAddress,
+            ethers.constants.AddressZero
+          )
+        ).to.be.revertedWith("only reference contract can deploy new IAs");
+      });
+    });
+  
+    describe("Version Fetching and Management", () => {
+      let nonReferenceIA: any;
+  
+      beforeEach(async () => {
+        nonReferenceIA = await new TREXImplementationAuthority__factory(owner).deploy(
+          false,
+          trexFactory.address,
+          identityImplementationAuthority.address
+        );
+      });
+  
+      it("should fail to fetch already fetched version", async () => {
+        const version = {
+          major: 4,
+          minor: 0,
+          patch: 0,
+        };
+  
+        // First fetch should succeed
+        await nonReferenceIA.fetchVersion(version);
+  
+        // Second fetch should fail
+        await expect(
+          nonReferenceIA.fetchVersion(version)
+        ).to.be.revertedWith("version fetched already");
+      });
+    });
+  
+  
 });

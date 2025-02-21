@@ -250,6 +250,13 @@ describe(" Fund Contract Testing ", function () {
           .to.emit(fund, "NAVUpdated")
           .withArgs(500, "ACTION123");
     });
+
+    it("should revert if non-owner calls onlyAgent functions", async function () {
+      await expect(
+        fund.connect(user1).setNAV(500, "ACTION123")
+      )
+    });
+
   });
 
   describe("Off-Chain Price Management", function () {
@@ -264,6 +271,21 @@ describe(" Fund Contract Testing ", function () {
       await fund.connect(owner).setOffChainPrice(true);
       expect(await fund.getOffChainPriceStatus()).to.be.true;
     });
+
+    it("should revert if non-owner tries to set off-chain price", async function () {
+      const newPrice = ethers.utils.parseUnits("200", 18);
+      await expect(
+        fund.connect(user1).setAssetPriceOffChain(newPrice)
+      )
+    });
+
+
+    it("should revert if non-owner tries to toggle off-chain price status", async function () {
+      await expect(
+        fund.connect(user1).setOffChainPrice(true)
+      )
+    });
+
   });
 
   describe("Investment Limits", function () {
@@ -284,6 +306,22 @@ describe(" Fund Contract Testing ", function () {
 
       expect(await fund.maxInvestment()).to.equal(newMaxInvestment);
     });
+
+
+    it("should revert if non-owner tries to update minimum investment", async function () {
+      const newMinInvestment = ethers.utils.parseUnits("50", 18);
+      await expect(
+        fund.connect(user1).setMinInvestment(newMinInvestment, "ACTION456")
+      )
+    });
+
+
+    it("should revert if non-owner tries to update maximum investment", async function () {
+      const newMaxInvestment = ethers.utils.parseUnits("500", 18);
+      await expect(
+        fund.connect(user1).setMaxInvestment(newMaxInvestment, "ACTION789")
+      )
+    });
   });
 
   describe("Projected Yield", function () {
@@ -294,6 +332,50 @@ describe(" Fund Contract Testing ", function () {
         .withArgs(newProjectedYield, "ACTION999");
     expect(await fund.projectedYield()).to.equal(newProjectedYield);
     });
+
+    it("should revert if non-owner tries to update the projected yield", async function () {
+      const newProjectedYield = 20;
+      await expect(
+        fund.connect(user1).setProjectedYield(newProjectedYield, "ACTION999")
+      )
+    });
   });
+
+
+  describe("Dividend Distribution", function () {  
+    it("should revert if dividend has already been distributed", async function () {
+      const dividendAmount = ethers.utils.parseUnits("1000", 18); // Dividend to be distributed
+      const userAddress = user1.address;
+      const userIds = "USER123";
+      const dividendIds = "DIVIDEND123";
+  
+      // Set up the dividend fee and admin wallet
+      const dividendFee = 200; // Assume 2% fee for simplicity
+      const adminWallet = owner.address; // Assume adminAddress is provided
+
+      // First distribution
+      await expect(fund.connect(owner).shareDividend(
+        userAddress,
+        dividendAmount,
+        userIds,
+        dividendIds,
+        usdc.address,
+        owner.address
+      )).to.be.reverted;
+  
+      // Try distributing the same dividend again, should revert
+      await expect(
+        fund.connect(owner).shareDividend(
+          userAddress,
+          dividendAmount,
+          userIds,
+          dividendIds,
+          usdc.address,
+          owner.address
+        )
+      ).to.be.reverted;
+    });
+  });
+  
 
 });

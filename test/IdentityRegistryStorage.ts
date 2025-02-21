@@ -92,6 +92,7 @@ describe("Identity Registry Storage Contract Testing", function () {
       user1.address,
       true
     );
+    
     user2Identity = await new Identity__factory(owner).deploy(
       user2.address,
       true

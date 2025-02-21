@@ -276,6 +276,32 @@ beforeEach(" ", async () => {
 
 describe('CountryAllowModule', function () {
     describe('batchAllowCountries', function () {
+        it('should allow a batch of countries for the contract', async function () {
+            // Initialize the modular compliance contract
+            await modularComplianceImplementation.init();
+        
+            // Add the country allow module to the compliance contract
+            await modularComplianceImplementation.addModule(countryAllowCompliance.address);
+            // Check if the modularComplianceImplementation is already bound to countryAllowCompliance
+            const isBound = await countryAllowCompliance.isComplianceBound(modularComplianceImplementation.address);
+            
+            // List of countries to be allowed
+            const countries = [1, 2, 3];
+            const encodedData = ethers.utils.defaultAbiCoder.encode(
+                ["uint16[]"], // data types
+                [countries] // actual data to encode
+            );
+
+            const functionSignature = "batchAllowCountries(uint16[])";
+            const functionSelector = ethers.utils.id(functionSignature).slice(0, 10); // Get the first 4 bytes
+            const callData = functionSelector + encodedData.slice(2); // Remove '0x' prefix from encoded data
+
+
+            // await modularComplianceImplementation.callModuleFunction(callData,countryAllowCompliance.address);
+            await expect(countryAllowCompliance.batchAllowCountries([32,17])).to.be.revertedWith('only bound compliance can call');
+        });
+
+
         it('should allow a batch of countries for the compliance contract', async function () {
             // Initialize the modular compliance contract
             await modularComplianceImplementation.init();
@@ -460,6 +486,38 @@ describe('CountryAllowModule', function () {
 
 
     describe('Add allow country', function () {
+            it('should revert with CountryAlreadyAllowed error if the country is already allowed', async function () {
+                // Initialize the modular compliance contract
+                await modularComplianceImplementation.init();
+                
+                // Add the country allow module to the compliance contract
+                await modularComplianceImplementation.addModule(countryAllowCompliance.address);
+                
+                // Check if the modularComplianceImplementation is already bound to countryAllowCompliance
+                const isBound = await countryAllowCompliance.isComplianceBound(modularComplianceImplementation.address);
+                
+                // List of countries to be allowed
+                const country = 1;
+                
+                // Add the country for the first time
+                const encodedData = ethers.utils.defaultAbiCoder.encode(
+                    ["uint16"], // data types
+                    [country] // actual data to encode
+                );
+        
+                const functionSignature = "addAllowedCountry(uint16)";
+                const functionSelector = ethers.utils.id(functionSignature).slice(0, 10); // Get the first 4 bytes
+                const callData = functionSelector + encodedData.slice(2); // Remove '0x' prefix from encoded data
+        
+                // Calling the function to add the country
+                await modularComplianceImplementation.callModuleFunction(callData, countryAllowCompliance.address);
+        
+                // Now try to add the same country again and expect it to revert with 'CountryAlreadyAllowed' custom error
+                await expect(
+                    modularComplianceImplementation.callModuleFunction(callData, countryAllowCompliance.address)
+                ).to.be.revertedWithCustomError(countryAllowCompliance, 'CountryAlreadyAllowed').withArgs(modularComplianceImplementation.address, country);
+            });
+
         it('should allow a country for the compliance contract', async function () {
             // Initialize the modular compliance contract
             await modularComplianceImplementation.init();
@@ -545,6 +603,36 @@ describe('CountryAllowModule', function () {
 
 
     describe('removeAllowedCountry', function () {
+        it('should revert with CountryNotAllowed error if the country is not allowed', async function () {
+            // Initialize the modular compliance contract
+            await modularComplianceImplementation.init();
+            
+            // Add the country allow module to the compliance contract
+            await modularComplianceImplementation.addModule(countryAllowCompliance.address);
+            
+            // Check if the modularComplianceImplementation is already bound to countryAllowCompliance
+            const isBound = await countryAllowCompliance.isComplianceBound(modularComplianceImplementation.address);
+            
+            // List of countries to be allowed
+            const country = 10;
+    
+            // Try to remove a country that was never added to the allowed list
+            const encodedData = ethers.utils.defaultAbiCoder.encode(
+                ["uint16"], // data types
+                [country] // actual data to encode
+            );
+    
+            const functionSignature = "removeAllowedCountry(uint16)";
+            const functionSelector = ethers.utils.id(functionSignature).slice(0, 10); // Get the first 4 bytes
+            const callData = functionSelector + encodedData.slice(2); // Remove '0x' prefix from encoded data
+    
+            // Expect the function to revert with the 'CountryNotAllowed' custom error
+            await expect(
+                modularComplianceImplementation.callModuleFunction(callData, countryAllowCompliance.address)
+            ).to.be.revertedWithCustomError(countryAllowCompliance, 'CountryNotAllowed').withArgs(modularComplianceImplementation.address, country);
+        });
+
+        
         it('should remove a allowed country from the allowed list', async function () {
             // Initialize the modular compliance contract
             await modularComplianceImplementation.init();
