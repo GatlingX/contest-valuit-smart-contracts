@@ -63,7 +63,7 @@ import {
   WrapperProxy__factory,
 } from "../typechain";
 
-describe.only("Tokenization Contract Testing ", function () {
+describe("Tokenization Contract Testing ", function () {
   let signer: SignerWithAddress;
   let signers: SignerWithAddress[];
   let owner: SignerWithAddress;
