@@ -15,10 +15,7 @@ describe("Wrapper Contract Testing", function () {
     let user2: SignerWithAddress;
     let user3: SignerWithAddress;
 
-    // const trustSigningKey = ethers.Wallet.createRandom();
-  
-    // console.log("claimIssuerSigningKey ", trustSigningKey);
-  
+    
     //Implementation
     let claimTopicsRegistryImplementation: ClaimTopicsRegistry;
     let trustedIssuersRegistryImplementation: TrustedIssuersRegistry;

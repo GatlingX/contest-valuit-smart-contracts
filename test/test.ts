@@ -409,10 +409,6 @@ describe(" Test contract Testing ", function () {
         expect((await trexFactory.getImplementationAuthority())).to.equal(trexImplementationAuthority.address);
     });
 
-
-   
-
-
     it("Deploy Equity Config Contract", async () => {
       let tokenDetails={
         owner:owner.address,
