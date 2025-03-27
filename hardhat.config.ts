@@ -9,7 +9,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "hardhat-contract-sizer";
 import dotenv from "dotenv";
 import 'solidity-coverage';
-
+import "@nomicfoundation/hardhat-foundry";
 
 require("hardhat-contract-sizer");
 dotenv.config();

@@ -42,6 +42,7 @@
   "homepage": "https://github.com/TokenySolutions/T-REX#README",
   "devDependencies": {
     "@commitlint/cli": "^17.6.1",
+    "@nomicfoundation/hardhat-foundry": "^1.1.3",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-solhint": "^3.0.1",
     "@onchain-id/solidity": "^2.0.0",
